@@ -84,7 +84,7 @@ function ContactSp() {
       {/* Header */}
       <div className="px-[20px] py-[30px] flex justify-between items-center">
         <a href="/">
-          <Image src="/images/logo-horizontal.svg" alt="KAKE PHOTO" width={140} height={16} />
+          <Image src="/images/logo-horizontal.svg" alt="KAKEPHOTO" width={140} height={16} />
         </a>
       </div>
 
@@ -161,7 +161,7 @@ function ContactPc() {
         {/* Header */}
         <div className="px-[100px] py-[60px]">
           <a href="/">
-            <Image src="/images/logo-horizontal.svg" alt="KAKE PHOTO" width={280} height={32} />
+            <Image src="/images/logo-horizontal.svg" alt="KAKEPHOTO" width={280} height={32} />
           </a>
         </div>
 
@@ -233,7 +233,7 @@ function ContactPc() {
       </div>
 
       <div className="pb-[100px] flex flex-col items-center opacity-50">
-        <p className="text-[12px] tracking-[2px]">©︎KAKE PHOTO All Rights Reserved.</p>
+        <p className="text-[12px] tracking-[2px]">©︎KAKEPHOTO All Rights Reserved.</p>
       </div>
     </main>
   );

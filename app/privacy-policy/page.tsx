@@ -104,7 +104,7 @@ function SpPage() {
   return (
     <main className="w-[375px] bg-[#FFFFFB] text-[#710b26] overflow-hidden min-h-screen pb-[60px]" style={{ fontFamily: 'Zen Old Mincho, serif' }}>
       <div className="px-[20px] py-[30px]">
-        <a href="/"><Image src="/images/logo-horizontal.svg" alt="KAKE PHOTO" width={140} height={16} /></a>
+        <a href="/"><Image src="/images/logo-horizontal.svg" alt="KAKEPHOTO" width={140} height={16} /></a>
       </div>
       <div className="px-[20px] pt-[40px]">
         <FadeInOnScroll>
@@ -130,7 +130,7 @@ function PcPage() {
       </div>
       <div className="relative z-10">
         <div className="px-[100px] py-[60px]">
-          <a href="/"><Image src="/images/logo-horizontal.svg" alt="KAKE PHOTO" width={280} height={32} /></a>
+          <a href="/"><Image src="/images/logo-horizontal.svg" alt="KAKEPHOTO" width={280} height={32} /></a>
         </div>
         <div className="max-w-[1200px] mx-auto pt-[80px] pb-[160px]">
           <FadeInOnScroll>
@@ -153,7 +153,7 @@ function PcPage() {
         </div>
       </div>
       <div className="pb-[100px] flex flex-col items-center opacity-50">
-        <p className="text-[12px] tracking-[2px]">©︎KAKE PHOTO All Rights Reserved.</p>
+        <p className="text-[12px] tracking-[2px]">©︎KAKEPHOTO All Rights Reserved.</p>
       </div>
     </main>
   );

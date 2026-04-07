@@ -124,13 +124,13 @@ function SpPage() {
       {/* ===== FV ===== */}
       <section className="relative w-[375px] h-[680px] overflow-hidden">
         <div className="absolute inset-0">
-          <Image src="/images/fv-bg.jpg" alt="KAKE PHOTO" fill className="object-cover" priority />
+          <Image src="/images/fv-bg.jpg" alt="KAKEPHOTO" fill className="object-cover" priority />
         </div>
         <div className="absolute top-[20px] left-[16px] z-10">
-          <Image src="/images/logo-horizontal.svg" alt="KAKE PHOTO" width={160} height={18} />
+          <Image src="/images/logo-horizontal.svg" alt="KAKEPHOTO" width={160} height={18} />
         </div>
         <div className="absolute top-[140px] left-1/2 -translate-x-1/2 z-10 hidden">
-          <Image src="/images/logo-center.svg" alt="KAKE PHOTO" width={150} height={236} />
+          <Image src="/images/logo-center.svg" alt="KAKEPHOTO" width={150} height={236} />
         </div>
         <div className="absolute bottom-[60px] right-[16px] text-right text-white z-10">
           <p className="text-[13px] tracking-[2px] font-medium">FULL CUSTOM MADE</p>
@@ -255,7 +255,7 @@ function SpPage() {
 
         {/* 雅コース */}
         <div className="bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden mb-[20px]">
-          <div className="relative w-full h-[200px]">
+          <div className="relative w-full h-[220px]">
             <Image src="/images/order-photo-miyabi.jpg" alt="雅コース" fill className="object-cover" />
           </div>
           <div className="p-[16px]">
@@ -278,7 +278,7 @@ function SpPage() {
 
         {/* 極コース */}
         <div className="bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden mb-[90px]">
-          <div className="relative w-full h-[200px]">
+          <div className="relative w-full h-[220px]">
             <Image src="/images/order-photo-kiwami.jpg" alt="極コース" fill className="object-cover" />
           </div>
           <div className="p-[16px]">
@@ -349,14 +349,14 @@ function SpPage() {
         {/* Footer */}
         <footer className="text-white pt-[20px] flex flex-col items-center">
           <div className="w-[60px] h-[94px] relative mb-[16px]">
-            <Image src="/images/footer-logo.svg" alt="KAKE PHOTO" fill className="object-contain" />
+            <Image src="/images/footer-logo.svg" alt="KAKEPHOTO" fill className="object-contain" />
           </div>
           <div className="flex items-center gap-[8px] mb-[16px]">
             <Image src="/images/instagram-icon.svg" alt="Instagram" width={14} height={14} />
             <span className="text-[12px] tracking-[1px]">Instagram</span>
           </div>
           <p className="text-[10px] tracking-[0.8px] mb-[8px]"><a href="/privacy-policy">プライバシーポリシー</a> | <a href="/cancel-policy">キャンセルポリシー</a></p>
-          <p className="text-[9px] tracking-[0.8px]">©︎KAKE PHOTO All Rights Reserved.</p>
+          <p className="text-[9px] tracking-[0.8px]">©︎KAKEPHOTO All Rights Reserved.</p>
         </footer>
       </section>
     </main>
@@ -375,7 +375,7 @@ export default function Home() {
           <div className="absolute inset-0 overflow-hidden">
             <Image
               src="/images/fv-bg.jpg"
-              alt="KAKE PHOTO メインビジュアル"
+              alt="KAKEPHOTO メインビジュアル"
               width={2929}
               height={1953}
               className="absolute max-w-none"
@@ -392,7 +392,7 @@ export default function Home() {
           <div className="absolute top-[60px] left-[42px] z-10">
             <Image
               src="/images/logo-horizontal.svg"
-              alt="KAKE PHOTO"
+              alt="KAKEPHOTO"
               width={269}
               height={30}
             />
@@ -401,7 +401,7 @@ export default function Home() {
           <div className="absolute top-[312px] left-[820px] z-10">
             <Image
               src="/images/logo-center.svg"
-              alt="KAKE PHOTO"
+              alt="KAKEPHOTO"
               width={280}
               height={441}
             />
@@ -540,8 +540,6 @@ export default function Home() {
             </p>
           </div>
 
-          {/* 装飾ドット — Figma: x=450 y=997 w=52 h=5 */}
-          <Image src="/images/deco-arrow-miyabi.svg" alt="" width={52} height={5} className="absolute left-[450px] top-[1092px]" />
 
           {/* 雅・極コース背景 — Figma: x=99 y=1080 w=1721 h=522 */}
           <div className="absolute left-[99px] top-[1175px] w-[1721px] h-[522px] bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden">
@@ -561,8 +559,6 @@ export default function Home() {
             <span className="absolute left-[327px] top-[411px] text-[18px] tracking-[7.2px] text-black leading-[50px]">46,000円</span>
             <span className="absolute left-[327px] top-[443px] text-[14px] tracking-[2.8px] text-black leading-[50px]">(税込/送料込)</span>
 
-            {/* 装飾ドット雅 — Figma: left=215 top=398 w=52 h=5 */}
-            <Image src="/images/deco-arrow-miyabi-card.svg" alt="" width={52} height={5} className="absolute left-[215px] top-[398px]" />
 
             {/* 極コース */}
             <h3 className="absolute left-[913px] top-[51px] text-[24px] tracking-[9.6px] leading-[50px]">極コース</h3>
@@ -579,8 +575,6 @@ export default function Home() {
             </div>
             <span className="absolute left-[1176px] top-[411px] text-[18px] tracking-[7.2px] text-black leading-[50px]">77,000円</span>
             <span className="absolute left-[1181px] top-[436px] text-[14px] tracking-[2.8px] text-black leading-[50px]">(税込/送料込)</span>
-            {/* 装飾ドット — Figma: left=1078 top=398 w=52 h=5 */}
-            <Image src="/images/deco-arrow-kiwami.svg" alt="" width={52} height={5} className="absolute left-[1078px] top-[398px]" />
           </div>
 
           {/* オーダーの流れ — Figma: x=300 y=1804 w=1320 */}
@@ -608,7 +602,7 @@ export default function Home() {
             href="#"
             className="absolute left-[300px] top-[2430px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[4.4px] hover:opacity-90 transition-opacity"
           >
-            KAKE PHOTO 公式LINEからオーダーする
+            KAKEPHOTO 公式LINEからオーダーする
             <Image src="/images/line-icon.svg" alt="LINE" width={57} height={54} />
           </a>
           <Link
@@ -647,7 +641,7 @@ export default function Home() {
             <div className="absolute left-0 top-0 w-[110px] h-[173px]">
               <Image
                 src="/images/footer-logo.svg"
-                alt="KAKE PHOTO"
+                alt="KAKEPHOTO"
                 fill
                 className="object-contain"
               />
@@ -666,7 +660,7 @@ export default function Home() {
 
             {/* Copyright */}
             <p className="absolute left-[738px] top-[167px] text-[12px] tracking-[1.2px]">
-              ©︎KAKE PHOTO All Rights Reserved.
+              ©︎KAKEPHOTO All Rights Reserved.
             </p>
 
             {/* プライバシーポリシー */}
