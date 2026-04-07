@@ -1,16 +1,31 @@
 "use client";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 
-function ScaledWrapper({ children }: { children: React.ReactNode }) {
+function ScaledWrapper({ children, spChildren }: { children: React.ReactNode; spChildren: React.ReactNode }) {
   const [scale, setScale] = useState(1);
+  const [isSp, setIsSp] = useState(false);
 
   useEffect(() => {
-    const update = () => setScale(document.documentElement.clientWidth / 1920);
+    const update = () => {
+      const w = document.documentElement.clientWidth;
+      const sp = w < 768;
+      setIsSp(sp);
+      setScale(sp ? w / 375 : w / 1920);
+    };
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
+
+  if (isSp) {
+    return (
+      <div style={{ width: 375, zoom: scale }}>
+        {spChildren}
+      </div>
+    );
+  }
 
   return (
     <div style={{ width: 1920, zoom: scale }}>
@@ -19,9 +34,349 @@ function ScaledWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
+function StickyMessagePanel({ children, index }: { children: React.ReactNode; index: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "start start"],
+  });
+  const opacity = useTransform(scrollYProgress, [0, 0.6, 1], index === 0 ? [1, 1, 1] : [0, 0, 1]);
+  const y = useTransform(scrollYProgress, [0, 0.6, 1], index === 0 ? [0, 0, 0] : [120, 120, 0]);
+
+  return (
+    <div ref={ref} className="sticky top-0 w-[1920px] overflow-hidden" style={{ height: "var(--panel-h)" }}>
+      <motion.div className="absolute inset-0" style={{ opacity, y }}>
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
+function StickyMessageSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const update = () => {
+      const w = document.documentElement.clientWidth;
+      const scale = w / 1920;
+      const h = window.innerHeight / scale;
+      document.documentElement.style.setProperty("--panel-h", `${h}px`);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const bgImage = (
+    <div className="absolute inset-0 overflow-hidden">
+      <Image
+        src="/images/message-bg.jpg"
+        alt=""
+        width={2730}
+        height={4096}
+        className="absolute max-w-none opacity-40"
+        style={{ width: 2730, height: 4096, left: -702, top: -526 }}
+      />
+    </div>
+  );
+
+  return (
+    <section ref={sectionRef} className="relative w-[1920px]">
+      {/* Panel 1 */}
+      <StickyMessagePanel index={0}>
+        <div className="absolute inset-0 bg-white" />
+        {bgImage}
+        <h2 className="absolute z-10 left-[99px] top-[206px] text-[#710b26] text-[40px] tracking-[16px]">Message</h2>
+        <div className="absolute z-10 left-0 top-[406px] w-[960px] h-[648px] overflow-hidden">
+          <Image src="/images/message-photo1.jpg" alt="掛け軸の裂地" fill className="object-cover" />
+        </div>
+        <div className="absolute z-10 left-[1110px] top-[538px] w-[534px] h-[384px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]" style={{ fontFamily: 'Zen Old Mincho' }}>
+          <p>「伝統を継ぎ、未来を綴る」</p>
+          <p>文化財修復という、歴史を守る現場で</p>
+          <p>磨かれた確かな技術。</p>
+          <p>機械では決して生み出せない、</p>
+          <p>一点一点、呼吸を合わせるような</p>
+          <p>完全ハンドメイド。</p>
+          <p>手仕事ならではの柔らかな風合いに、</p>
+          <p>職人の誇りを込めてお届けします。</p>
+        </div>
+      </StickyMessagePanel>
+
+      {/* Panel 2 */}
+      <StickyMessagePanel index={1}>
+        <div className="absolute inset-0 bg-white" />
+        {bgImage}
+        <h2 className="absolute z-10 left-[99px] top-[206px] text-[#710b26] text-[40px] tracking-[16px]">Message</h2>
+        <div className="absolute z-10 left-0 top-[406px] w-[960px] h-[648px] overflow-hidden">
+          <Image src="/images/message-photo2.jpg" alt="掛け軸のある空間" fill className="object-cover" />
+        </div>
+        <div className="absolute z-10 left-[1110px] top-[538px] w-[534px] h-[384px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]" style={{ fontFamily: 'Zen Old Mincho' }}>
+          <p>「敷居をまたぎ、日常に馴染む」</p>
+          <p>「掛軸は少し格式が高い」というこれまでの</p>
+          <p>常識を、私たちは軽やかにひっくり返します。</p>
+          <p>現代のリビングに、</p>
+          <p>驚くほど自然にフィットする佇まい。</p>
+          <p>もっと扱いやすく、もっと身近に。</p>
+          <p>あなたの何気ない日常の風景に、</p>
+          <p>そっと彩りを添えます。</p>
+        </div>
+      </StickyMessagePanel>
+
+      {/* Panel 3 */}
+      <StickyMessagePanel index={2}>
+        <div className="absolute inset-0 bg-white" />
+        {bgImage}
+        <h2 className="absolute z-10 left-[99px] top-[206px] text-[#710b26] text-[40px] tracking-[16px]">Message</h2>
+        <div className="absolute z-10 left-0 top-[406px] w-[960px] h-[648px] overflow-hidden">
+          <Image src="/images/message-photo3.jpg" alt="掛け軸と家族の思い出" fill className="object-cover" />
+        </div>
+        <div className="absolute z-10 left-[1110px] top-[538px] w-[434px] h-[434px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]" style={{ fontFamily: 'Zen Old Mincho' }}>
+          <p>「記憶を飾り、心を贈る」</p>
+          <p>家族の笑顔や、心に留めておきたい</p>
+          <p>大切な瞬間。</p>
+          <p>デジタルの中にある思い出を「形」にして、</p>
+          <p>世界にひとつだけの掛軸へ。</p>
+          <p>お世話になった方への贈り物や、</p>
+          <p>特別な記念日にも。</p>
+          <p>言葉では伝えきれない想いを、</p>
+          <p>確かな形に託して。</p>
+        </div>
+      </StickyMessagePanel>
+    </section>
+  );
+}
+
+function SpPage() {
+  return (
+    <main className="w-[375px] overflow-hidden" style={{ fontFamily: 'Zen Old Mincho, serif' }}>
+      {/* ===== FV ===== */}
+      <section className="relative w-[375px] h-[600px] overflow-hidden">
+        <div className="absolute inset-0">
+          <Image src="/images/fv-bg.jpg" alt="KAKE PHOTO" fill className="object-cover" priority />
+        </div>
+        <div className="absolute top-[20px] left-[16px] z-10">
+          <Image src="/images/logo-horizontal.svg" alt="KAKE PHOTO" width={160} height={18} />
+        </div>
+        <div className="absolute top-[140px] left-1/2 -translate-x-1/2 z-10 hidden">
+          <Image src="/images/logo-center.svg" alt="KAKE PHOTO" width={150} height={236} />
+        </div>
+        <div className="absolute bottom-[60px] right-[16px] text-right text-white z-10">
+          <p className="text-[13px] tracking-[2px] font-medium">FULL CUSTOM MADE</p>
+          <p className="text-[10px] tracking-[1.5px] mt-1">Each piece is made exclusively for one photograph.</p>
+        </div>
+      </section>
+
+      {/* ===== Concept ===== */}
+      <section className="relative w-[375px] bg-[#710b26] text-white px-[20px] py-[60px]">
+        <h2 className="text-[24px] tracking-[8px] mb-[30px] text-center">Concept</h2>
+        <div className="flex justify-center mb-[30px]">
+          <div className="flex gap-[12px]">
+            <div className="flex flex-col gap-[2px] text-[20px]" style={{ order: 2 }}>
+              {"あなたの写真を".split("").map((c, i) => (
+                <span key={i} className="w-[20px] h-[30px] flex items-center justify-center">{c}</span>
+              ))}
+              <span className="w-[20px] h-[10px] flex items-center justify-center rotate-180">、</span>
+            </div>
+            <div className="flex flex-col gap-[2px] text-[20px]" style={{ order: 1 }}>
+              {"日本の美で包む".split("").map((c, i) => (
+                <span key={i} className="w-[20px] h-[30px] flex items-center justify-center">{c}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="text-center text-[13px] tracking-[2px] leading-[32px] mb-[40px]">
+          <p>私たちの掛け軸は、既製品ではありません。</p>
+          <p>&nbsp;</p>
+          <p>すべてが、その写真、その空間のための</p>
+          <p>完全オーダーメイドです。</p>
+          <p>&nbsp;</p>
+          <p>掛け軸×写真</p>
+          <p>異なる時代に生まれた表現を</p>
+          <p>ひとつのかたちに。</p>
+          <p>&nbsp;</p>
+          <p>掛け軸が持つ</p>
+          <p>「余白」「間」「季節を飾る文化」と</p>
+          <p>写真が持つ「一瞬を写し取る力」。</p>
+          <p>&nbsp;</p>
+          <p>そのどちらも大切にしながら、</p>
+          <p>新しいアートとしての形を提案します。</p>
+        </div>
+        <div className="relative w-full h-[240px] overflow-hidden">
+          <Image src="/images/concept-photo.jpg" alt="掛け軸のある暮らし" fill className="object-cover" />
+        </div>
+      </section>
+
+      {/* ===== Transition ===== */}
+      <section className="relative w-[375px] h-[200px] overflow-hidden">
+        <Image src="/images/transition-bg.jpg" alt="" fill className="object-cover" />
+        <div className="absolute top-0 left-0 w-full h-[20px] bg-[#E7E8B2] z-10" />
+        <div className="absolute bottom-0 left-0 w-full h-[20px] bg-[#E7E8B2] z-10" />
+        <div className="absolute top-[20px] left-0 w-[8px] h-[calc(100%-40px)] bg-[#909AC3] z-10" />
+        <div className="absolute top-[20px] right-0 w-[8px] h-[calc(100%-40px)] bg-[#909AC3] z-10" />
+      </section>
+
+      {/* ===== Message ===== */}
+      <section className="relative w-[375px] bg-white overflow-hidden">
+        <div className="absolute inset-0">
+          <Image src="/images/message-bg.jpg" alt="" fill className="object-cover opacity-40" />
+        </div>
+        <div className="relative z-10 px-[20px] py-[50px]">
+          <h2 className="text-[#710b26] text-[24px] tracking-[8px] mb-[40px] text-center">Message</h2>
+
+          {[
+            { img: "/images/message-photo1.jpg", alt: "掛け軸の裂地", lines: ["「伝統を継ぎ、未来を綴る」", "文化財修復という、歴史を守る現場で磨かれた確かな技術。", "機械では決して生み出せない、一点一点、呼吸を合わせるような完全ハンドメイド。", "手仕事ならではの柔らかな風合いに、職人の誇りを込めてお届けします。"] },
+            { img: "/images/message-photo2.jpg", alt: "掛け軸のある空間", lines: ["「敷居をまたぎ、日常に馴染む」", "「掛軸は少し格式が高い」というこれまでの常識を、私たちは軽やかにひっくり返します。", "現代のリビングに、驚くほど自然にフィットする佇まい。", "もっと扱いやすく、もっと身近に。あなたの何気ない日常の風景に、そっと彩りを添えます。"] },
+            { img: "/images/message-photo3.jpg", alt: "掛け軸と家族の思い出", lines: ["「記憶を飾り、心を贈る」", "家族の笑顔や、心に留めておきたい大切な瞬間。", "デジタルの中にある思い出を「形」にして、世界にひとつだけの掛軸へ。", "お世話になった方への贈り物や、特別な記念日にも。言葉では伝えきれない想いを、確かな形に託して。"] },
+          ].map((msg, i) => (
+            <div key={i} className="mb-[40px]">
+              <div className="relative w-full h-[220px] overflow-hidden mb-[20px]">
+                <Image src={msg.img} alt={msg.alt} fill className="object-cover" />
+              </div>
+              <div className="text-[#710b26] text-[13px] tracking-[2px] leading-[28px]">
+                {msg.lines.map((line, j) => <p key={j}>{line}</p>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== Order ===== */}
+      <section className="relative w-[375px] bg-[#710b26] text-white px-[20px] py-[50px]">
+        <h2 className="text-[24px] tracking-[8px] mb-[20px] text-center">Order</h2>
+        <p className="text-[12px] tracking-[1.5px] leading-[28px] text-center mb-[30px]">
+          掛け軸は、オーダーにてお作りしています。<br />写真の内容だけでなく、裂地の色や質感、全体の配色バランスまで。<br />空間や飾る場所を想像しながら、<br />一緒に仕立てていく時間も大切にしています。
+        </p>
+
+        {/* 特注オーダーメイド */}
+        <div className="bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden mb-[20px]">
+          <div className="relative w-full h-[220px]">
+            <Image src="/images/order-photo.jpg" alt="特注オーダーメイド" fill className="object-cover" />
+          </div>
+          <div className="p-[16px]">
+            <div className="flex items-baseline gap-2 mb-1">
+              <h3 className="text-[18px] tracking-[4px]">特注オーダーメイド</h3>
+              <span className="text-[12px] tracking-[2px] text-[#323232]">Photo size FREE</span>
+            </div>
+            <div className="text-[12px] tracking-[2px] text-black leading-[24px] mb-2">
+              <p>縦：110-130cm / 横：30cm~</p>
+            </div>
+            <div className="flex items-baseline gap-2 mb-3">
+              <span className="text-[16px] tracking-[2px] text-black">00,000円</span>
+              <span className="text-[11px] tracking-[1px] text-black">(税込/送料込)</span>
+            </div>
+            <p className="text-[12px] tracking-[1.5px] text-black leading-[22px]">
+              写真の印刷サイズは、ハガキサイズからA3サイズまで自由にお選びいただけます。使用する裂地（きれじ）や完成形に制限はなく、自由なカスタマイズが可能です。
+            </p>
+          </div>
+        </div>
+
+        {/* 雅コース */}
+        <div className="bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden mb-[20px]">
+          <div className="relative w-full h-[200px]">
+            <Image src="/images/order-photo-miyabi.jpg" alt="雅コース" fill className="object-cover" />
+          </div>
+          <div className="p-[16px]">
+            <div className="flex items-baseline gap-2 mb-1">
+              <h3 className="text-[18px] tracking-[4px]">雅コース</h3>
+              <span className="text-[12px] tracking-[2px] text-[#323232]">Photo size A4</span>
+            </div>
+            <p className="text-[12px] tracking-[1.5px] text-black leading-[22px] mb-3">
+              お写真をA4サイズに拡大印刷して仕上げます。あらかじめ厳選された裂地（きれじ）や形状のラインナップから、お好みの組み合わせをお選びいただけます。
+            </p>
+            <div className="flex items-baseline justify-between">
+              <p className="text-[12px] text-black tracking-[2px]">縦：100-120cm 横23cm~</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-[16px] text-black">46,000円</span>
+                <span className="text-[10px] text-black">(税込/送料込)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 極コース */}
+        <div className="bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden mb-[30px]">
+          <div className="relative w-full h-[200px]">
+            <Image src="/images/order-photo-kiwami.jpg" alt="極コース" fill className="object-cover" />
+          </div>
+          <div className="p-[16px]">
+            <div className="flex items-baseline gap-2 mb-1">
+              <h3 className="text-[18px] tracking-[4px]">極コース</h3>
+              <span className="text-[12px] tracking-[2px] text-[#323232]">Photo size A3</span>
+            </div>
+            <p className="text-[12px] tracking-[1.5px] text-black leading-[22px] mb-3">
+              お写真を、存在感あふれるA3サイズに拡大印刷いたします。ダイナミックな大きさでありながら、細部まで鮮明に再現されます。
+            </p>
+            <div className="flex items-baseline justify-between">
+              <p className="text-[12px] text-black tracking-[2px]">縦：110-130cm 横：30cm~</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-[16px] text-black">77,000円</span>
+                <span className="text-[10px] text-black">(税込/送料込)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* オーダーの流れ */}
+        <h3 className="text-[18px] tracking-[4px] text-center underline mb-[24px]">オーダーの流れ</h3>
+        <div className="mb-[30px]">
+          {[
+            { step: "Step1", text: "まずは公式LINEもしくはお問合せからご連絡ください。" },
+            { step: "Step2", text: "職人から詳しいヒアリングの連絡をさせていただきます。" },
+            { step: "Step3", text: "写真からおすすめの裂地を選定させていただきます。" },
+            { step: "Step4", text: "裂地を確認後、制作に移らせていただきます。" },
+          ].map((item, i) => (
+            <div key={i} className="border-b border-white/30 py-[12px]">
+              <span className="text-[14px] tracking-[4px] block mb-1">{item.step}</span>
+              <span className="text-[12px] tracking-[1.5px] leading-[22px]">{item.text}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <a href="#" className="flex items-center justify-center gap-3 w-full h-[56px] bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] mb-[12px]">
+          公式LINEからオーダーする
+          <Image src="/images/line-icon.svg" alt="LINE" width={32} height={30} />
+        </a>
+        <a href="#" className="flex items-center justify-center gap-2 w-full h-[56px] bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] mb-[20px]">
+          お問い合わせからオーダーする
+          <span className="inline-block w-[24px] h-[1px] bg-[#710b26] relative">
+            <span className="absolute right-0 top-1/2 -translate-y-1/2 border-r-[1.5px] border-t-[1.5px] border-[#710b26] w-[6px] h-[6px] rotate-45" />
+          </span>
+        </a>
+
+        <p className="text-[10px] tracking-[0.5px] text-center leading-[18px] mb-[30px]">
+          ※使用する裂地や仕様により、金額は変動します。ご希望やご予算に合わせて、無理のない形をご提案しますのでお気軽にご相談ください。
+        </p>
+
+        {/* Gallery */}
+        <div className="flex overflow-x-auto gap-[8px] mb-[30px] -mx-[20px] px-[20px]">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="w-[160px] h-[120px] bg-[#d9d9d9] shrink-0" />
+          ))}
+        </div>
+
+        {/* Footer */}
+        <footer className="text-white pt-[20px] flex flex-col items-center">
+          <div className="w-[60px] h-[94px] relative mb-[16px]">
+            <Image src="/images/footer-logo.svg" alt="KAKE PHOTO" fill className="object-contain" />
+          </div>
+          <div className="flex items-center gap-[8px] mb-[16px]">
+            <Image src="/images/instagram-icon.svg" alt="Instagram" width={14} height={14} />
+            <span className="text-[12px] tracking-[1px]">Instagram</span>
+          </div>
+          <p className="text-[10px] tracking-[0.8px] mb-[8px]">プライバシーポリシー | 特定商取引法</p>
+          <p className="text-[9px] tracking-[0.8px]">©︎KAKE PHOTO All Rights Reserved.</p>
+        </footer>
+      </section>
+    </main>
+  );
+}
+
 export default function Home() {
   return (
-    <ScaledWrapper>
+    <ScaledWrapper
+      spChildren={<SpPage />}
+    >
       <main className="w-[1920px]">
         {/* ===== FV (First View) — Figma: 1920x1450 ===== */}
         <section className="relative w-[1920px] h-[1450px] overflow-hidden">
@@ -155,74 +510,8 @@ export default function Home() {
           <div className="absolute top-[64px] right-0 w-[26px] h-[calc(100%-128px)] bg-[#909AC3] z-10" />
         </section>
 
-        {/* ===== Message — Figma: 1920x3009 ===== */}
-        <section className="relative w-[1920px] h-[3009px] bg-white overflow-hidden">
-          {/* 背景テクスチャ — Figma: x=-702 y=-526 w=2730 h=4096 opacity=40% */}
-          <div className="absolute inset-0 overflow-hidden">
-            <Image
-              src="/images/message-bg.jpg"
-              alt=""
-              width={2730}
-              height={4096}
-              className="absolute max-w-none opacity-40"
-              style={{
-                width: 2730,
-                height: 4096,
-                left: -702,
-                top: -526,
-              }}
-            />
-          </div>
-
-          {/* Message title — Figma: x=99 y=206 */}
-          <h2 className="absolute z-10 left-[99px] top-[206px] text-[#710b26] text-[40px] tracking-[16px]">Message</h2>
-
-          {/* Message 1 — 画像: x=0 y=406, テキスト: x=1110 y=538 */}
-          <div className="absolute z-10 left-0 top-[406px] w-[960px] h-[648px] overflow-hidden">
-            <Image src="/images/message-photo1.jpg" alt="掛け軸の裂地" fill className="object-cover" />
-          </div>
-          <div className="absolute z-10 left-[1110px] top-[538px] w-[534px] h-[384px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]" style={{ fontFamily: 'Zen Old Mincho' }}>
-            <p>「伝統を継ぎ、未来を綴る」</p>
-            <p>文化財修復という、歴史を守る現場で</p>
-            <p>磨かれた確かな技術。</p>
-            <p>機械では決して生み出せない、</p>
-            <p>一点一点、呼吸を合わせるような</p>
-            <p>完全ハンドメイド。</p>
-            <p>手仕事ならではの柔らかな風合いに、</p>
-            <p>職人の誇りを込めてお届けします。</p>
-          </div>
-
-          {/* Message 2 — 画像: x=0 y=1254, テキスト: x=1110 y=1395 */}
-          <div className="absolute z-10 left-0 top-[1254px] w-[960px] h-[648px] overflow-hidden">
-            <Image src="/images/message-photo2.jpg" alt="掛け軸のある空間" fill className="object-cover" />
-          </div>
-          <div className="absolute z-10 left-[1110px] top-[1395px] w-[534px] h-[384px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]" style={{ fontFamily: 'Zen Old Mincho' }}>
-            <p>「敷居をまたぎ、日常に馴染む」</p>
-            <p>「掛軸は少し格式が高い」というこれまでの</p>
-            <p>常識を、私たちは軽やかにひっくり返します。</p>
-            <p>現代のリビングに、</p>
-            <p>驚くほど自然にフィットする佇まい。</p>
-            <p>もっと扱いやすく、もっと身近に。</p>
-            <p>あなたの何気ない日常の風景に、</p>
-            <p>そっと彩りを添えます。</p>
-          </div>
-
-          {/* Message 3 — 画像: x=0 y=2092, テキスト: x=1110 y=2199 */}
-          <div className="absolute z-10 left-0 top-[2092px] w-[960px] h-[648px] overflow-hidden">
-            <Image src="/images/message-photo3.jpg" alt="掛け軸と家族の思い出" fill className="object-cover" />
-          </div>
-          <div className="absolute z-10 left-[1110px] top-[2199px] w-[534px] h-[434px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]" style={{ fontFamily: 'Zen Old Mincho' }}>
-            <p>「記憶を飾り、心を贈る」</p>
-            <p>家族の笑顔や、心に留めておきたい</p>
-            <p>大切な瞬間。</p>
-            <p>デジタルの中にある思い出を「形」にして、</p>
-            <p>世界にひとつだけの掛軸へ。</p>
-            <p>お世話になった方への贈り物や、</p>
-            <p>特別な記念日にも。</p>
-            <p>言葉では伝えきれない想いを、</p>
-            <p>確かな形に託して。</p>
-          </div>
-        </section>
+        {/* ===== Message — Sticky Scroll ===== */}
+        <StickyMessageSection />
 
         {/* ===== Order + Footer — Figma: bg 1920x3143 ===== */}
         <section className="relative w-[1920px] h-[3143px] bg-[#710b26] text-white">

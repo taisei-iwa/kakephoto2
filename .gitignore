@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+image.png
+image copy.png
+next-env.d copy.ts
+
+.vercel
