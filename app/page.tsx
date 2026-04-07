@@ -2,6 +2,8 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import Link from "next/link";
+import Lenis from "lenis";
 
 function FadeInOnScroll({ children, className, delay = 0 }: { children?: React.ReactNode; className?: string; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -35,6 +37,17 @@ function ScaledWrapper({ children, spChildren }: { children: React.ReactNode; sp
     return () => window.removeEventListener("resize", update);
   }, []);
 
+  // Lenis smooth scroll — eliminates jitter for JS-driven sticky
+  useEffect(() => {
+    const lenis = new Lenis({ syncTouch: true });
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+    return () => lenis.destroy();
+  }, []);
+
   if (isSp) {
     return (
       <div style={{ width: 375, zoom: scale }}>
@@ -50,117 +63,68 @@ function ScaledWrapper({ children, spChildren }: { children: React.ReactNode; sp
   );
 }
 
-function MessageBg() {
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      <Image
-        src="/images/message-bg.jpg"
-        alt=""
-        width={2730}
-        height={4096}
-        className="absolute max-w-none opacity-40"
-        style={{ width: 2730, height: 4096, left: -702, top: -526 }}
-      />
-    </div>
-  );
-}
-
 function StickyMessageSection() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const [panelH, setPanelH] = useState(1080);
-
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end end"],
-  });
-
-  useEffect(() => {
-    const update = () => {
-      const w = document.documentElement.clientWidth;
-      if (w >= 768) {
-        const scale = w / 1920;
-        setPanelH(window.innerHeight / scale);
-      }
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  // JS-driven sticky: translate the viewport to follow scroll
-  const stickyY = useTransform(scrollYProgress, (v) => v * panelH * 3);
-
-  const opacity1 = useTransform(scrollYProgress, [0, 0.27, 0.33], [1, 1, 0]);
-  const content1Y = useTransform(scrollYProgress, [0, 0.27, 0.33], [0, 0, -80]);
-
-  const opacity2 = useTransform(scrollYProgress, [0.27, 0.33, 0.6, 0.66], [0, 1, 1, 0]);
-  const content2Y = useTransform(scrollYProgress, [0.27, 0.33, 0.6, 0.66], [80, 0, 0, -80]);
-
-  const opacity3 = useTransform(scrollYProgress, [0.6, 0.66, 1], [0, 1, 1]);
-  const content3Y = useTransform(scrollYProgress, [0.6, 0.66, 1], [80, 0, 0]);
-
   return (
-    <section ref={sectionRef} className="relative w-[1920px]" style={{ height: panelH * 4 }}>
-      <motion.div
-        className="absolute top-0 left-0 w-[1920px] overflow-hidden"
-        style={{ height: panelH, y: stickyY }}
-      >
-        <div className="absolute inset-0 bg-white" />
-        <MessageBg />
-        <h2 className="absolute z-20 left-[99px] top-[120px] text-[#710b26] text-[40px] tracking-[16px]">Message</h2>
+    <section className="relative w-[1920px] h-[3009px] bg-white overflow-hidden">
+      {/* 背景テクスチャ */}
+      <div className="absolute inset-0 overflow-hidden">
+        <Image
+          src="/images/message-bg.jpg"
+          alt=""
+          width={2730}
+          height={4096}
+          className="absolute max-w-none opacity-40"
+          style={{ width: 2730, height: 4096, left: -702, top: -526 }}
+        />
+      </div>
 
-        {/* Panel 1 */}
-        <motion.div className="absolute inset-0 z-10" style={{ opacity: opacity1, y: content1Y }}>
-          <div className="absolute left-0 top-[260px] w-[960px] h-[648px] overflow-hidden">
-            <Image src="/images/message-photo1.jpg" alt="掛け軸の裂地" fill className="object-cover" />
-          </div>
-          <div className="absolute left-[1110px] top-[340px] w-[534px] h-[384px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]" style={{ fontFamily: 'Zen Old Mincho' }}>
-            <p>「伝統を継ぎ、未来を綴る」</p>
-            <p>文化財修復という、歴史を守る現場で</p>
-            <p>磨かれた確かな技術。</p>
-            <p>機械では決して生み出せない、</p>
-            <p>一点一点、呼吸を合わせるような</p>
-            <p>完全ハンドメイド。</p>
-            <p>手仕事ならではの柔らかな風合いに、</p>
-            <p>職人の誇りを込めてお届けします。</p>
-          </div>
-        </motion.div>
+      <h2 className="absolute z-10 left-[99px] top-[206px] text-[#710b26] text-[40px] tracking-[16px]">Message</h2>
 
-        {/* Panel 2 */}
-        <motion.div className="absolute inset-0 z-10" style={{ opacity: opacity2, y: content2Y }}>
-          <div className="absolute left-0 top-[260px] w-[960px] h-[648px] overflow-hidden">
-            <Image src="/images/message-photo2.jpg" alt="掛け軸のある空間" fill className="object-cover" />
-          </div>
-          <div className="absolute left-[1110px] top-[340px] w-[534px] h-[384px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]" style={{ fontFamily: 'Zen Old Mincho' }}>
-            <p>「敷居をまたぎ、日常に馴染む」</p>
-            <p>「掛軸は少し格式が高い」というこれまでの</p>
-            <p>常識を、私たちは軽やかにひっくり返します。</p>
-            <p>現代のリビングに、</p>
-            <p>驚くほど自然にフィットする佇まい。</p>
-            <p>もっと扱いやすく、もっと身近に。</p>
-            <p>あなたの何気ない日常の風景に、</p>
-            <p>そっと彩りを添えます。</p>
-          </div>
-        </motion.div>
+      {/* Message 1 */}
+      <div className="absolute z-10 left-0 top-[406px] w-[960px] h-[648px] overflow-hidden">
+        <Image src="/images/message-photo1.jpg" alt="掛け軸の裂地" fill className="object-cover" />
+      </div>
+      <div className="absolute z-10 left-[1110px] top-[538px] w-[534px] h-[384px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]" style={{ fontFamily: 'Zen Old Mincho' }}>
+        <p>「伝統を継ぎ、未来を綴る」</p>
+        <p>文化財修復という、歴史を守る現場で</p>
+        <p>磨かれた確かな技術。</p>
+        <p>機械では決して生み出せない、</p>
+        <p>一点一点、呼吸を合わせるような</p>
+        <p>完全ハンドメイド。</p>
+        <p>手仕事ならではの柔らかな風合いに、</p>
+        <p>職人の誇りを込めてお届けします。</p>
+      </div>
 
-        {/* Panel 3 */}
-        <motion.div className="absolute inset-0 z-10" style={{ opacity: opacity3, y: content3Y }}>
-          <div className="absolute left-0 top-[260px] w-[960px] h-[648px] overflow-hidden">
-            <Image src="/images/message-photo3.jpg" alt="掛け軸と家族の思い出" fill className="object-cover" />
-          </div>
-          <div className="absolute left-[1110px] top-[340px] w-[534px] h-[434px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]" style={{ fontFamily: 'Zen Old Mincho' }}>
-            <p>「記憶を飾り、心を贈る」</p>
-            <p>家族の笑顔や、心に留めておきたい</p>
-            <p>大切な瞬間。</p>
-            <p>デジタルの中にある思い出を「形」にして、</p>
-            <p>世界にひとつだけの掛軸へ。</p>
-            <p>お世話になった方への贈り物や、</p>
-            <p>特別な記念日にも。</p>
-            <p>言葉では伝えきれない想いを、</p>
-            <p>確かな形に託して。</p>
-          </div>
-        </motion.div>
-      </motion.div>
+      {/* Message 2 */}
+      <div className="absolute z-10 left-0 top-[1254px] w-[960px] h-[648px] overflow-hidden">
+        <Image src="/images/message-photo2.jpg" alt="掛け軸のある空間" fill className="object-cover" />
+      </div>
+      <div className="absolute z-10 left-[1110px] top-[1395px] w-[534px] h-[384px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]" style={{ fontFamily: 'Zen Old Mincho' }}>
+        <p>「敷居をまたぎ、日常に馴染む」</p>
+        <p>「掛軸は少し格式が高い」というこれまでの</p>
+        <p>常識を、私たちは軽やかにひっくり返します。</p>
+        <p>現代のリビングに、</p>
+        <p>驚くほど自然にフィットする佇まい。</p>
+        <p>もっと扱いやすく、もっと身近に。</p>
+        <p>あなたの何気ない日常の風景に、</p>
+        <p>そっと彩りを添えます。</p>
+      </div>
+
+      {/* Message 3 */}
+      <div className="absolute z-10 left-0 top-[2092px] w-[960px] h-[648px] overflow-hidden">
+        <Image src="/images/message-photo3.jpg" alt="掛け軸と家族の思い出" fill className="object-cover" />
+      </div>
+      <div className="absolute z-10 left-[1110px] top-[2199px] w-[534px] h-[434px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]" style={{ fontFamily: 'Zen Old Mincho' }}>
+        <p>「記憶を飾り、心を贈る」</p>
+        <p>家族の笑顔や、心に留めておきたい</p>
+        <p>大切な瞬間。</p>
+        <p>デジタルの中にある思い出を「形」にして、</p>
+        <p>世界にひとつだけの掛軸へ。</p>
+        <p>お世話になった方への贈り物や、</p>
+        <p>特別な記念日にも。</p>
+        <p>言葉では伝えきれない想いを、</p>
+        <p>確かな形に託して。</p>
+      </div>
     </section>
   );
 }
@@ -348,7 +312,7 @@ function SpPage() {
 
         {/* オーダーの流れ */}
         <h3 className="text-[18px] tracking-[4px] text-center underline mb-[24px]">オーダーの流れ</h3>
-        <div className="mb-[30px]">
+        <div className="mb-[60px]">
           {[
             { step: "Step1", text: "まずは公式LINEもしくはお問合せからご連絡ください。" },
             { step: "Step2", text: "職人から詳しいヒアリングの連絡をさせていただきます。" },
@@ -367,22 +331,30 @@ function SpPage() {
           公式LINEからオーダーする
           <Image src="/images/line-icon.svg" alt="LINE" width={32} height={30} />
         </a>
-        <a href="#" className="flex items-center justify-center gap-2 w-full h-[56px] bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] mb-[20px]">
+        <Link href="/contact" className="flex items-center justify-center gap-2 w-full h-[56px] bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] mb-[20px]">
           お問い合わせからオーダーする
           <span className="inline-block w-[24px] h-[1px] bg-[#710b26] relative">
             <span className="absolute right-0 top-1/2 -translate-y-1/2 border-r-[1.5px] border-t-[1.5px] border-[#710b26] w-[6px] h-[6px] rotate-45" />
           </span>
-        </a>
+        </Link>
 
         <p className="text-[10px] tracking-[0.5px] text-center leading-[18px] mb-[30px]">
           ※使用する裂地や仕様により、金額は変動します。ご希望やご予算に合わせて、無理のない形をご提案しますのでお気軽にご相談ください。
         </p>
 
         {/* Gallery */}
-        <div className="flex overflow-x-auto gap-[8px] mb-[30px] -mx-[20px] px-[20px]">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="w-[160px] h-[120px] bg-[#d9d9d9] shrink-0" />
-          ))}
+        <div className="overflow-hidden -mx-[20px] mb-[30px]">
+          <motion.div
+            className="flex w-max"
+            animate={{ x: [0, -1680] }}
+            transition={{ duration: 70, ease: "linear", repeat: Infinity }}
+          >
+            {[...Array(20)].map((_, i) => (
+              <div key={i} className="w-[160px] h-[120px] bg-[#d9d9d9] shrink-0 ml-[8px] overflow-hidden relative">
+                <Image src={`/images/message-photo${(i % 3) + 1}.jpg`} alt="" fill className="object-cover" />
+              </div>
+            ))}
+          </motion.div>
         </div>
 
         {/* Footer */}
@@ -456,16 +428,16 @@ export default function Home() {
         </section>
 
         {/* ===== Concept — Figma: 1920x1695 ===== */}
-        <section className="relative w-[1920px] h-[1815px] bg-[#710b26] text-white overflow-hidden">
+        <section className="relative w-[1920px] h-[1975px] bg-[#710b26] text-white overflow-hidden">
           {/* 灰色矩形1 — Figma: x=1500 y=168 w=320 h=400 */}
           <FadeInOnScroll className="absolute top-[168px] left-[1500px] w-[320px] h-[400px] bg-[#d9d9d9] opacity-60" delay={0} />
           {/* 灰色矩形2 — Figma: x=0 y=568 w=429 h=350 */}
           <FadeInOnScroll className="absolute top-[568px] left-0 w-[429px] h-[350px] bg-[#d9d9d9] opacity-60" delay={0.15} />
           {/* 灰色矩形3 — Figma: x=172 y=1231 w=352 h=364 */}
-          <FadeInOnScroll className="absolute top-[1231px] left-[172px] w-[352px] h-[364px] bg-[#d9d9d9] opacity-60" delay={0.3} />
+          <FadeInOnScroll className="absolute top-[1391px] left-[172px] w-[352px] h-[364px] bg-[#d9d9d9] opacity-60" delay={0.3} />
 
           {/* Concept写真 — Figma: x=1430 y=983 w=390 h=480 */}
-          <FadeInOnScroll className="absolute top-[983px] left-[1430px] w-[390px] h-[480px] overflow-hidden" delay={0.2}>
+          <FadeInOnScroll className="absolute top-[1143px] left-[1430px] w-[390px] h-[480px] overflow-hidden" delay={0.2}>
             <Image
               src="/images/concept-photo.jpg"
               alt="掛け軸のある暮らし"
@@ -544,7 +516,7 @@ export default function Home() {
         <StickyMessageSection />
 
         {/* ===== Order + Footer — Figma: bg 1920x3143 ===== */}
-        <section className="relative w-[1920px] h-[3143px] bg-[#710b26] text-white">
+        <section className="relative w-[1920px] h-[3298px] bg-[#710b26] text-white">
           <h2 className="absolute z-10 left-[99px] top-[118px] text-[40px] tracking-[16px]">Order</h2>
           <p className="absolute z-10 left-[523px] top-[308px] w-[875px] text-[18px] tracking-[3.6px] leading-[50px] text-center" style={{ fontFamily: 'Zen Old Mincho' }}>
             掛け軸は、　オーダーにてお作りしています。<br />写真の内容だけでなく、　裂地の色や質感、　全体の配色バランスまで。<br />空間や飾る場所を想像しながら、<br />一緒に仕立てていく時間も　大切にしています。
@@ -574,16 +546,16 @@ export default function Home() {
             <span className="absolute left-[1520px] top-[157px] text-[18px] tracking-[7.2px] text-black leading-[50px]">00,000円</span>
             <span className="absolute left-[1532px] top-[182px] text-[14px] tracking-[2.8px] text-black leading-[50px]">(税込/送料込)</span>
             {/* 説明テキスト */}
-            <p className="absolute left-[802px] top-[260px] w-[860px] text-[18px] tracking-[7.2px] text-black leading-[30px]">
+            <p className="absolute left-[802px] top-[260px] w-[860px] text-[16px] tracking-[7.2px] text-black leading-[28px]">
               写真の印刷サイズは、ハガキサイズからA3サイズまで自由にお選びいただけます。<br />使用する裂地（きれじ）や完成形に制限はなく、自由なカスタマイズが可能です。ご自身のこだわりを妥協なく形にしたい方には、こちらのコースをおすすめいたします。
             </p>
           </div>
 
           {/* 装飾ドット — Figma: x=450 y=997 w=52 h=5 */}
-          <Image src="/images/deco-arrow-miyabi.svg" alt="" width={52} height={5} className="absolute left-[450px] top-[997px]" />
+          <Image src="/images/deco-arrow-miyabi.svg" alt="" width={52} height={5} className="absolute left-[450px] top-[1092px]" />
 
           {/* 雅・極コース背景 — Figma: x=99 y=1080 w=1721 h=522 */}
-          <div className="absolute left-[99px] top-[1080px] w-[1721px] h-[522px] bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden">
+          <div className="absolute left-[99px] top-[1175px] w-[1721px] h-[522px] bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden">
             {/* 雅コース */}
             <h3 className="absolute left-[54px] top-[54px] text-[24px] tracking-[9.6px] leading-[50px]">雅コース</h3>
             <span className="absolute left-[211px] top-[53px] text-[18px] tracking-[7.2px] text-[#323232] leading-[50px]">Photo sizeA4</span>
@@ -623,7 +595,7 @@ export default function Home() {
           </div>
 
           {/* オーダーの流れ — Figma: x=300 y=1804 w=1320 */}
-          <div className="absolute left-[300px] top-[1804px] w-[1320px]">
+          <div className="absolute left-[300px] top-[1899px] w-[1320px]">
             <h3 className="text-[28px] tracking-[11.2px] text-center underline mb-[60px]">
               オーダーの流れ
             </h3>
@@ -645,35 +617,43 @@ export default function Home() {
           {/* CTA Buttons — Figma: y=2275 */}
           <a
             href="#"
-            className="absolute left-[100px] top-[2275px] flex items-center justify-center gap-4 w-[810px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[22px] tracking-[4.4px] hover:opacity-90 transition-opacity"
+            className="absolute left-[300px] top-[2430px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[4.4px] hover:opacity-90 transition-opacity"
           >
             KAKE PHOTO 公式LINEからオーダーする
             <Image src="/images/line-icon.svg" alt="LINE" width={57} height={54} />
           </a>
-          <a
-            href="#"
-            className="absolute left-[1010px] top-[2275px] flex items-center justify-center gap-4 w-[810px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[22px] tracking-[4.4px] hover:opacity-90 transition-opacity"
+          <Link
+            href="/contact"
+            className="absolute left-[980px] top-[2430px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[4.4px] hover:opacity-90 transition-opacity"
           >
             お問い合わせからオーダーする
             <span className="inline-block w-[41px] h-[1px] bg-[#710b26] relative ml-2">
               <span className="absolute right-0 top-1/2 -translate-y-1/2 border-r-[2px] border-t-[2px] border-[#710b26] w-[8px] h-[8px] rotate-45" />
             </span>
-          </a>
+          </Link>
 
           {/* 注意書き — Figma: y≈2455 */}
-          <p className="absolute left-0 top-[2455px] w-full text-center text-[14px] tracking-[1px]">
+          <p className="absolute left-0 top-[2610px] w-full text-center text-[14px] tracking-[1px]">
             ※使用する裂地や仕様により、金額は変動します。ご希望やご予算に合わせて、無理のない形をご提案しますのでお気軽にご相談ください。
           </p>
 
           {/* Gallery — Figma: x=-30 y=2574 w=1979 h=280 */}
-          <div className="absolute left-[-30px] top-[2574px] flex">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="w-[380px] h-[280px] bg-[#d9d9d9] shrink-0 ml-[19px] first:ml-0" />
-            ))}
+          <div className="absolute left-0 top-[2729px] w-[1920px] overflow-hidden">
+            <motion.div
+              className="flex w-max"
+              animate={{ x: [0, -3990] }}
+              transition={{ duration: 90, ease: "linear", repeat: Infinity }}
+            >
+              {[...Array(20)].map((_, i) => (
+                <div key={i} className="w-[380px] h-[280px] bg-[#d9d9d9] shrink-0 ml-[19px] overflow-hidden relative">
+                  <Image src={`/images/message-photo${(i % 3) + 1}.jpg`} alt="" fill className="object-cover" />
+                </div>
+              ))}
+            </motion.div>
           </div>
 
           {/* Footer — Figma: x=100 y=2926 w=1720 h=217 */}
-          <footer className="absolute left-[100px] top-[2926px] w-[1720px] h-[217px] text-white">
+          <footer className="absolute left-[100px] top-[3081px] w-[1720px] h-[217px] text-white">
             {/* Logo */}
             <div className="absolute left-0 top-0 w-[110px] h-[173px]">
               <Image
