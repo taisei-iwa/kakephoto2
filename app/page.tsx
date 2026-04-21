@@ -269,42 +269,23 @@ function StickyMessageSection() {
   );
 }
 
-function SpStickyHeader() {
+function SpBackToTop() {
   const [visible, setVisible] = useState(false);
-  const [isDark, setIsDark] = useState(true);
-  const lastY = useRef(0);
+  const idleTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const onScroll = () => {
-      const y = window.scrollY;
-      if (y < 200) {
-        setVisible(false);
-      } else if (y < lastY.current - 4) {
-        setVisible(true);
-      } else if (y > lastY.current + 4) {
-        setVisible(false);
-      }
-      lastY.current = y;
+      setVisible(false);
+      if (idleTimer.current !== null) window.clearTimeout(idleTimer.current);
+      idleTimer.current = window.setTimeout(() => {
+        if (window.scrollY > 400) setVisible(true);
+      }, 400);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    const sections = document.querySelectorAll<HTMLElement>("[data-sp-theme]");
-    if (sections.length === 0) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsDark(entry.target.getAttribute("data-sp-theme") === "dark");
-          }
-        });
-      },
-      { rootMargin: "-60px 0px -90% 0px", threshold: 0 }
-    );
-    sections.forEach((s) => observer.observe(s));
-    return () => observer.disconnect();
+    return () => {
+      if (idleTimer.current !== null) window.clearTimeout(idleTimer.current);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   return (
@@ -312,18 +293,13 @@ function SpStickyHeader() {
       type="button"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       aria-label="トップに戻る"
-      initial={{ y: -80, opacity: 0 }}
-      animate={visible ? { y: 0, opacity: 1 } : { y: -80, opacity: 0 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-[20px] left-[16px] z-50 cursor-pointer"
+      initial={{ opacity: 0, y: 16 }}
+      animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="fixed bottom-[24px] right-[16px] z-50 w-[44px] h-[44px] rounded-full bg-[#710b26]/80 backdrop-blur-sm flex items-center justify-center shadow-md"
       style={{ pointerEvents: visible ? "auto" : "none" }}
     >
-      <motion.div
-        animate={{ filter: isDark ? "invert(0)" : "invert(1)" }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-      >
-        <Image src="/images/footer-logo.svg" alt="KAKEPHOTO" width={72} height={112} />
-      </motion.div>
+      <span className="block w-[10px] h-[10px] border-t-[2px] border-l-[2px] border-white rotate-45 translate-y-[2px]" />
     </motion.button>
   );
 }
@@ -331,7 +307,7 @@ function SpStickyHeader() {
 function SpPage() {
   return (
     <main className="w-[375px] overflow-hidden" style={{ fontFamily: 'Zen Old Mincho, serif' }}>
-      <SpStickyHeader />
+      <SpBackToTop />
       {/* ===== FV ===== */}
       <section data-sp-theme="dark" className="relative w-[375px] h-[680px] overflow-hidden">
         <div className="absolute inset-0">
