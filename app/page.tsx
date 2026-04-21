@@ -20,6 +20,55 @@ function FadeInOnScroll({ children, className, delay = 0 }: { children?: React.R
   );
 }
 
+function SpMessageBlock({
+  msg,
+  index,
+}: {
+  msg: { img: string; alt: string; lines: string[] };
+  index: number;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  return (
+    <div ref={ref} className="mb-[40px]">
+      <motion.div
+        className="relative w-full h-[220px] overflow-hidden mb-[20px]"
+        initial={{ opacity: 0, y: 32, scale: 1.04 }}
+        animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
+        transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <Image
+          src={msg.img}
+          alt={msg.alt}
+          fill
+          className={index === 2 ? "object-cover scale-[1.15] object-[center_35%]" : "object-cover"}
+        />
+      </motion.div>
+      <motion.div
+        className="text-[#710b26] text-[13px] tracking-[2px] leading-[28px] text-center"
+        initial="hidden"
+        animate={inView ? "visible" : "hidden"}
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.06, delayChildren: 0.25 } },
+        }}
+      >
+        {msg.lines.map((line, j) => (
+          <motion.p
+            key={j}
+            variants={{
+              hidden: { opacity: 0, y: 12 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+            }}
+          >
+            {line || "\u00A0"}
+          </motion.p>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
 function ScaledWrapper({ children, spChildren }: { children: React.ReactNode; spChildren: React.ReactNode }) {
   const [scale, setScale] = useState(1);
   const [isSp, setIsSp] = useState(false);
@@ -306,18 +355,64 @@ function SpPage() {
           <h2 className="text-[#710b26] text-[24px] tracking-[8px] mb-[80px] text-center">Message</h2>
 
           {[
-            { img: "/images/message-photo1.jpg", alt: "掛け軸の裂地", lines: ["「伝統を継ぎ、未来を綴る」", "文化財修復という、歴史を守る現場で磨かれた確かな技術。", "機械では決して生み出せない、一点一点、呼吸を合わせるような完全ハンドメイド。", "手仕事ならではの柔らかな風合いに、職人の誇りを込めてお届けします。"] },
-            { img: "/images/message-photo2.jpg", alt: "掛け軸のある空間", lines: ["「敷居をまたぎ、日常に馴染む」", "「掛軸は少し格式が高い」というこれまでの常識を、私たちは軽やかにひっくり返します。", "現代のリビングに、驚くほど自然にフィットする佇まい。", "もっと扱いやすく、もっと身近に。あなたの何気ない日常の風景に、そっと彩りを添えます。"] },
-            { img: "/images/message-photo3.jpg", alt: "掛け軸と家族の思い出", lines: ["「記憶を飾り、心を贈る」", "家族の笑顔や、心に留めておきたい大切な瞬間。", "デジタルの中にある思い出を「形」にして、世界にひとつだけの掛軸へ。", "お世話になった方への贈り物や、特別な記念日にも。言葉では伝えきれない想いを、確かな形に託して。"] },
+            {
+              img: "/images/message-photo1.jpg",
+              alt: "掛け軸の裂地",
+              lines: [
+                "「伝統を継ぎ、未来を綴る」",
+                "",
+                "文化財修復という、",
+                "歴史を守る現場で磨かれた",
+                "確かな技術。",
+                "",
+                "機械では決して生み出せない、",
+                "一点一点、呼吸を合わせるような",
+                "完全ハンドメイド。",
+                "",
+                "手仕事ならではの柔らかな風合いに、",
+                "職人の誇りを込めてお届けします。",
+              ],
+            },
+            {
+              img: "/images/message-photo2.jpg",
+              alt: "掛け軸のある空間",
+              lines: [
+                "「敷居をまたぎ、日常に馴染む」",
+                "",
+                "「掛軸は少し格式が高い」",
+                "というこれまでの常識を、",
+                "私たちは軽やかにひっくり返します。",
+                "",
+                "現代のリビングに、",
+                "驚くほど自然にフィットする佇まい。",
+                "",
+                "もっと扱いやすく、もっと身近に。",
+                "あなたの何気ない日常の風景に、",
+                "そっと彩りを添えます。",
+              ],
+            },
+            {
+              img: "/images/message-photo3.jpg",
+              alt: "掛け軸と家族の思い出",
+              lines: [
+                "「記憶を飾り、心を贈る」",
+                "",
+                "家族の笑顔や、",
+                "心に留めておきたい大切な瞬間。",
+                "",
+                "デジタルの中にある思い出を",
+                "「形」にして、",
+                "世界にひとつだけの掛軸へ。",
+                "",
+                "お世話になった方への贈り物や、",
+                "特別な記念日にも。",
+                "",
+                "言葉では伝えきれない想いを、",
+                "確かな形に託して。",
+              ],
+            },
           ].map((msg, i) => (
-            <div key={i} className="mb-[40px]">
-              <div className="relative w-full h-[220px] overflow-hidden mb-[20px]">
-                <Image src={msg.img} alt={msg.alt} fill className={i === 2 ? "object-cover scale-[1.15] object-[center_35%]" : "object-cover"} />
-              </div>
-              <div className="text-[#710b26] text-[13px] tracking-[2px] leading-[28px] text-center">
-                {msg.lines.map((line, j) => <p key={j}>{line}</p>)}
-              </div>
-            </div>
+            <SpMessageBlock key={i} msg={msg} index={i} />
           ))}
         </div>
       </section>
