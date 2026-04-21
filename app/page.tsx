@@ -101,6 +101,12 @@ function ScaledWrapper({ children, spChildren }: { children: React.ReactNode; sp
   );
 }
 
+// Responsive pixel→vw helper: design baseline is 1920 wide, 1080 tall.
+// Widths / font-sizes scale with vw; vertical positions inside the sticky
+// (100vh) use vh so the layout fills the viewport on any aspect ratio.
+const vwPx = (n: number) => `calc(100vw * ${n} / 1920)`;
+const vhPx = (n: number) => `calc(100vh * ${n} / 1080)`;
+
 function StickyMessage({
   progress,
   range,
@@ -121,12 +127,24 @@ function StickyMessage({
       className="absolute inset-0 z-10"
       style={{ opacity, y }}
     >
-      <div className="absolute left-0 top-[220px] w-[960px] h-[648px] overflow-hidden">
+      <div
+        className="absolute overflow-hidden"
+        style={{ left: 0, top: vhPx(220), width: vwPx(960), height: vwPx(648) }}
+      >
         <Image src={img} alt={alt} fill className="object-cover" />
       </div>
       <div
-        className="absolute left-[1110px] top-[350px] w-[534px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]"
-        style={{ fontFamily: 'Zen Old Mincho' }}
+        className="absolute"
+        style={{
+          left: vwPx(1110),
+          top: vhPx(350),
+          width: vwPx(534),
+          color: '#710b26',
+          fontSize: vwPx(18),
+          letterSpacing: vwPx(7.2),
+          lineHeight: vwPx(50),
+          fontFamily: 'Zen Old Mincho',
+        }}
       >
         {lines.map((line, i) => (
           <p key={i}>{line}</p>
@@ -135,9 +153,6 @@ function StickyMessage({
     </motion.div>
   );
 }
-
-const SECTION_LAYOUT_HEIGHT = 5400;
-const STICKY_LAYOUT_HEIGHT = 1080;
 
 function StickyMessageSection() {
   const ref = useRef<HTMLElement>(null);
@@ -153,10 +168,7 @@ function StickyMessageSection() {
       const rect = el.getBoundingClientRect();
       // Early-exit when section is far from viewport — avoids computing opacity during unrelated scroll
       if (rect.bottom < 0 || rect.top > window.innerHeight) return;
-      const scale = rect.height / SECTION_LAYOUT_HEIGHT;
-      if (scale <= 0) return;
-      const visualStickyH = STICKY_LAYOUT_HEIGHT * scale;
-      const maxVisualScroll = rect.height - visualStickyH;
+      const maxVisualScroll = rect.height - window.innerHeight;
       if (maxVisualScroll <= 0) return;
       const scrolled = -rect.top;
       const clamped = Math.max(0, Math.min(maxVisualScroll, scrolled));
@@ -258,9 +270,7 @@ function StickyMessageSection() {
         return;
       }
 
-      const scale = rect.height / SECTION_LAYOUT_HEIGHT;
-      const visualStickyH = STICKY_LAYOUT_HEIGHT * scale;
-      const maxVisualScroll = rect.height - visualStickyH;
+      const maxVisualScroll = rect.height - window.innerHeight;
       if (maxVisualScroll <= 0) return;
       const currentProgress = (-rect.top) / maxVisualScroll;
       const dir = e.deltaY > 0 ? 1 : -1;
@@ -348,24 +358,33 @@ function StickyMessageSection() {
   ];
 
   return (
-    <section ref={ref} className="relative w-[1920px] bg-white" style={{ height: SECTION_LAYOUT_HEIGHT }}>
+    <section ref={ref} className="relative w-full bg-white" style={{ height: '500vh' }}>
       <div
-        className="sticky top-0 w-[1920px] overflow-hidden"
-        style={{ height: STICKY_LAYOUT_HEIGHT }}
+        className="sticky top-0 w-full overflow-hidden"
+        style={{ height: '100vh' }}
       >
         {/* 背景テクスチャ */}
         <div className="absolute inset-0 overflow-hidden">
           <Image
             src="/images/message-bg.jpg"
             alt=""
-            width={2730}
-            height={4096}
-            className="absolute max-w-none opacity-40"
-            style={{ width: 2730, height: 4096, left: -702, top: -526 }}
+            fill
+            className="object-cover opacity-40"
           />
         </div>
 
-        <h2 className="absolute z-20 left-[99px] top-[60px] text-[#710b26] text-[40px] tracking-[16px]">Message</h2>
+        <h2
+          className="absolute z-20"
+          style={{
+            left: vwPx(99),
+            top: vhPx(60),
+            color: '#710b26',
+            fontSize: vwPx(40),
+            letterSpacing: vwPx(16),
+          }}
+        >
+          Message
+        </h2>
 
         {messages.map((m, i) => (
           <StickyMessage
@@ -729,13 +748,35 @@ function SpPage() {
 }
 
 export default function Home() {
+  const [scale, setScale] = useState(1);
+  const [isSp, setIsSp] = useState(false);
+
+  useEffect(() => {
+    const update = () => {
+      const w = document.documentElement.clientWidth;
+      const sp = w < 768;
+      setIsSp(sp);
+      setScale(sp ? w / 375 : w / 1920);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  if (isSp) {
+    return (
+      <div style={{ width: 375, zoom: scale }}>
+        <SpPage />
+      </div>
+    );
+  }
+
   return (
-    <ScaledWrapper
-      spChildren={<SpPage />}
-    >
-      <main className="w-[1920px]">
-        {/* ===== FV (First View) — Figma: 1920x1450 ===== */}
-        <section className="relative w-[1920px] h-[1450px] overflow-hidden">
+    <>
+      <div style={{ width: 1920, zoom: scale }}>
+        <main className="w-[1920px]">
+          {/* ===== FV (First View) — Figma: 1920x1450 ===== */}
+          <section className="relative w-[1920px] h-[1450px] overflow-hidden">
           {/* Background photo — Figma: left:-51.41% top:-33.59% w:152.55% h:134.68% */}
           <div className="absolute inset-0 overflow-hidden">
             <Image
@@ -871,10 +912,14 @@ export default function Home() {
           <div className="absolute top-[64px] left-0 w-[26px] h-[calc(100%-128px)] bg-[#D1C4B2] z-10" />
           <div className="absolute top-[64px] right-0 w-[26px] h-[calc(100%-128px)] bg-[#D1C4B2] z-10" />
         </section>
+        </main>
+      </div>
 
-        {/* ===== Message — Sticky Scroll ===== */}
-        <StickyMessageSection />
+      {/* ===== Message — Sticky Scroll (OUTSIDE zoom — uses vw/vh) ===== */}
+      <StickyMessageSection />
 
+      <div style={{ width: 1920, zoom: scale }}>
+        <main className="w-[1920px]">
         {/* ===== Order + Footer — Figma: bg 1920x3143 ===== */}
         <section className="relative w-[1920px] h-[3298px] bg-[#710b26] text-white">
           <h2 className="absolute z-10 left-[99px] top-[118px] text-[40px] tracking-[16px]">Order</h2>
@@ -1056,7 +1101,8 @@ export default function Home() {
             </p>
           </footer>
         </section>
-      </main>
-    </ScaledWrapper>
+        </main>
+      </div>
+    </>
   );
 }

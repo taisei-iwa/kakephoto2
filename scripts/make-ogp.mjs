@@ -39,10 +39,3 @@ await render({ w: 1200, h: 630, logoRatio: 0.57, out: "app/twitter-image.png" })
 
 // Apple touch icon (iOS home screen)
 await render({ w: 180, h: 180, logoRatio: 0.72, out: "app/apple-icon.png" });
-
-// PWA / browser icon
-await render({ w: 512, h: 512, logoRatio: 0.72, out: "app/icon.png" });
-
-// favicon.ico (browsers hitting /favicon.ico directly)
-// Write a 32x32 PNG stream as .ico — modern browsers accept this
-await render({ w: 64, h: 64, logoRatio: 0.78, out: "app/favicon.ico" });
