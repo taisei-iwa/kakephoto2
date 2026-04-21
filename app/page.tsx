@@ -121,11 +121,11 @@ function StickyMessage({
       className="absolute inset-0 z-10"
       style={{ opacity, y }}
     >
-      <div className="absolute left-0 top-[280px] w-[960px] h-[648px] overflow-hidden">
+      <div className="absolute left-0 top-[130px] w-[960px] h-[648px] overflow-hidden">
         <Image src={img} alt={alt} fill className="object-cover" />
       </div>
       <div
-        className="absolute left-[1110px] top-[410px] w-[534px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]"
+        className="absolute left-[1110px] top-[260px] w-[534px] text-[#710b26] text-[18px] tracking-[7.2px] leading-[50px]"
         style={{ fontFamily: 'Zen Old Mincho' }}
       >
         {lines.map((line, i) => (
@@ -136,8 +136,8 @@ function StickyMessage({
   );
 }
 
-const SECTION_LAYOUT_HEIGHT = 4500;
-const STICKY_LAYOUT_HEIGHT = 1080;
+const SECTION_LAYOUT_HEIGHT = 7200;
+const STICKY_LAYOUT_HEIGHT = 900;
 
 function StickyMessageSection() {
   const ref = useRef<HTMLElement>(null);
@@ -233,23 +233,24 @@ function StickyMessageSection() {
   ];
 
   return (
-    <section ref={ref} className="relative w-[1920px] bg-white overflow-hidden" style={{ height: SECTION_LAYOUT_HEIGHT }}>
-      {/* 背景テクスチャ — セクション全体にタイル（sticky はみ出し領域も埋める） */}
+    <section ref={ref} className="relative w-[1920px] bg-white" style={{ height: SECTION_LAYOUT_HEIGHT }}>
       <div
-        className="absolute inset-0 opacity-40 pointer-events-none"
-        style={{
-          backgroundImage: 'url(/images/message-bg.jpg)',
-          backgroundSize: '2730px auto',
-          backgroundPosition: '-702px top',
-          backgroundRepeat: 'repeat-y',
-        }}
-      />
-
-      <div
-        className="sticky top-0 w-[1920px]"
+        className="sticky top-0 w-[1920px] overflow-hidden"
         style={{ height: STICKY_LAYOUT_HEIGHT }}
       >
-        <h2 className="absolute z-20 left-[99px] top-[80px] text-[#710b26] text-[40px] tracking-[16px]">Message</h2>
+        {/* 背景テクスチャ */}
+        <div className="absolute inset-0 overflow-hidden">
+          <Image
+            src="/images/message-bg.jpg"
+            alt=""
+            width={2730}
+            height={4096}
+            className="absolute max-w-none opacity-40"
+            style={{ width: 2730, height: 4096, left: -702, top: -526 }}
+          />
+        </div>
+
+        <h2 className="absolute z-20 left-[99px] top-[60px] text-[#710b26] text-[40px] tracking-[16px]">Message</h2>
 
         {messages.map((m, i) => (
           <StickyMessage
@@ -287,13 +288,13 @@ function SpPage() {
       </section>
 
       {/* ===== Concept ===== */}
-      <section className="relative w-[375px] bg-[#710b26] text-white pt-[120px] pb-[320px] overflow-hidden">
+      <section className="relative w-[375px] bg-[#710b26] text-white pt-[120px] pb-[380px] overflow-hidden">
         {/* 装飾写真1 — 右上 */}
         <FadeInOnScroll className="absolute top-[100px] right-0 w-[140px] h-[180px] overflow-hidden" delay={0}>
           <Image src="/images/concept-photo1.jpg" alt="" fill className="object-cover" />
         </FadeInOnScroll>
         {/* 装飾写真2 — 左中 */}
-        <FadeInOnScroll className="absolute top-[380px] left-0 w-[120px] h-[160px] overflow-hidden" delay={0.15}>
+        <FadeInOnScroll className="absolute top-[280px] left-0 w-[120px] h-[160px] overflow-hidden" delay={0.15}>
           <Image src="/images/concept-photo2.jpg" alt="" fill className="object-cover" />
         </FadeInOnScroll>
 
@@ -335,12 +336,12 @@ function SpPage() {
 
         </div>
 
-        {/* 装飾写真3 — 左下（少し埋め込み） */}
-        <FadeInOnScroll className="absolute bottom-[140px] left-[-30px] w-[130px] h-[160px] overflow-hidden" delay={0}>
+        {/* 装飾写真3 — 左下（少し中央寄り） */}
+        <FadeInOnScroll className="absolute bottom-[200px] left-[30px] w-[130px] h-[160px] overflow-hidden" delay={0}>
           <Image src="/images/concept-photo3.jpg" alt="" fill className="object-cover" />
         </FadeInOnScroll>
         {/* 装飾写真4 — 右下（少し下げる） */}
-        <FadeInOnScroll className="absolute bottom-[40px] right-[20px] w-[150px] h-[170px] overflow-hidden" delay={0.15}>
+        <FadeInOnScroll className="absolute bottom-[100px] right-[20px] w-[150px] h-[170px] overflow-hidden" delay={0.15}>
           <Image src="/images/concept-photo.jpg" alt="" fill className="object-cover" />
         </FadeInOnScroll>
       </section>
