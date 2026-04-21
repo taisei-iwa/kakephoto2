@@ -115,11 +115,10 @@ function StickyMessage({
   lines: string[];
 }) {
   const opacity = useTransform(progress, range, [0, 1, 1, 0]);
-  const y = useTransform(progress, range, [20, 0, 0, -20]);
   return (
     <motion.div
       className="absolute inset-0 z-10"
-      style={{ opacity, y }}
+      style={{ opacity }}
     >
       <div className="absolute left-0 top-[130px] w-[960px] h-[648px] overflow-hidden">
         <Image src={img} alt={alt} fill className="object-cover" />
@@ -223,13 +222,14 @@ function StickyMessageSection() {
     },
   ];
 
-  // Crossfade ranges: adjacent messages OVERLAP so one fades out while the next fades in
-  // at the same time — no blank moment between messages.
+  // Non-overlapping ranges: msg N fully fades OUT before msg N+1 fades IN.
+  // At the boundary (e.g. 0.33) both are 0 for a single progress point, so
+  // only one message is ever readable — no double-text ghosting.
   // Format: [a, b, c, d] → opacity 0 at a, 1 from b..c, 0 at d
   const ranges: Array<[number, number, number, number]> = [
-    [0.00, 0.001, 0.28, 0.40], // msg1: already visible at start, fade out 0.28 → 0.40
-    [0.28, 0.40, 0.60, 0.72],  // msg2: fade in 0.28 → 0.40 (overlaps msg1 out), fade out 0.60 → 0.72
-    [0.60, 0.72, 0.999, 1.00], // msg3: fade in 0.60 → 0.72 (overlaps msg2 out), stay visible to end
+    [0.00, 0.001, 0.31, 0.33], // msg1: visible from start, fade out 0.31 → 0.33
+    [0.33, 0.35, 0.64, 0.66],  // msg2: fade in 0.33 → 0.35, hold, fade out 0.64 → 0.66
+    [0.66, 0.68, 0.999, 1.00], // msg3: fade in 0.66 → 0.68, stay visible to end
   ];
 
   return (
@@ -292,10 +292,10 @@ function SpStickyHeader() {
       initial={{ y: -80, opacity: 0 }}
       animate={visible ? { y: 0, opacity: 1 } : { y: -80, opacity: 0 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-sm px-[16px] py-[10px] flex items-center"
+      className="fixed top-[20px] left-[16px] z-50"
       style={{ pointerEvents: visible ? "auto" : "none" }}
     >
-      <Image src="/images/footer-logo.svg" alt="KAKEPHOTO" width={40} height={62} />
+      <Image src="/images/footer-logo.svg" alt="KAKEPHOTO" width={72} height={112} />
     </motion.div>
   );
 }
