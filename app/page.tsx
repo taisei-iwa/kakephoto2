@@ -335,7 +335,7 @@ function SpPage() {
       {/* ===== FV ===== */}
       <section data-sp-theme="dark" className="relative w-[375px] h-[680px] overflow-hidden">
         <div className="absolute inset-0">
-          <Image src="/images/fv-bg.jpg" alt="KAKEPHOTO" fill className="object-cover" priority />
+          <Image src="/images/sp-fv-bg.jpg" alt="KAKEPHOTO" fill className="object-cover" priority />
         </div>
         <div className="absolute top-[20px] left-[16px] z-10">
           <Image src="/images/footer-logo.svg" alt="KAKEPHOTO" width={72} height={112} />
