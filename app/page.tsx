@@ -272,7 +272,6 @@ function StickyMessageSection() {
 function SpStickyHeader() {
   const [visible, setVisible] = useState(false);
   const [isDark, setIsDark] = useState(true);
-  const [topBtnVisible, setTopBtnVisible] = useState(false);
   const lastY = useRef(0);
 
   useEffect(() => {
@@ -285,7 +284,6 @@ function SpStickyHeader() {
       } else if (y > lastY.current + 4) {
         setVisible(false);
       }
-      setTopBtnVisible(y > 400);
       lastY.current = y;
     };
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -310,35 +308,23 @@ function SpStickyHeader() {
   }, []);
 
   return (
-    <>
+    <motion.button
+      type="button"
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      aria-label="トップに戻る"
+      initial={{ y: -80, opacity: 0 }}
+      animate={visible ? { y: 0, opacity: 1 } : { y: -80, opacity: 0 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed top-[20px] left-[16px] z-50 cursor-pointer"
+      style={{ pointerEvents: visible ? "auto" : "none" }}
+    >
       <motion.div
-        initial={{ y: -80, opacity: 0 }}
-        animate={visible ? { y: 0, opacity: 1 } : { y: -80, opacity: 0 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed top-[20px] left-[16px] z-50"
-        style={{ pointerEvents: visible ? "auto" : "none" }}
+        animate={{ filter: isDark ? "invert(0)" : "invert(1)" }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
       >
-        <motion.div
-          animate={{ filter: isDark ? "invert(0)" : "invert(1)" }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-        >
-          <Image src="/images/footer-logo.svg" alt="KAKEPHOTO" width={72} height={112} />
-        </motion.div>
+        <Image src="/images/footer-logo.svg" alt="KAKEPHOTO" width={72} height={112} />
       </motion.div>
-
-      <motion.button
-        type="button"
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        initial={{ opacity: 0, y: 16 }}
-        animate={topBtnVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        aria-label="トップに戻る"
-        className="fixed bottom-[24px] right-[16px] z-50 w-[44px] h-[44px] rounded-full bg-[#710b26]/80 backdrop-blur-sm flex items-center justify-center shadow-md"
-        style={{ pointerEvents: topBtnVisible ? "auto" : "none" }}
-      >
-        <span className="block w-[10px] h-[10px] border-t-[2px] border-l-[2px] border-white rotate-45 translate-y-[2px]" />
-      </motion.button>
-    </>
+    </motion.button>
   );
 }
 
