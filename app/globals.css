@@ -20,3 +20,21 @@ body {
   writing-mode: vertical-rl;
   text-orientation: upright;
 }
+
+/* Viewport-scale via CSS (no JS flash). Using typed-calc so `zoom` receives a
+   unitless number: `100vw / 1px` yields the viewport's px count, divided by
+   the design canvas width gives the scale factor. */
+.vp-sp-root {
+  width: 375px;
+  zoom: calc(100vw / 1px / 375);
+}
+.vp-pc-root {
+  width: 1920px;
+  zoom: calc(100vw / 1px / 1920);
+}
+@media (max-width: 767.98px) {
+  .vp-pc-only { display: none !important; }
+}
+@media (min-width: 768px) {
+  .vp-sp-only { display: none !important; }
+}

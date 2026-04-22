@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { motion, useInView, useMotionValue, useTransform, easeInOut, type MotionValue } from "framer-motion";
+import { motion, useInView, useMotionValue, useSpring, useTransform, easeInOut, type MotionValue } from "framer-motion";
 import Link from "next/link";
 
 function FadeInOnScroll({ children, className, delay = 0 }: { children?: React.ReactNode; className?: string; delay?: number }) {
@@ -69,38 +69,6 @@ function SpMessageBlock({
   );
 }
 
-function ScaledWrapper({ children, spChildren }: { children: React.ReactNode; spChildren: React.ReactNode }) {
-  const [scale, setScale] = useState(1);
-  const [isSp, setIsSp] = useState(false);
-
-  useEffect(() => {
-    const update = () => {
-      const w = document.documentElement.clientWidth;
-      const sp = w < 768;
-      setIsSp(sp);
-      setScale(sp ? w / 375 : w / 1920);
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-
-  if (isSp) {
-    return (
-      <div style={{ width: 375, zoom: scale }}>
-        {spChildren}
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ width: 1920, zoom: scale }}>
-      {children}
-    </div>
-  );
-}
-
 // Responsive pixel→vw helper: design baseline is 1920 wide, 1080 tall.
 // Widths / font-sizes scale with vw; vertical positions inside the sticky
 // (100vh) use vh so the layout fills the viewport on any aspect ratio.
@@ -121,7 +89,7 @@ function StickyMessage({
   lines: string[];
 }) {
   const opacity = useTransform(progress, range, [0, 1, 1, 0], { ease: easeInOut });
-  const y = useTransform(progress, range, [24, 0, 0, -24], { ease: easeInOut });
+  const y = useTransform(progress, range, [40, 0, 0, -40], { ease: easeInOut });
   return (
     <motion.div
       className="absolute inset-0 z-10"
@@ -156,7 +124,10 @@ function StickyMessage({
 
 function StickyMessageSection() {
   const ref = useRef<HTMLElement>(null);
-  const progress = useMotionValue(0); // 0..1 direct from scroll — instant, no spring lag
+  const rawProgress = useMotionValue(0); // 0..1 direct from scroll
+  // Smooth out the discrete wheel-delta jumps (Windows wheel = 100px steps)
+  // into a continuous motion value — this is what actually drives the fade.
+  const progress = useSpring(rawProgress, { stiffness: 400, damping: 40, mass: 0.4 });
 
   useEffect(() => {
     let rafId = 0;
@@ -172,7 +143,7 @@ function StickyMessageSection() {
       if (maxVisualScroll <= 0) return;
       const scrolled = -rect.top;
       const clamped = Math.max(0, Math.min(maxVisualScroll, scrolled));
-      progress.set(clamped / maxVisualScroll);
+      rawProgress.set(clamped / maxVisualScroll);
     };
     const onScroll = () => {
       if (queued) return;
@@ -187,116 +158,80 @@ function StickyMessageSection() {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
-  }, [progress]);
+  }, [rawProgress]);
 
-  // Scroll hijack: while the section is pinned, each wheel gesture snaps to the
-  // next stage with a custom 3-phase animation — fade out, pause (breath),
-  // fade in. Gesture detection (160ms quiet gap) prevents trackpad inertia
-  // from auto-advancing to the next stage.
+  // One wheel tick = advance to next message. Slow transit (~900ms) with
+  // easeInOut. During the transit and a short cooldown after, additional
+  // wheel events are dropped so inertia cannot auto-advance. At the last
+  // stage, a further wheel-down is released to native scroll so the user
+  // leaves the section into Order (msg3 stays fully visible because its
+  // range holds opacity=1 up to progress=1.0).
   useEffect(() => {
-    const stages = [0, 0.42, 0.75];
-    let cooldownUntil = 0;
-    let wasPinned = false;
-    let lastWheelAt = 0;
+    const stages = [0.10, 0.50, 0.88];
+    let animating = false;
     let animId = 0;
+    let cooldownUntil = 0;
 
-    const snapAnimate = (fromP: number, toP: number, maxVisualScroll: number) => {
-      const sign = Math.sign(toP - fromP);
-      const mid = (fromP + toP) / 2;
-      const fadeOutStart = mid - 0.04 * sign;
-      const fadeOutEnd = mid - 0.01 * sign;
-      const fadeInStart = mid + 0.01 * sign;
-      const fadeInEnd = mid + 0.04 * sign;
-      // [t_ms, progress] keyframes: quick stable travel → slow fade → hold breath → slow fade → quick travel
-      const kfs: [number, number][] = [
-        [0, fromP],
-        [220, fadeOutStart],
-        [560, fadeOutEnd],
-        [960, fadeInStart],
-        [1300, fadeInEnd],
-        [1500, toP],
-      ];
-      const startY = window.scrollY;
-      const pToY = (p: number) => startY + (p - fromP) * maxVisualScroll;
+    const animateTo = (fromY: number, toY: number) => {
+      const duration = 900;
       const t0 = performance.now();
+      animating = true;
       cancelAnimationFrame(animId);
       const tick = () => {
-        const elapsed = performance.now() - t0;
-        if (elapsed >= 1500) {
-          window.scrollTo(0, pToY(toP));
+        const t = Math.min(1, (performance.now() - t0) / duration);
+        const eased = 0.5 - 0.5 * Math.cos(Math.PI * t); // cosine easeInOut
+        window.scrollTo(0, fromY + (toY - fromY) * eased);
+        if (t >= 1) {
+          animating = false;
+          cooldownUntil = performance.now() + 300; // swallow trackpad inertia tail
           return;
         }
-        let i = 0;
-        while (i < kfs.length - 1 && elapsed >= kfs[i + 1][0]) i++;
-        const [ta, pa] = kfs[i];
-        const [tb, pb] = kfs[i + 1];
-        const u = tb > ta ? (elapsed - ta) / (tb - ta) : 1;
-        const eased = u * u * (3 - 2 * u); // smoothstep per segment
-        const p = pa + (pb - pa) * eased;
-        window.scrollTo(0, pToY(p));
         animId = requestAnimationFrame(tick);
       };
       animId = requestAnimationFrame(tick);
     };
 
     const onWheel = (e: WheelEvent) => {
-      if (e.ctrlKey) return; // don't interfere with browser zoom
+      if (e.ctrlKey) return;
       const el = ref.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
       const pinned = rect.top <= 0 && rect.bottom > window.innerHeight;
-      if (!pinned) {
-        wasPinned = false;
-        return;
-      }
-
-      const now = performance.now();
-      const gapSinceLastWheel = now - lastWheelAt;
-      lastWheelAt = now;
-
-      if (!wasPinned) {
-        wasPinned = true;
-        cooldownUntil = now + 700; // hold at entry so user reads msg1
+      if (!pinned) return;
+      if (animating || performance.now() < cooldownUntil) {
         e.preventDefault();
         return;
       }
-      if (now < cooldownUntil) {
-        e.preventDefault();
-        return;
-      }
-      // Require a fresh gesture — trackpad inertia fires rapid wheels; ignore them
-      if (gapSinceLastWheel < 160) {
-        e.preventDefault();
-        return;
-      }
-
       const maxVisualScroll = rect.height - window.innerHeight;
       if (maxVisualScroll <= 0) return;
-      const currentProgress = (-rect.top) / maxVisualScroll;
+      const currentP = (-rect.top) / maxVisualScroll;
       const dir = e.deltaY > 0 ? 1 : -1;
 
-      let nextIdx = -1;
+      let targetP = -1;
       if (dir > 0) {
-        for (let i = 0; i < stages.length; i++) {
-          if (stages[i] > currentProgress + 0.01) { nextIdx = i; break; }
+        for (const s of stages) {
+          if (s > currentP + 0.02) { targetP = s; break; }
         }
       } else {
         for (let i = stages.length - 1; i >= 0; i--) {
-          if (stages[i] < currentProgress - 0.01) { nextIdx = i; break; }
+          if (stages[i] < currentP - 0.02) { targetP = stages[i]; break; }
         }
       }
-      if (nextIdx === -1) return; // at an edge — let scroll escape the section
+      if (targetP < 0) return; // at edge stage — release to native scroll
 
       e.preventDefault();
-      snapAnimate(currentProgress, stages[nextIdx], maxVisualScroll);
-      cooldownUntil = now + 1600; // full animation + small buffer
+      const startY = window.scrollY;
+      const targetY = startY + (targetP - currentP) * maxVisualScroll;
+      animateTo(startY, targetY);
     };
+
     window.addEventListener("wheel", onWheel, { passive: false });
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("wheel", onWheel);
     };
   }, []);
+
 
   const messages = [
     {
@@ -344,21 +279,18 @@ function StickyMessageSection() {
     },
   ];
 
-  // Ranges aligned with the custom snap animator. Each transit's fade-out /
-  // breath / fade-in sits symmetrically around the midpoint between stages, so
-  // the animator's timed phases land exactly on the visual changes.
-  //   stage 0 → 0.42  (mid 0.21): fade-out 0.17→0.20, breath 0.20→0.22, fade-in 0.22→0.25
-  //   stage 0.42 → 0.75 (mid 0.585): fade-out 0.545→0.575, breath 0.575→0.595, fade-in 0.595→0.625
-  // msg1 starts visible at p=0 (a=-0.01 so b=0 gives opacity 1 exactly at entry).
-  // msg3 holds visible past progress=1 (fades only as the section physically leaves viewport).
+  // [a, b, c, d]: opacity 0→1 between a..b (fade-in), hold 1 between b..c, 1→0 between c..d (fade-out).
+  // msg1: b=0 so it is fully visible the moment the section pins (avoids a "missed msg1" on fast scroll).
+  // msg3: c=d=1 so it stays fully visible until the section unpins (never half-faded at the bottom).
+  // Overlapping fade bands between msgs create a gentle crossfade.
   const ranges: Array<[number, number, number, number]> = [
-    [-0.01, 0.00, 0.17, 0.20],
-    [0.22, 0.25, 0.545, 0.575],
-    [0.595, 0.625, 1.10, 1.20],
+    [-0.10, 0.00, 0.25, 0.38],
+    [0.28, 0.42, 0.58, 0.72],
+    [0.62, 0.76, 1.00, 1.00],
   ];
 
   return (
-    <section ref={ref} className="relative w-full bg-white" style={{ height: '500vh' }}>
+    <section ref={ref} className="relative w-full bg-white" style={{ height: '600vh' }}>
       <div
         className="sticky top-0 w-full overflow-hidden"
         style={{ height: '100vh' }}
@@ -748,32 +680,12 @@ function SpPage() {
 }
 
 export default function Home() {
-  const [scale, setScale] = useState(1);
-  const [isSp, setIsSp] = useState(false);
-
-  useEffect(() => {
-    const update = () => {
-      const w = document.documentElement.clientWidth;
-      const sp = w < 768;
-      setIsSp(sp);
-      setScale(sp ? w / 375 : w / 1920);
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  if (isSp) {
-    return (
-      <div style={{ width: 375, zoom: scale }}>
-        <SpPage />
-      </div>
-    );
-  }
-
   return (
     <>
-      <div style={{ width: 1920, zoom: scale }}>
+      <div className="vp-sp-only vp-sp-root">
+        <SpPage />
+      </div>
+      <div className="vp-pc-only vp-pc-root">
         <main className="w-[1920px]">
           {/* ===== FV (First View) — Figma: 1920x1450 ===== */}
           <section className="relative w-[1920px] h-[1450px] overflow-hidden">
@@ -916,9 +828,11 @@ export default function Home() {
       </div>
 
       {/* ===== Message — Sticky Scroll (OUTSIDE zoom — uses vw/vh) ===== */}
-      <StickyMessageSection />
+      <div className="vp-pc-only">
+        <StickyMessageSection />
+      </div>
 
-      <div style={{ width: 1920, zoom: scale }}>
+      <div className="vp-pc-only vp-pc-root">
         <main className="w-[1920px]">
         {/* ===== Order + Footer — Figma: bg 1920x3143 ===== */}
         <section className="relative w-[1920px] h-[3298px] bg-[#710b26] text-white">
