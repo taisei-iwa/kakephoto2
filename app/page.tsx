@@ -296,7 +296,7 @@ function SpPage() {
         <div className="absolute top-[140px] left-1/2 -translate-x-1/2 z-10 hidden">
           <Image src="/images/logo-center.svg" alt="KAKEPHOTO" width={150} height={236} />
         </div>
-        <div className="absolute bottom-[80px] right-[16px] text-right text-white z-10">
+        <div className="absolute bottom-[28px] right-[16px] text-right text-white z-10">
           <p className="text-[13px] tracking-[2px] font-medium">FULL CUSTOM MADE</p>
           <p className="text-[10px] tracking-[1.5px] mt-1">Each piece is made exclusively for one photograph.</p>
         </div>
