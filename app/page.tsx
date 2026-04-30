@@ -170,11 +170,11 @@ function MessageTextBlock({
 // Left column (image + h2 + bg) stays pinned for the whole section. Right
 // column scrolls naturally: as each text block passes viewport center,
 // activeIndex updates and the left image crossfades to the matching photo.
-// First and last messages get extra hold (200vh) so the user has time to read.
+// All messages get extra hold (200vh) so the user has time to read.
 function StickyMessageSection() {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const holds = [200, 100, 200]; // per-message wrapper heights (vh)
+  const holds = [200, 200, 200]; // per-message wrapper heights (vh)
   const totalVh = holds.reduce((a, b) => a + b, 0);
 
   return (
