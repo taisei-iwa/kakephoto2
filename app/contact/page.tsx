@@ -36,7 +36,6 @@ function ScaledWrapper({ children, spChildren }: { children: React.ReactNode; sp
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // Lenis smooth scroll — eliminates jitter for JS-driven sticky
   useEffect(() => {
     const lenis = new Lenis({ syncTouch: true });
     function raf(time: number) {
@@ -62,26 +61,35 @@ function ScaledWrapper({ children, spChildren }: { children: React.ReactNode; sp
   );
 }
 
-function InputField({ label, type = "text", placeholder, required = false }: { label: string; type?: string; placeholder: string; required?: boolean }) {
-  return (
-    <div className="flex flex-col gap-3 mb-[40px] md:mb-[60px]">
-      <label className="text-[14px] md:text-[18px] tracking-[2px] md:tracking-[4px] flex items-center gap-4">
-        {label}
-        {required && <span className="text-[10px] md:text-[12px] bg-[#710b26] text-white px-2 py-[2px] rounded-sm">必須</span>}
-      </label>
-      <input
-        type={type}
-        placeholder={placeholder}
-        className="bg-transparent border-b border-[#710b26]/30 py-2 focus:border-[#710b26] outline-none transition-colors text-[16px] md:text-[20px] tracking-[1px] md:tracking-[2px]"
-      />
-    </div>
-  );
+const CATEGORIES = ["雅コース", "極コース", "特注オーダーメイド", "その他"];
+
+function useContactForm() {
+  const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setStatus("sending");
+    const formData = new FormData(e.currentTarget);
+    try {
+      const res = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(formData as unknown as Record<string, string>).toString(),
+      });
+      setStatus(res.ok ? "done" : "error");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  return { status, handleSubmit };
 }
 
 function ContactSp() {
+  const { status, handleSubmit } = useContactForm();
+
   return (
     <main className="w-[375px] bg-[#FFFFFB] text-[#710b26] overflow-hidden min-h-screen pb-[60px]" style={{ fontFamily: 'Zen Old Mincho, serif' }}>
-      {/* Header */}
       <div className="px-[20px] py-[30px] flex justify-between items-center">
         <a href="/">
           <Image src="/images/logo-horizontal.svg" alt="KAKEPHOTO" width={140} height={16} />
@@ -99,45 +107,90 @@ function ContactSp() {
           </p>
         </FadeInOnScroll>
 
-        <form className="max-w-[1000px] mx-auto">
-          <FadeInOnScroll delay={0.1}>
-            <InputField label="お名前" placeholder="例：山田 太郎" required />
-            <InputField label="メールアドレス" type="email" placeholder="例：example@mail.com" required />
-            <InputField label="お電話番号" type="tel" placeholder="例：09012345678" />
-
-            <div className="flex flex-col gap-3 mb-[40px]">
-              <label className="text-[14px] tracking-[2px] flex items-center gap-4">
-                お問い合わせ項目
-                <span className="text-[10px] bg-[#710b26] text-white px-2 py-[2px] rounded-sm">必須</span>
-              </label>
-              <div className="flex flex-col gap-3 mt-2">
-                {["雅コース", "極コース", "特注オーダーメイド", "その他"].map((item) => (
-                  <label key={item} className="flex items-center gap-3 cursor-pointer">
-                    <input type="radio" name="category" className="accent-[#710b26] w-[16px] h-[16px]" />
-                    <span className="text-[14px] tracking-[1px] text-black">{item}</span>
-                  </label>
-                ))}
-              </div>
+        {status === "done" ? (
+          <FadeInOnScroll>
+            <div className="text-center py-[60px]">
+              <p className="text-[18px] tracking-[3px] mb-[16px]">送信が完了しました</p>
+              <p className="text-[13px] leading-[26px] tracking-[1px] text-black">
+                お問い合わせありがとうございます。<br />
+                内容を確認の上、担当者よりご連絡いたします。
+              </p>
             </div>
-
-            <div className="flex flex-col gap-3 mb-[60px]">
-              <label className="text-[14px] tracking-[2px] flex items-center gap-4">
-                メッセージ内容
-                <span className="text-[10px] bg-[#710b26] text-white px-2 py-[2px] rounded-sm">必須</span>
-              </label>
-              <textarea
-                rows={5}
-                placeholder="ご相談内容や、掛け軸にされたい写真について詳しくお聞かせください。"
-                className="bg-transparent border border-[#710b26]/30 p-4 focus:border-[#710b26] outline-none transition-colors text-[14px] leading-[24px] tracking-[1px]"
-              />
-            </div>
-
-
-            <button type="button" className="w-full h-[64px] bg-[#710b26] text-white text-[16px] tracking-[4px] font-medium hover:opacity-90 transition-opacity">
-              送信する
-            </button>
           </FadeInOnScroll>
-        </form>
+        ) : (
+          <form
+            name="contact"
+            method="POST"
+            data-netlify="true"
+            onSubmit={handleSubmit}
+            className="max-w-[1000px] mx-auto"
+          >
+            <input type="hidden" name="form-name" value="contact" />
+            <FadeInOnScroll delay={0.1}>
+              <div className="flex flex-col gap-3 mb-[40px]">
+                <label className="text-[14px] tracking-[2px] flex items-center gap-4">
+                  お名前
+                  <span className="text-[10px] bg-[#710b26] text-white px-2 py-[2px] rounded-sm">必須</span>
+                </label>
+                <input name="name" type="text" placeholder="例：山田 太郎" required className="bg-transparent border-b border-[#710b26]/30 py-2 focus:border-[#710b26] outline-none transition-colors text-[16px] tracking-[1px]" />
+              </div>
+
+              <div className="flex flex-col gap-3 mb-[40px]">
+                <label className="text-[14px] tracking-[2px] flex items-center gap-4">
+                  メールアドレス
+                  <span className="text-[10px] bg-[#710b26] text-white px-2 py-[2px] rounded-sm">必須</span>
+                </label>
+                <input name="email" type="email" placeholder="例：example@mail.com" required className="bg-transparent border-b border-[#710b26]/30 py-2 focus:border-[#710b26] outline-none transition-colors text-[16px] tracking-[1px]" />
+              </div>
+
+              <div className="flex flex-col gap-3 mb-[40px]">
+                <label className="text-[14px] tracking-[2px]">お電話番号</label>
+                <input name="phone" type="tel" placeholder="例：09012345678" className="bg-transparent border-b border-[#710b26]/30 py-2 focus:border-[#710b26] outline-none transition-colors text-[16px] tracking-[1px]" />
+              </div>
+
+              <div className="flex flex-col gap-3 mb-[40px]">
+                <label className="text-[14px] tracking-[2px] flex items-center gap-4">
+                  お問い合わせ項目
+                  <span className="text-[10px] bg-[#710b26] text-white px-2 py-[2px] rounded-sm">必須</span>
+                </label>
+                <div className="flex flex-col gap-3 mt-2">
+                  {CATEGORIES.map((item) => (
+                    <label key={item} className="flex items-center gap-3 cursor-pointer">
+                      <input type="radio" name="category" value={item} required className="accent-[#710b26] w-[16px] h-[16px]" />
+                      <span className="text-[14px] tracking-[1px] text-black">{item}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 mb-[60px]">
+                <label className="text-[14px] tracking-[2px] flex items-center gap-4">
+                  メッセージ内容
+                  <span className="text-[10px] bg-[#710b26] text-white px-2 py-[2px] rounded-sm">必須</span>
+                </label>
+                <textarea
+                  name="message"
+                  rows={5}
+                  required
+                  placeholder="ご相談内容や、掛け軸にされたい写真について詳しくお聞かせください。"
+                  className="bg-transparent border border-[#710b26]/30 p-4 focus:border-[#710b26] outline-none transition-colors text-[14px] leading-[24px] tracking-[1px]"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={status === "sending"}
+                className="w-full h-[64px] bg-[#710b26] text-white text-[16px] tracking-[4px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {status === "sending" ? "送信中..." : "送信する"}
+              </button>
+
+              {status === "error" && (
+                <p className="text-center text-[12px] mt-4 text-red-600">送信に失敗しました。時間をおいて再度お試しください。</p>
+              )}
+            </FadeInOnScroll>
+          </form>
+        )}
 
         <div className="mt-[80px] text-center">
           <a href="/" className="text-[12px] tracking-[2px] border-b border-[#710b26] pb-1">
@@ -150,15 +203,15 @@ function ContactSp() {
 }
 
 function ContactPc() {
+  const { status, handleSubmit } = useContactForm();
+
   return (
     <main className="w-[1920px] bg-[#FFFFFB] text-[#710b26] relative overflow-hidden min-h-screen" style={{ fontFamily: 'Zen Old Mincho, serif' }}>
-      {/* Background Decor */}
       <div className="absolute inset-0 z-0 opacity-[0.05]">
         <Image src="/images/message-bg.jpg" alt="" fill className="object-cover" />
       </div>
 
       <div className="relative z-10">
-        {/* Header */}
         <div className="px-[100px] py-[60px]">
           <a href="/">
             <Image src="/images/logo-horizontal.svg" alt="KAKEPHOTO" width={280} height={32} />
@@ -174,52 +227,93 @@ function ContactPc() {
             </p>
           </FadeInOnScroll>
 
-          <form className="max-w-[1000px] mx-auto px-[100px]">
-            <FadeInOnScroll delay={0.1}>
-              <div className="grid grid-cols-2 gap-[60px]">
-                <InputField label="お名前" placeholder="例：山田 太郎" required />
-                <InputField label="メールアドレス" type="email" placeholder="例：example@mail.com" required />
-              </div>
-              <InputField label="お電話番号" type="tel" placeholder="例：09012345678" />
-
-              <div className="flex flex-col gap-6 mb-[80px]">
-                <label className="text-[18px] tracking-[4px] flex items-center gap-6">
-                  お問い合わせ項目
-                  <span className="text-[12px] bg-[#710b26] text-white px-3 py-[2px] rounded-sm">必須</span>
-                </label>
-                <div className="flex gap-[40px] mt-2">
-                  {["雅コース", "極コース", "特注オーダーメイド", "その他"].map((item) => (
-                    <label key={item} className="flex items-center gap-4 cursor-pointer group">
-                      <input type="radio" name="category" className="accent-[#710b26] w-[20px] h-[20px]" />
-                      <span className="text-[18px] tracking-[2px] group-hover:opacity-80 transition-opacity text-black">{item}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-6 mb-[100px]">
-                <label className="text-[18px] tracking-[4px] flex items-center gap-6">
-                  メッセージ内容
-                  <span className="text-[12px] bg-[#710b26] text-white px-3 py-[2px] rounded-sm">必須</span>
-                </label>
-                <textarea
-                  rows={6}
-                  placeholder="具体的に検討されているお写真の内容や、飾りたい場所の雰囲気、納期のご希望などがございましたら自由にご記入ください。"
-                  className="bg-transparent border border-[#710b26]/20 p-6 focus:border-[#710b26] outline-none transition-colors text-[20px] leading-[40px] tracking-[2px]"
-                />
-              </div>
-
-              <div className="flex flex-col items-center gap-12">
-                <button
-                  type="button"
-                  className="w-[500px] h-[90px] bg-[#710b26] text-white text-[20px] tracking-[8px] font-medium relative group overflow-hidden"
-                >
-                  <span className="relative z-10">送信内容を確認する</span>
-                  <div className="absolute inset-0 bg-[#8c1433] -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out z-0" />
-                </button>
+          {status === "done" ? (
+            <FadeInOnScroll>
+              <div className="text-center py-[100px]">
+                <p className="text-[28px] tracking-[6px] mb-[24px]">送信が完了しました</p>
+                <p className="text-[18px] leading-[40px] tracking-[2px] text-black">
+                  お問い合わせありがとうございます。<br />
+                  内容を確認の上、担当者よりご連絡いたします。
+                </p>
               </div>
             </FadeInOnScroll>
-          </form>
+          ) : (
+            <form
+              name="contact"
+              method="POST"
+              data-netlify="true"
+              onSubmit={handleSubmit}
+              className="max-w-[1000px] mx-auto px-[100px]"
+            >
+              <input type="hidden" name="form-name" value="contact" />
+              <FadeInOnScroll delay={0.1}>
+                <div className="grid grid-cols-2 gap-[60px]">
+                  <div className="flex flex-col gap-3 mb-[60px]">
+                    <label className="text-[18px] tracking-[4px] flex items-center gap-4">
+                      お名前
+                      <span className="text-[12px] bg-[#710b26] text-white px-3 py-[2px] rounded-sm">必須</span>
+                    </label>
+                    <input name="name" type="text" placeholder="例：山田 太郎" required className="bg-transparent border-b border-[#710b26]/30 py-2 focus:border-[#710b26] outline-none transition-colors text-[20px] tracking-[2px]" />
+                  </div>
+                  <div className="flex flex-col gap-3 mb-[60px]">
+                    <label className="text-[18px] tracking-[4px] flex items-center gap-4">
+                      メールアドレス
+                      <span className="text-[12px] bg-[#710b26] text-white px-3 py-[2px] rounded-sm">必須</span>
+                    </label>
+                    <input name="email" type="email" placeholder="例：example@mail.com" required className="bg-transparent border-b border-[#710b26]/30 py-2 focus:border-[#710b26] outline-none transition-colors text-[20px] tracking-[2px]" />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 mb-[60px]">
+                  <label className="text-[18px] tracking-[4px]">お電話番号</label>
+                  <input name="phone" type="tel" placeholder="例：09012345678" className="bg-transparent border-b border-[#710b26]/30 py-2 focus:border-[#710b26] outline-none transition-colors text-[20px] tracking-[2px]" />
+                </div>
+
+                <div className="flex flex-col gap-6 mb-[80px]">
+                  <label className="text-[18px] tracking-[4px] flex items-center gap-6">
+                    お問い合わせ項目
+                    <span className="text-[12px] bg-[#710b26] text-white px-3 py-[2px] rounded-sm">必須</span>
+                  </label>
+                  <div className="flex gap-[40px] mt-2">
+                    {CATEGORIES.map((item) => (
+                      <label key={item} className="flex items-center gap-4 cursor-pointer group">
+                        <input type="radio" name="category" value={item} required className="accent-[#710b26] w-[20px] h-[20px]" />
+                        <span className="text-[18px] tracking-[2px] group-hover:opacity-80 transition-opacity text-black">{item}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-6 mb-[100px]">
+                  <label className="text-[18px] tracking-[4px] flex items-center gap-6">
+                    メッセージ内容
+                    <span className="text-[12px] bg-[#710b26] text-white px-3 py-[2px] rounded-sm">必須</span>
+                  </label>
+                  <textarea
+                    name="message"
+                    rows={6}
+                    required
+                    placeholder="具体的に検討されているお写真の内容や、飾りたい場所の雰囲気、納期のご希望などがございましたら自由にご記入ください。"
+                    className="bg-transparent border border-[#710b26]/20 p-6 focus:border-[#710b26] outline-none transition-colors text-[20px] leading-[40px] tracking-[2px]"
+                  />
+                </div>
+
+                <div className="flex flex-col items-center gap-6">
+                  <button
+                    type="submit"
+                    disabled={status === "sending"}
+                    className="w-[500px] h-[90px] bg-[#710b26] text-white text-[20px] tracking-[8px] font-medium relative group overflow-hidden disabled:opacity-50"
+                  >
+                    <span className="relative z-10">{status === "sending" ? "送信中..." : "送信する"}</span>
+                    <div className="absolute inset-0 bg-[#8c1433] -translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-out z-0" />
+                  </button>
+                  {status === "error" && (
+                    <p className="text-[14px] tracking-[1px] text-red-600">送信に失敗しました。時間をおいて再度お試しください。</p>
+                  )}
+                </div>
+              </FadeInOnScroll>
+            </form>
+          )}
 
           <footer className="mt-[200px] text-center">
             <a href="/" className="inline-flex items-center gap-6 group">
