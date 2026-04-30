@@ -35,7 +35,7 @@ function SpMessageBlock({
         className="relative w-full h-[220px] overflow-hidden mb-[20px]"
         initial={{ opacity: 0, y: 32, scale: 1.04 }}
         animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
-        transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 1.6, ease: [0.22, 1, 0.36, 1] }}
       >
         <Image
           src={msg.img}
