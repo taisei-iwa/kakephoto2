@@ -70,13 +70,14 @@ function useContactForm() {
     e.preventDefault();
     setStatus("sending");
     const formData = new FormData(e.currentTarget);
+    formData.append("access_key", "6774cbd2-861f-4aba-8275-de16fa3f266d");
     try {
-      const res = await fetch("/", {
+      const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams(formData as unknown as Record<string, string>).toString(),
+        body: formData,
       });
-      setStatus(res.ok ? "done" : "error");
+      const data = await res.json();
+      setStatus(data.success ? "done" : "error");
     } catch {
       setStatus("error");
     }
@@ -119,13 +120,9 @@ function ContactSp() {
           </FadeInOnScroll>
         ) : (
           <form
-            name="contact"
-            method="POST"
-            data-netlify="true"
             onSubmit={handleSubmit}
             className="max-w-[1000px] mx-auto"
           >
-            <input type="hidden" name="form-name" value="contact" />
             <FadeInOnScroll delay={0.1}>
               <div className="flex flex-col gap-3 mb-[40px]">
                 <label className="text-[14px] tracking-[2px] flex items-center gap-4">
@@ -239,13 +236,9 @@ function ContactPc() {
             </FadeInOnScroll>
           ) : (
             <form
-              name="contact"
-              method="POST"
-              data-netlify="true"
               onSubmit={handleSubmit}
               className="max-w-[1000px] mx-auto px-[100px]"
             >
-              <input type="hidden" name="form-name" value="contact" />
               <FadeInOnScroll delay={0.1}>
                 <div className="grid grid-cols-2 gap-[60px]">
                   <div className="flex flex-col gap-3 mb-[60px]">
