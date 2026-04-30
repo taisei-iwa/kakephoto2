@@ -282,6 +282,15 @@ function SpBackToTop() {
 }
 
 function SpPage() {
+  // Chrome (Android & iOS CriOS) keeps a bottom URL bar that overlaps the FV
+  // tagline. Safari hides it on scroll, so it can sit lower over the kakejiku.
+  const [taglineBottom, setTaglineBottom] = useState(28);
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    const isChrome = /CriOS|Chrome/i.test(ua) && !/Edg|OPR|EdgiOS/i.test(ua);
+    setTaglineBottom(isChrome ? 64 : 28);
+  }, []);
+
   return (
     <main className="w-[375px] overflow-hidden" style={{ fontFamily: 'Zen Old Mincho, serif' }}>
       <SpBackToTop />
@@ -296,7 +305,7 @@ function SpPage() {
         <div className="absolute top-[140px] left-1/2 -translate-x-1/2 z-10 hidden">
           <Image src="/images/logo-center.svg" alt="KAKEPHOTO" width={150} height={236} />
         </div>
-        <div className="absolute bottom-[64px] right-[16px] text-right text-white z-10">
+        <div className="absolute right-[16px] text-right text-white z-10" style={{ bottom: `${taglineBottom}px` }}>
           <p className="text-[13px] tracking-[2px] font-medium">FULL CUSTOM MADE</p>
           <p className="text-[10px] tracking-[1.5px] mt-1">Each piece is made exclusively for one photograph.</p>
         </div>
