@@ -140,7 +140,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <script dangerouslySetInnerHTML={{__html: `(function(){function uz(){var w=window.innerWidth;document.querySelectorAll('.vp-pc-root').forEach(function(el){el.style.zoom=w/1920;});document.querySelectorAll('.vp-sp-root').forEach(function(el){el.style.zoom=w/375;});}uz();window.addEventListener('resize',uz);})();`}} />
+        {children}
+      </body>
     </html>
   );
 }

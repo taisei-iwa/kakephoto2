@@ -26,11 +26,9 @@ body {
    the design canvas width gives the scale factor. */
 .vp-sp-root {
   width: 375px;
-  zoom: calc(100dvw / 1px / 375);
 }
 .vp-pc-root {
   width: 1920px;
-  zoom: calc(100dvw / 1px / 1920);
 }
 @media (max-width: 767.98px) {
   .vp-pc-only { display: none !important; }
