@@ -10,7 +10,8 @@ function withVersion(src: string): string {
   return `${src}?v=${IMG_V}`;
 }
 
-export default function VImage({ src, ...props }: ImageProps) {
-  const versioned = typeof src === "string" ? withVersion(src) : src;
-  return <NextImage src={versioned} {...props} />;
+export default function VImage(props: ImageProps) {
+  const src =
+    typeof props.src === "string" ? withVersion(props.src) : props.src;
+  return <NextImage {...props} src={src} />;
 }
