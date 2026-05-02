@@ -637,6 +637,7 @@ export default function Home() {
                 top: '-33.59%',
               }}
               priority
+              unoptimized
             />
           </div>
           {/* 横ロゴ — Figma: x=42 y=60 */}
@@ -752,6 +753,7 @@ export default function Home() {
                 left: -10,
                 top: -306,
               }}
+              unoptimized
             />
           </div>
           {/* Top/bottom borders */}

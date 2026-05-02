@@ -542,6 +542,7 @@ export default function HomeEn() {
                 className="absolute max-w-none"
                 style={{ width: "152.55%", height: "134.68%", left: "-51.41%", top: "-33.59%" }}
                 priority
+                unoptimized
               />
             </div>
             <div className="absolute top-[60px] left-[42px] z-10">
@@ -613,6 +614,7 @@ export default function HomeEn() {
                 height={2894}
                 className="absolute max-w-none"
                 style={{ width: 1930, height: 2894, left: -10, top: -306 }}
+                unoptimized
               />
             </div>
             <div className="absolute top-0 left-0 w-full h-[64px] bg-[#D1C4B2] z-10" />
