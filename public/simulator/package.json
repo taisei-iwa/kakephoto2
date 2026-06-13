@@ -1,0 +1,10 @@
+{
+  "name": "kakephoto-order",
+  "version": "0.1.0",
+  "private": true,
+  "description": "かけフォト(KAKEPHOTO)顧客向け 掛軸オーダーシミュレーター。スプリント1: ブランド適用 + 写真の本紙当てはめ + サイズ選択 + サイズ価格のリアルタイム表示 + 部位クリックの裂地ピッカー。",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "node server.js"
+  }
+}

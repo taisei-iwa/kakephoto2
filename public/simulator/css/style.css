@@ -1,0 +1,768 @@
+/* かけフォト 掛軸オーダーシミュレーター
+   ブランド視覚: かけフォト本サイト(kakephoto-site)準拠。
+   ヘッダー = Concept セクション色 #710b26(臙脂)。
+   本文背景 = Message セクションと同じ 白 + message-bg.jpg を opacity 0.4 で敷く。
+   書体 = Zen Old Mincho。本文 #333、見出し・アクセント #710b26。
+   岩﨑精正堂(表具師業)との関係は一切出さない。絵文字を使わない。 */
+
+/* Google Fonts(Zen Old Mincho)は index.html の <link> で読み込む。 */
+
+:root {
+  /* ---- ブランド(サイト globals.css 由来) ---- */
+  --brand:       #710b26;   /* 臙脂(ヘッダー背景・見出し・価格・アクセント) */
+  --brand-dark:  #5a0a1e;   /* 濃い臙脂(ホバー) */
+  --brand-soft:  #9a3a4f;   /* 補助 */
+
+  /* ---- テキスト(白背景上) ---- */
+  --ink:         #333333;   /* 本文(サイト body と同じ) */
+  --ink-soft:    #6b6258;   /* 補助文字 */
+  --ink-faint:   #9b938a;   /* 注釈 */
+
+  /* ---- ヘッダー文字(臙脂背景上) ---- */
+  --on-brand:      #ffffff;
+  --on-brand-soft: #ecdfd9;
+
+  /* ---- サーフェス(白背景上のカード/パネル) ---- */
+  --paper:       #ffffff;
+  --surface:     #ffffff;   /* カード地 */
+  --surface-2:   #faf7f2;   /* 僅かに温かい面 */
+  --line:        #e3ddd1;   /* 罫線 */
+  --line-soft:   #efe9df;   /* 薄い仕切り */
+
+  /* ---- 部位・警告 ---- */
+  --placeholder: #efe9de;   /* 無地の部位 */
+  --honshi-bg:   #f6f2ea;   /* 写真未取り込みの本紙 */
+  --warn-bg:     #fbeeea;
+  --warn-line:   #c98a78;
+  --warn-ink:    #9a3322;
+
+  /* ---- フォント(サイトと同じ Zen Old Mincho) ---- */
+  --font-mincho: "Zen Old Mincho", "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "Hiragino Mincho Pro", serif;
+  --font-body: var(--font-mincho);
+
+  font-size: 16px;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 本文背景: Message セクションと同じ(白地 + message-bg.jpg を opacity 0.4 で敷く) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url("../assets/message-bg.jpg") center / cover no-repeat;
+  opacity: 0.4;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ---- ヘッダー(Concept セクション色 #710b26)。左上にサイトのロゴ、全体は低く ---- */
+.app-header {
+  position: relative;
+  text-align: center;
+  padding: 1.3rem 1.5rem 1.1rem;
+  background: var(--brand);
+}
+.app-header .brand-logo {
+  position: absolute;
+  top: 1.15rem;
+  left: 1.5rem;
+  display: inline-block;
+  line-height: 0;
+}
+.app-header .brand-logo img {
+  height: 18px;
+  width: auto;
+  display: block;
+}
+.app-header h1 {
+  margin: 0;
+  font-size: 1.18rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--on-brand);
+}
+.app-header .subtitle {
+  margin: 0.5rem auto 0;
+  max-width: 34rem;
+  font-size: 0.8rem;
+  color: var(--on-brand-soft);
+  letter-spacing: 0.06em;
+}
+/* 狭い画面ではロゴを中央上に重ねず、行を分ける */
+@media (max-width: 560px) {
+  .app-header { padding-top: 2.6rem; }
+  .app-header .brand-logo { left: 50%; transform: translateX(-50%); top: 0.9rem; }
+}
+
+/* ---- レイアウト(3 カラム) ---- */
+.layout {
+  display: flex;
+  gap: 2.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.8rem 2rem 4rem;
+  align-items: flex-start;
+}
+
+/* 左右パネルを同じ幅にして、中央のプレビュー列をページ中央に一致させる */
+.panel { flex: 0 0 300px; max-width: 300px; }
+.panel-price { flex: 0 0 300px; max-width: 300px; }
+
+/* ---- パネル内の各ブロック ---- */
+.block {
+  background: transparent;
+  border: none;
+  padding: 0 0 1.5rem;
+  margin: 0;
+}
+.block + .block {
+  border-top: 1px solid var(--line);
+  padding-top: 1.4rem;
+}
+.block legend {
+  /* fieldset の legend 特有の余白を避けるため通常フローに戻す */
+  float: left;
+  width: 100%;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  padding: 0;
+  margin-bottom: 0.4rem;
+  color: var(--brand);
+  text-transform: none;
+}
+.block legend + * { clear: both; }
+.lead, .block .lead {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin: 0 0 1rem;
+}
+
+.block label {
+  display: block;
+  font-size: 0.78rem;
+  margin: 0.9rem 0 0.3rem;
+  color: var(--ink-soft);
+}
+.file-label { margin-top: 0; }
+/* legend 直後のラベル(例: 仕立てを選ぶ → 表装の形式)の余白を詰める */
+.block legend + label { margin-top: 0; line-height: 1.4; }
+
+select, input[type="number"], input[type="file"] {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  font-size: 0.88rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--surface);
+}
+input[type="file"] { font-size: 0.78rem; padding: 0.4rem; }
+
+select option { background: var(--surface); color: var(--ink); }
+
+.row { display: flex; align-items: center; gap: 0.6rem; }
+.row label { flex: 1; margin: 0.6rem 0 0.3rem; }
+.row input[type="number"] { flex: 0 0 120px; }
+
+.pair-row { gap: 1.2rem; margin-top: 0.9rem; flex-wrap: wrap; }
+.pair-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.84rem;
+  flex: none;
+  margin: 0;
+  color: var(--ink);
+}
+.pair-row input[type="checkbox"] { width: auto; accent-color: var(--brand); }
+
+.btns { gap: 0.6rem; margin-top: 0.8rem; }
+
+button {
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--brand);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--brand);
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+button:hover {
+  background: var(--brand);
+  color: var(--on-brand);
+  border-color: var(--brand);
+}
+button.secondary {
+  border-color: var(--line);
+  color: var(--ink-soft);
+}
+button.secondary:hover {
+  background: var(--surface-2);
+  color: var(--brand);
+  border-color: var(--brand-soft);
+}
+button:focus-visible, select:focus-visible, input:focus-visible, a.cta:focus-visible {
+  outline: 2px solid var(--brand-soft);
+  outline-offset: 2px;
+}
+
+.note {
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+  margin: 0.6rem 0 0;
+  letter-spacing: 0.03em;
+}
+
+.warning {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+  color: var(--warn-ink);
+  border-radius: 2px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.8rem;
+  margin-top: 0.7rem;
+}
+
+/* ---- セグメント(サイズ種別・向き・箱) ---- */
+.seg, .orient {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+.orient { margin-top: 0.8rem; }
+
+.seg-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  margin: 0 !important;
+  color: var(--ink-soft);
+  background: var(--surface);
+  user-select: none;
+  text-align: center;
+  line-height: 1.4;
+}
+.seg-item input { position: absolute; opacity: 0; width: 0; height: 0; }
+.seg-item:has(input:checked) {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+.seg-item:has(input:focus-visible) { outline: 2px solid var(--brand-soft); outline-offset: 2px; }
+.seg-item:hover:not(:has(input:checked)) {
+  background: var(--surface-2);
+  border-color: var(--brand-soft);
+}
+
+/* 箱セグメントの補助テキスト */
+.seg-sub {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+}
+.seg-item:has(input:checked) .seg-sub { color: var(--on-brand-soft); }
+
+.free-size { margin-top: 1rem; }
+.free-note { margin-top: 0; margin-bottom: 0.3rem; }
+.free-size .row input[type="number"] { flex: 0 0 130px; }
+
+/* ---- プレビュー領域(中央) ---- */
+.preview-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  position: sticky;
+  top: 1.5rem;
+  align-self: flex-start;
+}
+.preview-warning { align-self: stretch; max-width: 420px; }
+.preview-size-note {
+  margin: 0 0 0.9rem;
+  font-size: 0.74rem;
+  color: var(--ink);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+/* プレビュー枠: PC ではボックスを作らず従来どおり(stage を直接 area の子として扱う)。
+   スマホでは @media 内で実体のフレックス枠にし、残り高さを測ってプレビューを収める。 */
+.preview-frame { display: contents; }
+
+/* 寸法ラベル(幅=上・中央 / 高さ=左・縦書き) */
+.preview-stage { display: inline-flex; flex-direction: column; align-items: center; }
+.preview-stage-row { display: flex; align-items: center; gap: 0.5rem; }
+.dim {
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.dim-w { margin-bottom: 0.5rem; }
+/* 高さラベルと右の釣り合いスペーサーは常に同じ固定幅にし、
+   ラベルの文字有無に関わらずプレビューが必ず中央に来るようにする。 */
+.dim-h, .dim-spacer { flex: 0 0 1.9em; width: 1.9em; text-align: center; }
+/* 高さラベルは縦書き。CJK は正立、数字(120 等)は縦中横で横並びにする。 */
+.dim-h { writing-mode: vertical-rl; text-orientation: upright; }
+.dim-h .tcy { text-combine-upright: all; -webkit-text-combine: horizontal; letter-spacing: 0; }
+.dim-spacer { visibility: hidden; }
+
+.kakejiku-preview {
+  position: relative;
+  background: var(--paper);
+  box-shadow: 0 12px 40px rgba(80,15,30,0.18), 0 2px 8px rgba(80,15,30,0.10);
+}
+.preview-hint {
+  margin: 1.6rem 0 0;
+  font-size: 0.76rem;
+  color: var(--ink);
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+/* 各部位領域(絶対配置) */
+.part {
+  position: absolute;
+  overflow: hidden;
+  background-color: var(--placeholder);
+  background-repeat: repeat;
+  outline: 0.5px solid rgba(80,15,30,0.12);
+  cursor: pointer;
+}
+/* 裂地にカーソルを重ねると、一緒に変わる部位の「連結したかたまり」の外周だけを
+   1 本の細枠で囲む(柱の上下線・内側線は出さず、両端は縦一直線になる)。 */
+.hl-frame { position: absolute; box-shadow: inset 0 0 0 1px var(--brand); pointer-events: none; z-index: 7; }
+.part-honshi { background-color: var(--honshi-bg); cursor: default; }
+
+.part-fuutai { z-index: 12; outline: 0.5px solid rgba(80,15,30,0.18); }
+
+/* 軸棒・八双・軸先 */
+.jiku-bar {
+  position: absolute;
+  left: -6px;
+  width: calc(100% + 12px);
+  height: 10px;
+  background-color: #e3dccd;
+  outline: 0.5px solid rgba(80,15,30,0.14);
+  z-index: 10;
+}
+.jiku-bar.top { top: -8px; left: -1px; width: calc(100% + 2px); }
+.jiku-bar.bottom { bottom: -10px; height: 14px; }
+.jiku-end {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  bottom: -10px;
+  z-index: 11;
+  background: linear-gradient(#9c7a50, #7a5c38 35%, #543c22); /* 既定: 茶 */
+}
+.jiku-end.left { left: -20px; }
+.jiku-end.right { right: -20px; }
+/* 軸先の色(黒・茶・アイボリー) */
+.jiku-end.black  { background: linear-gradient(#565656, #333 35%, #111); }
+.jiku-end.brown  { background: linear-gradient(#9c7a50, #7a5c38 35%, #543c22); }
+.jiku-end.ivory  { background: linear-gradient(#f6f0e2, #e7dac2 38%, #d3c2a2); }
+
+/* ---- 価格カード(右) ---- */
+.price-card {
+  position: sticky;
+  top: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 1.8rem 1.6rem;
+  background: var(--surface);
+}
+.price-heading {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.22em;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.price-total {
+  margin: 0.5rem 0 0.2rem;
+  font-family: var(--font-body);
+  font-size: 2.4rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  color: var(--brand);
+}
+.price-tax { margin: 0; font-size: 0.76rem; color: var(--ink-soft); letter-spacing: 0.06em; }
+
+.price-breakdown {
+  margin: 1.4rem 0 0;
+  padding: 1.2rem 0 0;
+  border-top: 1px solid var(--line-soft);
+}
+.bd-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+}
+.bd-row dt { margin: 0; color: var(--ink-soft); }
+.bd-row dd { margin: 0; color: var(--ink); }
+.bd-row.bd-sum {
+  border-top: 1px solid var(--line);
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  font-size: 0.95rem;
+}
+.bd-row.bd-sum dt, .bd-row.bd-sum dd { color: var(--brand); font-weight: 600; }
+
+.price-note {
+  margin: 1.2rem 0 0;
+  font-size: 0.73rem;
+  color: var(--ink-faint);
+  line-height: 1.75;
+}
+
+.cta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1.6rem;
+}
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  text-align: center;
+  padding: 0.8rem 1rem;
+  border-radius: 2px;
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.cta-icon { width: 1.25em; height: 1.25em; flex: none; }
+/* LINE で相談する: LINE ブランドカラー(#06C755)。アイコンは白のトークふきだし。 */
+.cta-line {
+  background: #06c755;
+  color: #ffffff;
+  border: 1px solid #06c755;
+  font-weight: 600;
+}
+.cta-line:hover {
+  background: #05b249;
+  border-color: #05b249;
+}
+.cta-form {
+  background: transparent;
+  color: var(--brand);
+  border: 1px solid var(--brand);
+}
+.cta-form:hover {
+  background: var(--surface-2);
+  border-color: var(--brand-dark);
+}
+.cta-note { margin: 1rem 0 0; font-size: 0.71rem; color: var(--ink-faint); }
+
+/* ---- 裂地ピッカー / ダイアログ ---- */
+.picker-dialog {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1.6rem;
+  max-width: 560px;
+  width: min(560px, 94vw);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 20px 60px rgba(80,15,30,0.28);
+}
+.picker-dialog::backdrop { background: rgba(50,10,18,0.45); }
+.dialog-title {
+  margin: 0 0 0.8rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--brand);
+}
+.dialog-note { font-size: 0.78rem; color: var(--ink-faint); margin: 0 0 0.8rem; }
+.show-all-label {
+  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  margin-bottom: 0.8rem;
+  color: var(--ink-soft);
+}
+.show-all-label input { width: auto; accent-color: var(--brand); }
+
+.fabric-list {
+  list-style: none; padding: 0; margin: 0.3rem 0 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem;
+  max-height: 56vh; overflow-y: auto;
+}
+.fabric-item {
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.3rem;
+  text-align: center;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+.fabric-item:hover { border-color: var(--brand-soft); }
+.fabric-item.selected { outline: 2px solid var(--brand); outline-offset: 1px; }
+.fabric-item img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 2px; display: block; cursor: pointer; }
+.fabric-item .fname {
+  font-size: 0.68rem;
+  margin-top: 0.3rem;
+  word-break: break-all;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+/* 料金グループの見出し(追加料金なし / +¥3,000 / +¥5,000) */
+.fabric-group-head {
+  grid-column: 1 / -1;
+  margin: 0.4rem 0 0.1rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--brand);
+}
+.fabric-group-head:first-child { margin-top: 0; }
+
+.dialog-btns {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+.dialog-btns button { flex: 1; }
+
+/* ---- トリミング ---- */
+.trim-options { margin-bottom: 0.8rem; }
+.trim-canvas-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.8rem;
+  background: #3a2530;
+  border-radius: 3px;
+  padding: 4px;
+}
+.trim-canvas { display: block; cursor: crosshair; max-width: 100%; touch-action: none; }
+
+/* ---- 裏方専用パネル(裂地追加・#admin のときだけ表示) ---- */
+body.admin-mode { height: auto !important; overflow: auto !important; } /* スマホの 100dvh 固定を解除 */
+.admin-panel {
+  max-width: 1200px;
+  margin: 1.5rem auto 3rem;
+  padding: 1.4rem 1.6rem 1.8rem;
+  background: #2b2b30;
+  color: #ececf0;
+  border-radius: 6px;
+}
+.admin-panel h2 { margin: 0 0 0.4rem; font-size: 1.02rem; color: #fff; letter-spacing: 0.04em; }
+.admin-panel h3 { margin: 1.4rem 0 0.6rem; font-size: 0.86rem; color: #ddd; }
+.admin-note { font-size: 0.78rem; color: #b9b9c2; margin: 0 0 1.1rem; line-height: 1.7; }
+.admin-note code { background: #4a4a52; padding: 0 0.3em; border-radius: 3px; }
+.admin-form { display: grid; gap: 0.75rem; max-width: 460px; }
+.admin-form > label { display: block; font-size: 0.82rem; color: #d6d6de; }
+.admin-form input[type="text"], .admin-form input[type="number"],
+.admin-form input[type="file"], .admin-form select { margin-top: 0.25rem; }
+.admin-form input[type="number"] { width: 6rem; }
+.admin-uses { display: flex; gap: 1.1rem; flex-wrap: wrap; align-items: center; font-size: 0.82rem; color: #d6d6de; }
+.admin-uses label { display: inline-flex; align-items: center; gap: 0.35rem; margin: 0; }
+.admin-uses input { width: auto; accent-color: var(--brand-soft); }
+.admin-btns { display: flex; gap: 0.6rem; align-items: center; }
+#admin-fabric-add {
+  flex: none;
+  background: var(--brand);
+  color: #fff;
+  border: 1px solid var(--brand);
+  padding: 0.6rem 1.4rem;
+}
+#admin-fabric-add:hover { background: var(--brand-dark); border-color: var(--brand-dark); }
+#admin-fabric-cancel { flex: none; padding: 0.6rem 1.1rem; background: transparent; color: #cfcfd6; border: 1px solid #5a5a64; }
+#admin-fabric-cancel:hover { background: #44444c; color: #fff; border-color: #6a6a74; }
+.admin-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; max-width: 560px; }
+.admin-item { display: flex; align-items: center; gap: 0.75rem; background: #3a3a42; padding: 0.45rem 0.6rem; border-radius: 4px; }
+.admin-item img { width: 42px; height: 42px; object-fit: cover; border-radius: 3px; flex: none; background: #fff; }
+.admin-item-info { flex: 1; font-size: 0.8rem; color: #e4e4ea; line-height: 1.5; }
+.admin-item button { flex: none; padding: 0.4rem 0.8rem; }
+.admin-empty { color: #9a9aa2; font-size: 0.8rem; }
+.admin-hint { font-size: 0.74rem; color: #a8a8b0; margin: -0.3rem 0 0; }
+.admin-preview { font-size: 0.78rem; color: #d6d6de; display: flex; align-items: center; gap: 0.6rem; }
+.admin-preview img { width: 56px; height: 56px; object-fit: cover; border-radius: 3px; background: #fff; }
+
+/* ---- レスポンシブ: スマホ・タブレットは 1 画面に収める(スクロール不要) ----
+   構成: ヘッダー(薄) / プレビュー(残り全部・中央) / 操作(コンパクト) / 価格バー。
+   プレビューは js が枠を実測して縮小するため、ここでは枠だけ用意する。 */
+@media (max-width: 960px) {
+  html { height: 100%; }
+  body {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ヘッダー: ロゴ + タイトルのみ。サブタイトルは省略して低く */
+  .app-header { flex: none; padding: 0.5rem 1rem 0.45rem; }
+  .app-header .brand-logo {
+    position: static;
+    transform: none;
+    display: block;
+    text-align: center;
+    margin-bottom: 0.12rem;
+  }
+  .app-header .brand-logo img { height: 14px; margin: 0 auto; }
+  .app-header h1 { font-size: 0.9rem; letter-spacing: 0.1em; }
+  .app-header .subtitle { display: none; }
+
+  /* 本体: ヘッダー下を「左:操作 / 右:プレビュー(大) / 下:価格バー」のグリッドに。
+     掛軸は縦長なので、右側で縦いっぱいに使うと大きく見せられる。 */
+  .layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    grid-template-rows: 1fr auto;
+    grid-template-areas:
+      "controls preview"
+      "price    price";
+    gap: 0.5rem 0.7rem;
+    padding: 0.5rem 0.7rem 0.55rem;
+    max-width: none;
+    overflow: hidden;
+  }
+  .panel, .panel-price { max-width: none; width: auto; }
+
+  /* flex/grid 項目の min-width:auto による横膨張を抑える(日本語 select 等が列を
+     押し広げ、プレビュー枠まで広がるのを防ぐ)。 */
+  .layout, .preview-area, .preview-frame, .panel, .panel-price,
+  .panel-controls > .block, .price-card, .price-card > *, .cta-row, .cta { min-width: 0; }
+  select, input[type="file"] { min-width: 0; max-width: 100%; }
+
+  /* 左: 操作を縦に整頓 */
+  .panel-controls {
+    grid-area: controls;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    overflow-y: auto;
+  }
+  .block { padding: 0; }
+  .block + .block { border-top: 1px solid var(--line); padding-top: 0.55rem; }
+  .block legend { font-size: 0.73rem; margin-bottom: 0.22rem; letter-spacing: 0.04em; }
+  .block .lead { display: none; }
+  /* 説明ラベル(「写真ファイル」「表装の形式」)だけ隠す。セグメントや
+     チェックボックスの <label> は隠さない。.block label より詳細度を上げる。 */
+  .block .file-label, .block legend + label { display: none; }
+  .note, #format-note { display: none; }
+  .seg, .orient { margin-top: 0.2rem; gap: 0.3rem; }
+  #size-block .seg { flex-direction: column; }   /* A4/A3/自由は縦積みで読みやすく */
+  .orient { margin-top: 0.3rem; }
+  .seg-item { padding: 0.34rem 0.25rem; font-size: 0.72rem; line-height: 1.25; }
+  .seg-sub { font-size: 0.58rem; }
+  select, input[type="file"] { padding: 0.4rem; font-size: 0.74rem; }
+  .pair-row { margin-top: 0.35rem; gap: 0.4rem; flex-direction: column; align-items: flex-start; }
+  .pair-row label { font-size: 0.72rem; }
+  .btns { margin-top: 0.35rem; }
+  #free-size-row { flex-direction: column; }
+
+  /* 右: プレビューを縦いっぱいに大きく(列内で中央寄せは維持) */
+  .preview-area {
+    grid-area: preview;
+    position: static;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .preview-size-note { display: block; flex: none; font-size: 0.62rem; line-height: 1.45; margin: 0 0 0.25rem; }
+  .preview-frame {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .preview-hint {
+    flex: none;
+    margin: 0.3rem 0 0;
+    font-size: 0.62rem;
+    line-height: 1.4;
+    text-align: center;
+  }
+  .preview-stage-row { gap: 0.3rem; }
+  .dim { font-size: 0.66rem; }
+  .dim-h, .dim-spacer { flex-basis: 1.35em; width: 1.35em; }
+  .dim-w { margin-bottom: 0.2rem; }
+
+  /* 自由サイズ入力は 1 行にまとめて低く */
+  #free-size-row { display: flex; gap: 0.5rem; margin-top: 0.35rem; }
+  #free-size-row .free-note { display: none; }
+  #free-size-row .row { flex: 1; margin: 0; display: flex; align-items: center; gap: 0.3rem; }
+  #free-size-row .row label { display: block; flex: none; margin: 0; font-size: 0.68rem; }
+  #free-size-row input[type="number"] { flex: 1; width: auto; padding: 0.35rem; }
+
+  /* 価格: 下段に全幅で「お見積りの目安」ボックスをそのまま残す(細いバー) */
+  .panel-price { grid-area: price; }
+  .price-card {
+    position: static;
+    padding: 0.4rem 0.8rem 0.45rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "head  total"
+      "tax   tax"
+      "cta   cta";
+    align-items: center;
+    column-gap: 0.7rem;
+    row-gap: 0.2rem;
+  }
+  .price-heading { grid-area: head; margin: 0; font-size: 0.66rem; letter-spacing: 0.06em; }
+  .price-total { grid-area: total; margin: 0; font-size: 1.3rem; text-align: right; }
+  .price-tax { grid-area: tax; margin: 0; font-size: 0.6rem; }
+  .price-breakdown { display: none; }
+  .price-note { display: none; }
+  .cta-row { grid-area: cta; flex-direction: row; gap: 0.5rem; margin-top: 0.15rem; }
+  .cta { flex: 1; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
+  .cta-icon { width: 1.1em; height: 1.1em; }
+  .cta-note { display: none; }
+
+  .fabric-list { grid-template-columns: repeat(3, 1fr); }
+}

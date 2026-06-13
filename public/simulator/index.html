@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>かけフォト 掛軸オーダーシミュレーター</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand-logo" href="/" aria-label="かけフォト トップへ">
+      <img src="assets/logo-horizontal.svg" alt="KAKEPHOTO" />
+    </a>
+    <h1>掛軸オーダーシミュレーター</h1>
+    <p class="subtitle">お手元の写真を、一幅の掛軸に。仕上がりとお見積もりの目安を、その場で。</p>
+  </header>
+
+  <main class="layout">
+    <!-- 操作パネル(左) -->
+    <section class="panel panel-controls" aria-label="設定パネル">
+
+      <!-- F1: 写真(本紙)の取り込み -->
+      <fieldset class="block">
+        <legend>写真を選ぶ</legend>
+        <p class="lead">本紙となる、お手元の一枚をお選びください。</p>
+        <label for="honshi-image-file" class="file-label">写真ファイル</label>
+        <input type="file" id="honshi-image-file" accept="image/*" />
+        <div id="honshi-image-warning" class="warning" role="alert" hidden></div>
+        <div class="row btns" style="margin-top:0.6rem;">
+          <button type="button" id="trim-honshi-btn" class="secondary" style="display:none">位置を調整</button>
+          <button type="button" id="remove-honshi-btn" class="secondary" hidden>取り外す</button>
+        </div>
+      </fieldset>
+
+      <!-- F2: 本紙サイズ選択 -->
+      <fieldset class="block" id="size-block">
+        <legend>本紙(写真)の大きさを選ぶ</legend>
+        <div class="seg" role="radiogroup" aria-label="サイズの種類">
+          <label class="seg-item"><input type="radio" name="size-mode" value="a4" /> <span>A4 定型</span></label>
+          <label class="seg-item"><input type="radio" name="size-mode" value="a3" /> <span>A3 定型</span></label>
+          <label class="seg-item"><input type="radio" name="size-mode" value="free" /> <span>自由サイズ</span></label>
+        </div>
+
+        <!-- 定型(A4/A3)の向き -->
+        <div id="orientation-row" class="orient" role="radiogroup" aria-label="向き">
+          <label class="seg-item"><input type="radio" name="orientation" value="portrait" checked /> <span>縦</span></label>
+          <label class="seg-item"><input type="radio" name="orientation" value="landscape" /> <span>横</span></label>
+        </div>
+
+        <!-- 自由サイズの数値入力 -->
+        <div id="free-size-row" class="free-size" hidden>
+          <p class="note free-note">A3(420 × 297 mm)までのお好みの寸法を入力してください。</p>
+          <div class="row">
+            <label for="free-w">幅 (mm)</label>
+            <input type="number" id="free-w" value="210" min="1" step="1" inputmode="numeric" />
+          </div>
+          <div class="row">
+            <label for="free-h">高さ (mm)</label>
+            <input type="number" id="free-h" value="297" min="1" step="1" inputmode="numeric" />
+          </div>
+          <div id="size-warning" class="warning" role="alert" hidden></div>
+        </div>
+      </fieldset>
+
+      <!-- F4: 表装形式(全形式を顧客にも見せる) -->
+      <fieldset class="block">
+        <legend>仕立てを選ぶ</legend>
+        <label for="format-select">表装の形式</label>
+        <select id="format-select" aria-label="表装形式の選択"></select>
+        <div class="row pair-row">
+          <label><input type="checkbox" id="opt-ichimonji-ari" /> 一文字追加</label>
+          <label id="fuutai-ari-label" hidden><input type="checkbox" id="opt-fuutai-ari" /> 風帯あり(+¥3,000)</label>
+          <label id="mincho-label" hidden><input type="checkbox" id="opt-mincho" /> 明朝仕立て</label>
+        </div>
+        <p id="format-note" class="note" hidden></p>
+        <p class="note">中央のプレビューで、各部の裂地をお選びいただけます。</p>
+      </fieldset>
+
+      <!-- 軸先(端の飾り)の色 -->
+      <fieldset class="block" id="jiku-color-block">
+        <legend>軸先の色</legend>
+        <div class="seg jiku-seg" role="radiogroup" aria-label="軸先の色">
+          <label class="seg-item"><input type="radio" name="jiku-color" value="black" /> <span>黒</span></label>
+          <label class="seg-item"><input type="radio" name="jiku-color" value="brown" checked /> <span>茶</span></label>
+          <label class="seg-item"><input type="radio" name="jiku-color" value="ivory" /> <span>Ivory</span></label>
+        </div>
+      </fieldset>
+
+      <!-- F8/スプリント2: 箱(梱包)オプション -->
+      <fieldset class="block" id="box-block">
+        <legend>箱の種類</legend>
+        <div class="seg box-seg" role="radiogroup" aria-label="箱の種類">
+          <label class="seg-item"><input type="radio" name="box-option" value="paper" checked /> <span>紙箱<br /><span class="seg-sub">無料</span></span></label>
+          <label class="seg-item"><input type="radio" name="box-option" value="kiri" /> <span>桐箱<br /><span class="seg-sub">+¥11,000</span></span></label>
+        </div>
+      </fieldset>
+
+    </section>
+
+    <!-- プレビュー(中央) -->
+    <section class="preview-area" aria-label="掛軸プレビュー">
+      <div id="preview-warning" class="warning preview-warning" role="alert" hidden>
+        サイズを正しく入力してください。
+      </div>
+      <p class="preview-size-note">まわりの裂地部分をタップすると、その箇所の裂地を直接お選びいただけます。</p>
+      <div class="preview-frame">
+        <div class="preview-stage">
+          <div class="dim dim-w" id="dim-w"></div>
+          <div class="preview-stage-row">
+            <div class="dim dim-h" id="dim-h"></div>
+            <div id="preview" class="kakejiku-preview" aria-label="掛軸全体プレビュー"></div>
+            <div class="dim dim-spacer" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+      <p class="preview-hint">中央の写真をタップすると、位置を調整できます。</p>
+    </section>
+
+    <!-- 価格・注文(右) -->
+    <section class="panel panel-price" aria-label="お見積もりと注文">
+      <div class="price-card">
+        <p class="price-heading">お見積もりの目安</p>
+        <div class="price-total" id="price-total">¥0</div>
+        <p class="price-tax">税込・送料別</p>
+
+        <dl class="price-breakdown" id="price-breakdown">
+          <div class="bd-row">
+            <dt>サイズ価格</dt>
+            <dd id="bd-size">¥0</dd>
+          </div>
+          <div class="bd-row" id="bd-fuutai-row" hidden>
+            <dt>風帯</dt>
+            <dd id="bd-fuutai">¥0</dd>
+          </div>
+          <div class="bd-row" id="bd-fabric-row">
+            <dt>裂地</dt>
+            <dd id="bd-fabric">¥0</dd>
+          </div>
+          <div class="bd-row" id="bd-box-row">
+            <dt>箱</dt>
+            <dd id="bd-box">¥0</dd>
+          </div>
+        </dl>
+
+        <p class="price-note">表示の価格はお見積もりの目安です。確定の金額ではありません。</p>
+
+        <div class="cta-row">
+          <a href="https://line.me/R/ti/p/@447updgf" target="_blank" rel="noopener" id="cta-line" class="cta cta-line" role="button">
+            <svg class="cta-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M12 3C6.48 3 2 6.58 2 11c0 2.5 1.44 4.73 3.7 6.19-.1.86-.46 2.02-1.2 3.06-.18.25.02.6.32.55 1.9-.33 3.3-1.05 4.2-1.66.88.2 1.82.31 2.78.31 5.52 0 10-3.58 10-8S17.52 3 12 3z"/>
+            </svg>
+            <span>LINE で相談する</span>
+          </a>
+          <a href="/contact" id="cta-form" class="cta cta-form" role="button">フォームで相談する</a>
+        </div>
+        <p class="cta-note">仕上がりとお見積もりにご納得いただけましたら、お気軽にご相談ください。</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- 裏方専用: 裂地の追加(URL に #admin を付けたときだけ表示。お客様には出ない) -->
+  <section id="admin-panel" class="admin-panel" hidden aria-label="裂地の追加(裏方)">
+    <h2>裂地の追加(裏方専用)</h2>
+    <p class="admin-note">この画面はお客様には表示されません(URL の末尾に <code>#admin</code> を付けたときだけ表示)。追加した裂地はこのブラウザに保存され、各部位の裂地一覧に並びます。</p>
+    <div class="admin-form">
+      <label>画像(裂地のスワッチ)<input type="file" id="admin-fabric-file" accept="image/*" /></label>
+      <p class="admin-hint">画像を選ぶとトリミング画面が開きます。柄が継ぎ目なく繰り返す範囲を切り抜くと綺麗です。</p>
+      <div id="admin-fabric-preview-wrap" class="admin-preview" hidden>切り抜き: <img id="admin-fabric-preview" alt="取り込みプレビュー" /> <button type="button" id="admin-fabric-recrop" class="secondary">切り抜きを調整</button></div>
+      <label>名前<input type="text" id="admin-fabric-name" placeholder="例: 裂地 菊唐草(臙脂)" /></label>
+      <div class="admin-uses">用途(1つ以上):
+        <label><input type="checkbox" id="admin-use-tenchi" /> 天地</label>
+        <label><input type="checkbox" id="admin-use-nakamawashi" /> 中廻し・柱</label>
+        <label><input type="checkbox" id="admin-use-ichimonji" /> 一文字</label>
+      </div>
+      <label>等級
+        <select id="admin-fabric-grade">
+          <option value="standard">標準(+¥0)</option>
+          <option value="joh">上(+¥3,000)</option>
+          <option value="tokujou">特上(+¥5,000)</option>
+        </select>
+      </label>
+      <label>柄の大きさ<input type="number" id="admin-fabric-tile" value="40" min="8" max="200" /> px(プレビューで1柄が表示される大きさ)</label>
+      <div id="admin-fabric-warning" class="warning" role="alert" hidden></div>
+      <div class="admin-btns">
+        <button type="button" id="admin-fabric-add">追加する</button>
+        <button type="button" id="admin-fabric-cancel" class="secondary" hidden>編集をやめる</button>
+      </div>
+    </div>
+    <h3>追加済みの裂地(このブラウザに保存)</h3>
+    <ul id="admin-fabric-list" class="admin-list"></ul>
+  </section>
+
+  <!-- F5: 部位クリック → 用途別の裂地ピッカー -->
+  <dialog id="part-fabric-dialog" class="picker-dialog" aria-modal="true" aria-labelledby="part-fabric-title">
+    <h2 id="part-fabric-title" class="dialog-title"></h2>
+    <label class="show-all-label">
+      <input type="checkbox" id="part-fabric-showall" />
+      すべての裂地を表示する
+    </label>
+    <ul id="part-fabric-list" class="fabric-list" aria-label="部位向け裂地一覧"></ul>
+    <div class="dialog-btns">
+      <button type="button" id="part-fabric-clear-btn" class="secondary">無地に戻す</button>
+      <button type="button" id="part-fabric-close-btn" class="secondary">閉じる</button>
+    </div>
+  </dialog>
+
+  <!-- 写真(本紙)の位置調整(トリミング)ダイアログ -->
+  <dialog id="trim-dialog" class="picker-dialog" aria-modal="true" aria-labelledby="trim-dialog-title">
+    <h2 id="trim-dialog-title" class="dialog-title">写真の位置を調整</h2>
+    <p class="dialog-note">枠の外をドラッグ: 範囲を選び直す / 枠の中をドラッグ: 移動 / 四隅: 大きさ変更</p>
+    <div class="trim-options">
+      <label class="show-all-label">
+        <input type="checkbox" id="trim-lock-aspect" />
+        本紙の縦横比に合わせて固定する
+      </label>
+    </div>
+    <div class="trim-canvas-wrap">
+      <canvas id="trim-canvas" class="trim-canvas"></canvas>
+    </div>
+    <div id="trim-warning" class="warning" role="alert" hidden></div>
+    <div class="dialog-btns">
+      <button type="button" id="trim-confirm-btn">確定</button>
+      <button type="button" id="trim-cancel-btn" class="secondary">キャンセル</button>
+    </div>
+  </dialog>
+
+  <script src="js/catalog.js"></script>
+  <script src="js/pricing.js"></script>
+  <script src="js/presets.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

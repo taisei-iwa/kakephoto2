@@ -562,12 +562,16 @@ function SpPage() {
           公式LINEからオーダーする
           <Image src="/images/line-icon.svg" alt="LINE" width={32} height={30} />
         </a>
-        <Link href="/contact" className="flex items-center justify-center gap-2 w-full h-[56px] bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] mb-[30px]">
+        <Link href="/contact" className="flex items-center justify-center gap-2 w-full h-[56px] bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] mb-[12px]">
           お問い合わせからオーダーする
           <span className="inline-block w-[24px] h-[1px] bg-[#710b26] relative">
             <span className="absolute right-0 top-1/2 -translate-y-1/2 border-r-[1.5px] border-t-[1.5px] border-[#710b26] w-[6px] h-[6px] rotate-45" />
           </span>
         </Link>
+        {/* オーダーシミュレーター */}
+        <a href="/simulator/index.html" className="flex items-center justify-center w-full h-[56px] bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] mb-[30px]">
+          オーダーシミュレーターを使用する
+        </a>
 
         {/* Gallery */}
         <div className="overflow-hidden -mx-[20px] mb-[30px]">
@@ -888,6 +892,13 @@ export default function Home() {
               <span className="absolute right-0 top-1/2 -translate-y-1/2 border-r-[2px] border-t-[2px] border-[#710b26] w-[8px] h-[8px] rotate-45" />
             </span>
           </Link>
+          {/* オーダーシミュレーター(2ボタンの下・中央) */}
+          <a
+            href="/simulator/index.html"
+            className="absolute left-[640px] top-[2560px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[4.4px] hover:opacity-90 transition-opacity"
+          >
+            オーダーシミュレーターを使用する
+          </a>
 
           {/* Gallery — Figma: x=-30 y=2574 w=1979 h=280 */}
           <div className="absolute left-0 top-[2729px] w-[1920px] overflow-hidden">
