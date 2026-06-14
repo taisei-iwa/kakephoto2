@@ -61,10 +61,17 @@ function ScaledWrapper({ children, spChildren }: { children: React.ReactNode; sp
   );
 }
 
-const CATEGORIES = ["雅コース", "極コース", "特注オーダーメイド", "その他"];
+const CATEGORIES = ["オーダーのご相談", "その他"];
 
 function useContactForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  // オーダーシミュレーターから ?summary=... で渡された内容をメッセージ欄に初期表示する。
+  useEffect(() => {
+    const s = new URLSearchParams(window.location.search).get("summary");
+    if (s) setMessage(s);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -83,11 +90,11 @@ function useContactForm() {
     }
   };
 
-  return { status, handleSubmit };
+  return { status, handleSubmit, message, setMessage };
 }
 
 function ContactSp() {
-  const { status, handleSubmit } = useContactForm();
+  const { status, handleSubmit, message, setMessage } = useContactForm();
 
   return (
     <main className="w-[375px] bg-[#FFFFFB] text-[#710b26] overflow-hidden min-h-screen pb-[60px]" style={{ fontFamily: 'Zen Old Mincho, serif' }}>
@@ -169,6 +176,8 @@ function ContactSp() {
                   name="message"
                   rows={5}
                   required
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
                   placeholder="ご相談内容や、掛け軸にされたい写真について詳しくお聞かせください。"
                   className="bg-transparent border border-[#710b26]/30 p-4 focus:border-[#710b26] outline-none transition-colors text-[14px] leading-[24px] tracking-[1px]"
                 />
@@ -200,7 +209,7 @@ function ContactSp() {
 }
 
 function ContactPc() {
-  const { status, handleSubmit } = useContactForm();
+  const { status, handleSubmit, message, setMessage } = useContactForm();
 
   return (
     <main className="w-[1920px] bg-[#FFFFFB] text-[#710b26] relative overflow-hidden min-h-screen" style={{ fontFamily: 'Zen Old Mincho, serif' }}>
@@ -286,6 +295,8 @@ function ContactPc() {
                     name="message"
                     rows={6}
                     required
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
                     placeholder="具体的に検討されているお写真の内容や、飾りたい場所の雰囲気、納期のご希望などがございましたら自由にご記入ください。"
                     className="bg-transparent border border-[#710b26]/20 p-6 focus:border-[#710b26] outline-none transition-colors text-[20px] leading-[40px] tracking-[2px]"
                   />

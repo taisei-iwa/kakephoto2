@@ -45,7 +45,7 @@ function PolicyContent() {
           <h3 className="text-[14px] md:text-[22px] tracking-[1px] md:tracking-[3px] mb-[16px] md:mb-[24px] font-medium">Shipping</h3>
           <ul className="space-y-[10px] md:space-y-[16px]">
             {[
-              "Japan (domestic): Free shipping. Included in the product price.",
+              "Japan (domestic): Shipping is charged separately from the product price (actual cost).",
               "Overseas: We do ship internationally, but the fee varies by destination and method. We will provide a custom quote — please reach out via the contact form.",
               "Customs & import duties: For international shipments, any customs or import duties at destination are the recipient's responsibility.",
               "Carriers: Yamato Transport (domestic); EMS or DHL (international).",
@@ -125,8 +125,8 @@ function PolicyContent() {
               ["Operations Manager", "Masakatsu Iwasaki"],
               ["Address", "355 Iwaya, Nanto City, Toyama 932-0203, Japan"],
               ["Contact", "Phone: 0763-82-3529\nEmail: iwasaki.seishodo@gmail.com"],
-              ["Sales Price", "Shown on each course page (from ¥46,000)"],
-              ["Additional Fees", "Consumption tax, bank transfer fees (where applicable). For international shipments, separate shipping fees and any customs / import duties at destination."],
+              ["Sales Price", "Fully custom order (from ¥46,000, tax incl., shipping separate)"],
+              ["Additional Fees", "Consumption tax, shipping fees, bank transfer fees (where applicable). For international shipments, any customs / import duties at destination."],
               ["Delivery Time", "As a fully made-to-order product, items ship approximately 1–2 months after the order (design confirmation).\n* Delivery may be delayed depending on demand and weather."],
               ["Payment Methods", "Credit card / Bank transfer / PayPal"],
               ["Payment Due", "Credit card & PayPal: charged at the time of order.\nBank transfer: please remit to our designated account within 7 days of placing the order."],

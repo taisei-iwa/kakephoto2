@@ -109,7 +109,7 @@ function ContactSp() {
                 <span className="text-[10px] bg-[#710b26] text-white px-2 py-[2px] rounded-sm">Required</span>
               </label>
               <div className="flex flex-col gap-3 mt-2">
-                {["Miyabi", "Kiwami", "Fully Custom Order", "Other"].map((item) => (
+                {["Order inquiry", "Other"].map((item) => (
                   <label key={item} className="flex items-center gap-3 cursor-pointer">
                     <input type="radio" name="category" className="accent-[#710b26] w-[16px] h-[16px]" />
                     <span className="text-[14px] tracking-[1px] text-black">{item}</span>
@@ -183,7 +183,7 @@ function ContactPc() {
                   <span className="text-[12px] bg-[#710b26] text-white px-3 py-[2px] rounded-sm">Required</span>
                 </label>
                 <div className="flex gap-[40px] mt-2">
-                  {["Miyabi", "Kiwami", "Fully Custom Order", "Other"].map((item) => (
+                  {["Order inquiry", "Other"].map((item) => (
                     <label key={item} className="flex items-center gap-4 cursor-pointer group">
                       <input type="radio" name="category" className="accent-[#710b26] w-[20px] h-[20px]" />
                       <span className="text-[18px] tracking-[2px] group-hover:opacity-80 transition-opacity text-black">{item}</span>

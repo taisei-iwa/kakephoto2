@@ -469,7 +469,7 @@ function SpPage() {
         </p>
 
         {/* 特注オーダーメイド */}
-        <div className="bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden mb-[20px]">
+        <div className="bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden mb-[90px]">
           <div className="relative w-full h-[220px]">
             <Image src="/images/order-photo.jpg" alt="特注オーダーメイド" fill className="object-cover" />
           </div>
@@ -478,61 +478,12 @@ function SpPage() {
               <h3 className="text-[18px] tracking-[4px]">特注オーダーメイド</h3>
               <span className="text-[12px] tracking-[2px] text-[#323232]">Photo size FREE</span>
             </div>
-            <div className="text-[12px] tracking-[2px] text-black leading-[24px] mb-2">
-              <p>縦：110-130cm / 横：30cm~</p>
-            </div>
             <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-[16px] tracking-[2px] text-black">88,000円～</span>
-              <span className="text-[11px] tracking-[1px] text-black">(税込/国内送料込)</span>
+              <span className="text-[16px] tracking-[2px] text-black">46,000円～</span>
+              <span className="text-[11px] tracking-[1px] text-black">(税込/送料別)</span>
             </div>
             <p className="text-[12px] tracking-[1.5px] text-black leading-[22px]">
-              写真の印刷サイズは、ハガキサイズからA3サイズまで自由にお選びいただけます。使用する裂地（きれじ）や完成形に制限はなく、自由なカスタマイズが可能です。
-            </p>
-          </div>
-        </div>
-
-        {/* 雅コース */}
-        <div className="bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden mb-[20px]">
-          <div className="relative w-full h-[220px]">
-            <Image src="/images/order-photo-miyabi.jpg" alt="雅コース" fill className="object-cover" />
-          </div>
-          <div className="p-[16px]">
-            <div className="mb-1">
-              <h3 className="text-[18px] tracking-[4px]">雅コース</h3>
-              <span className="text-[12px] tracking-[2px] text-[#323232]">Photo size A4</span>
-            </div>
-            <div className="text-[12px] tracking-[2px] text-black leading-[24px] mb-2">
-              <p>縦：100-120cm / 横：23cm~</p>
-            </div>
-            <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-[16px] tracking-[2px] text-black">46,000円</span>
-              <span className="text-[11px] tracking-[1px] text-black">(税込/国内送料込)</span>
-            </div>
-            <p className="text-[12px] tracking-[1.5px] text-black leading-[22px]">
-              お写真をA4サイズに拡大印刷して仕上げます。あらかじめ厳選された裂地（きれじ）や形状のラインナップから、お好みの組み合わせをお選びいただけます。
-            </p>
-          </div>
-        </div>
-
-        {/* 極コース */}
-        <div className="bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden mb-[90px]">
-          <div className="relative w-full h-[220px]">
-            <Image src="/images/order-photo-kiwami.jpg" alt="極コース" fill className="object-cover" />
-          </div>
-          <div className="p-[16px]">
-            <div className="mb-1">
-              <h3 className="text-[18px] tracking-[4px]">極コース</h3>
-              <span className="text-[12px] tracking-[2px] text-[#323232]">Photo size A3</span>
-            </div>
-            <div className="text-[12px] tracking-[2px] text-black leading-[24px] mb-2">
-              <p>縦：110-130cm / 横：30cm~</p>
-            </div>
-            <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-[16px] tracking-[2px] text-black">77,000円</span>
-              <span className="text-[11px] tracking-[1px] text-black">(税込/国内送料込)</span>
-            </div>
-            <p className="text-[12px] tracking-[1.5px] text-black leading-[22px]">
-              お写真を、存在感あふれるA3サイズに拡大印刷いたします。ダイナミックな大きさでありながら、細部まで鮮明に再現されます。
+              写真の印刷サイズは、ハガキサイズからA3サイズまで自由にお選びいただけます。使用する裂地（きれじ）や完成形に制限はなく、自由なカスタマイズが可能です。使用する裂地によって価格が変動することがあります。仕上がりイメージとお見積もりは、オーダーシミュレーターをぜひご活用ください。
             </p>
           </div>
         </div>
@@ -778,7 +729,7 @@ export default function Home() {
       <div className="vp-pc-only vp-pc-root">
         <main className="w-[1920px]">
         {/* ===== Order + Footer — Figma: bg 1920x3143 ===== */}
-        <section className="relative w-[1920px] h-[3298px] bg-[#710b26] text-white">
+        <section className="relative w-[1920px] h-[2698px] bg-[#710b26] text-white">
           <h2 className="absolute z-10 left-[99px] top-[118px] text-[40px] tracking-[16px]">Order</h2>
           <p className="absolute z-10 left-[523px] top-[308px] w-[875px] text-[18px] tracking-[3.6px] leading-[50px] text-center" style={{ fontFamily: 'Zen Old Mincho' }}>
             掛け軸は、　オーダーにてお作りしています。<br />写真の内容だけでなく、　裂地の色や質感、　全体の配色バランスまで。<br />空間や飾る場所を想像しながら、<br />一緒に仕立てていく時間も　大切にしています。
@@ -799,59 +750,17 @@ export default function Home() {
             <h3 className="absolute left-[801px] top-[88px] text-[24px] tracking-[9.6px] leading-[50px]">特注オーダーメイド</h3>
             {/* Photo size FREE */}
             <span className="absolute left-[1140px] top-[88px] text-[18px] tracking-[7.2px] text-[#323232] leading-[50px]">Photo size FREE</span>
-            {/* サイズ */}
-            <div className="absolute left-[802px] top-[165px] text-[14px] tracking-[5.6px] text-black leading-[30px]">
-              <p>縦：110-130cm</p>
-              <p>横：30cm~</p>
-            </div>
             {/* 価格 */}
-            <span className="absolute left-[1520px] top-[157px] text-[18px] tracking-[7.2px] text-black leading-[50px]">88,000円～</span>
-            <span className="absolute left-[1532px] top-[182px] text-[14px] tracking-[2.8px] text-black leading-[50px]">(税込/国内送料込)</span>
+            <span className="absolute left-[1520px] top-[157px] text-[18px] tracking-[7.2px] text-black leading-[50px]">46,000円～</span>
+            <span className="absolute left-[1532px] top-[182px] text-[14px] tracking-[2.8px] text-black leading-[50px]">(税込/送料別)</span>
             {/* 説明テキスト */}
-            <p className="absolute left-[802px] top-[260px] w-[860px] text-[16px] tracking-[7.2px] text-black leading-[28px]">
-              写真の印刷サイズは、ハガキサイズからA3サイズまで自由にお選びいただけます。<br />使用する裂地（きれじ）や完成形に制限はなく、自由なカスタマイズが可能です。ご自身のこだわりを妥協なく形にしたい方には、こちらのコースをおすすめいたします。
+            <p className="absolute left-[802px] top-[230px] w-[860px] text-[16px] tracking-[7.2px] text-black leading-[28px]">
+              写真の印刷サイズは、ハガキサイズからA3サイズまで自由にお選びいただけます。<br />使用する裂地（きれじ）や完成形に制限はなく、自由なカスタマイズが可能です。ご自身のこだわりを妥協なく形にしたい方には、こちらのコースをおすすめいたします。<br />使用する裂地によって価格が変動することがあります。仕上がりイメージとお見積もりは、オーダーシミュレーターをぜひご活用ください。
             </p>
-          </div>
-
-
-          {/* 雅・極コース背景 — Figma: x=99 y=1080 w=1721 h=522 */}
-          <div className="absolute left-[99px] top-[1175px] w-[1721px] h-[522px] bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden">
-            {/* 雅コース */}
-            <h3 className="absolute left-[54px] top-[54px] text-[24px] tracking-[9.6px] leading-[50px]">雅コース</h3>
-            <span className="absolute left-[211px] top-[53px] text-[18px] tracking-[7.2px] text-[#323232] leading-[50px]">Photo sizeA4</span>
-            <div className="absolute left-[54px] top-[125px] w-[382px] h-[252px] overflow-hidden">
-              <Image src="/images/order-photo-miyabi.jpg" alt="雅コース" fill className="object-cover" />
-            </div>
-            <p className="absolute left-[475px] top-[119px] w-[326px] text-[14px] tracking-[4.8px] text-black leading-[26px]">
-              お写真をA4サイズに拡大印刷して仕上げます。あらかじめ厳選された裂地（きれじ）や形状のラインナップから、お好みの組み合わせをお選びいただき、理想の完成イメージを形にしていきます。
-            </p>
-            <div className="absolute left-[54px] top-[428px] text-[14px] tracking-[5.6px] text-black leading-[30px]">
-              <p>縦：100-120cm</p>
-              <p>横23cm~</p>
-            </div>
-            <span className="absolute left-[327px] top-[411px] text-[18px] tracking-[7.2px] text-black leading-[50px]">46,000円</span>
-            <span className="absolute left-[327px] top-[443px] text-[14px] tracking-[2.8px] text-black leading-[50px]">(税込/国内送料込)</span>
-
-
-            {/* 極コース */}
-            <h3 className="absolute left-[913px] top-[51px] text-[24px] tracking-[9.6px] leading-[50px]">極コース</h3>
-            <span className="absolute left-[1070px] top-[53px] text-[18px] tracking-[7.2px] text-[#323232] leading-[50px]">Photo sizeA3</span>
-            <div className="absolute left-[913px] top-[125px] w-[382px] h-[252px] overflow-hidden">
-              <Image src="/images/order-photo-kiwami.jpg" alt="極コース" fill className="object-cover" />
-            </div>
-            <p className="absolute left-[1334px] top-[119px] w-[326px] text-[14px] tracking-[4.8px] text-black leading-[26px]">
-              お写真を、存在感あふれるA3サイズに拡大印刷いたします。<br />ダイナミックな大きさでありながら、細部まで鮮明に再現されるため、大切な思い出がより一層の臨場感とともに蘇ります。お部屋の主役となる十分なサイズ感は、ご自宅用はもちろん、記念品やお祝いの品としても大変喜ばれる仕上がりです。
-            </p>
-            <div className="absolute left-[918px] top-[417px] text-[14px] tracking-[5.6px] text-black leading-[30px]">
-              <p>縦：110-130cm</p>
-              <p>横：30cm~</p>
-            </div>
-            <span className="absolute left-[1176px] top-[411px] text-[18px] tracking-[7.2px] text-black leading-[50px]">77,000円</span>
-            <span className="absolute left-[1181px] top-[436px] text-[14px] tracking-[2.8px] text-black leading-[50px]">(税込/国内送料込)</span>
           </div>
 
           {/* オーダーの流れ — Figma: x=300 y=1804 w=1320 */}
-          <div className="absolute left-[300px] top-[1899px] w-[1320px]">
+          <div className="absolute left-[300px] top-[1299px] w-[1320px]">
             <h3 className="text-[28px] tracking-[11.2px] text-center underline mb-[60px]">
               オーダーの流れ
             </h3>
@@ -878,14 +787,14 @@ export default function Home() {
             href="https://line.me/R/ti/p/@447updgf"
             target="_blank"
             rel="noopener noreferrer"
-            className="absolute left-[300px] top-[2430px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[4.4px] hover:opacity-90 transition-opacity"
+            className="absolute left-[300px] top-[1830px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[4.4px] hover:opacity-90 transition-opacity"
           >
             KAKEPHOTO 公式LINEからオーダーする
             <Image src="/images/line-icon.svg" alt="LINE" width={57} height={54} />
           </a>
           <Link
             href="/contact"
-            className="absolute left-[980px] top-[2430px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[4.4px] hover:opacity-90 transition-opacity"
+            className="absolute left-[980px] top-[1830px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[4.4px] hover:opacity-90 transition-opacity"
           >
             お問い合わせからオーダーする
             <span className="inline-block w-[41px] h-[1px] bg-[#710b26] relative ml-2">
@@ -895,13 +804,13 @@ export default function Home() {
           {/* オーダーシミュレーター(2ボタンの下・中央) */}
           <a
             href="/simulator/index.html"
-            className="absolute left-[640px] top-[2560px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[4.4px] hover:opacity-90 transition-opacity"
+            className="absolute left-[640px] top-[1960px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[4.4px] hover:opacity-90 transition-opacity"
           >
             オーダーシミュレーターを使用する
           </a>
 
           {/* Gallery — Figma: x=-30 y=2574 w=1979 h=280 */}
-          <div className="absolute left-0 top-[2729px] w-[1920px] overflow-hidden">
+          <div className="absolute left-0 top-[2129px] w-[1920px] overflow-hidden">
             <motion.div
               className="flex w-max"
               animate={{ x: [0, -3990] }}
@@ -916,7 +825,7 @@ export default function Home() {
           </div>
 
           {/* Footer — Figma: x=100 y=2926 w=1720 h=217 */}
-          <footer className="absolute left-[100px] top-[3081px] w-[1720px] h-[217px] text-white">
+          <footer className="absolute left-[100px] top-[2481px] w-[1720px] h-[217px] text-white">
             {/* Logo */}
             <button
               type="button"

@@ -143,6 +143,14 @@
     document.getElementById("trim-lock-aspect").addEventListener("change", onTrimLockToggle);
     setupTrimCanvasDrag();
 
+    // 共有(LINE で相談・フォームへ引き継ぎ・画像保存)
+    const ctaLine = document.getElementById("cta-line");
+    const ctaForm = document.getElementById("cta-form");
+    const saveImageBtn = document.getElementById("save-image-btn");
+    if (ctaLine) ctaLine.addEventListener("click", onLineClick);
+    if (ctaForm) ctaForm.addEventListener("click", onFormClick);
+    if (saveImageBtn) saveImageBtn.addEventListener("click", onSaveImageClick);
+
     window.addEventListener("resize", () => render());
 
     // 裂地にカーソルを重ねたら、一緒に変わる部位をまとめて囲む(委譲)
@@ -1077,7 +1085,13 @@
       if (stage && fw > 0 && fh > 0 && pw > 0 && ph > 0) {
         const overheadW = stage.offsetWidth - pw;   // 高さラベル等の固定幅ぶん
         const overheadH = stage.offsetHeight - ph;  // 幅ラベル等の固定高ぶん
-        const shrink = Math.min((fw - overheadW) / pw, (fh - overheadH) / ph) * 0.98;
+        // 軸先(左右に ~20px)・軸棒(上 ~8px / 下 ~10px)はプレビュー枠の外へ
+        // はみ出す固定 px。その分を余白として確保し、下端の軸棒が見切れるのを防ぐ。
+        const jikuPadX = 22, jikuPadY = 12;
+        const shrink = Math.min(
+          (fw - overheadW - jikuPadX * 2) / pw,
+          (fh - overheadH - jikuPadY * 2) / ph
+        ) * 0.90;
         if (shrink > 0 && shrink < 0.999) {
           render(scale * shrink);
           return;
@@ -1411,6 +1425,295 @@
   function onTrimCancel() {
     document.getElementById("trim-dialog").close();
     trimCtx = null;
+  }
+
+  // ===========================================================================
+  // 共有(LINE で相談・フォームへ引き継ぎ・プレビュー画像の保存)
+  //   静的サイトのため自動送信はできない。お客様の選択内容をテキストに、
+  //   プレビューを PNG に書き出し、LINE は手動添付、フォームは本文へ引き継ぐ。
+  // ===========================================================================
+  const LINE_URL = "https://line.me/R/ti/p/@447updgf";
+  const JIKU_LABEL = { black: "黒", brown: "茶", ivory: "アイボリー" };
+  const JIKU_GRAD = {
+    black: ["#565656", "#333333", "#111111"],
+    brown: ["#9c7a50", "#7a5c38", "#543c22"],
+    ivory: ["#f6f0e2", "#e7dac2", "#d3c2a2"],
+  };
+
+  // 現在の設定を、職人が読んで分かる注文内容テキストにまとめる。
+  function buildOrderSummary() {
+    const layout = computeLayout(activePreset(), state.honshiW, state.honshiH, partOptions());
+    const lines = [];
+    lines.push("【掛軸オーダー内容】");
+    lines.push("■ 本紙サイズ: " + sizeSummaryText());
+    const fin = finishedSizeText(layout);
+    if (fin) lines.push("■ 仕上がり寸法(目安): " + fin);
+    lines.push("■ 仕立て: " + formatSummaryText());
+    lines.push("■ 裂地:");
+    fabricSummaryLines(layout).forEach((l) => lines.push("　・" + l));
+    lines.push("■ 軸先の色: " + (JIKU_LABEL[state.jikuColor] || state.jikuColor));
+    lines.push("■ 箱: " + (state.boxKey === "kiri" ? "桐箱(+¥11,000)" : "紙箱(無料)"));
+    lines.push("■ お見積もり(目安): " + el.priceTotal.textContent + "(税込・送料別)");
+    return lines.join("\n");
+  }
+
+  function sizeSummaryText() {
+    if (!state.sizeMode) return "未選択";
+    if (state.sizeMode === "free") {
+      return "自由サイズ " + Math.round(state.honshiW) + " × " + Math.round(state.honshiH) + " mm";
+    }
+    const f = FIXED_SIZES[state.sizeMode];
+    const orient = state.honshiW > state.honshiH ? "横" : "縦";
+    return (f ? f.label : state.sizeMode.toUpperCase()) + "(" + orient + ")";
+  }
+
+  function finishedSizeText(layout) {
+    if (!state.sizeMode) return "";
+    const fmtId = (activePreset() || {}).id || state.formatId;
+    const fixed = finishedSizeFor(state.sizeMode, state.honshiW, state.honshiH, fmtId);
+    if (fixed) return "幅 " + cmRange(fixed.w) + " cm × 高さ " + cmRange(fixed.h) + " cm";
+    const r5 = (mm) => Math.round(mm / 10 / 5) * 5;
+    return "幅 約" + r5(layout.totalW) + " cm × 高さ 約" + r5(layout.totalH) + " cm";
+  }
+
+  function formatSummaryText() {
+    const preset = activePreset() || {};
+    let s = preset.label || "";
+    const po = partOptions();
+    if (!po.noIchimonji) s += "・一文字追加";
+    if (!po.noFuutai) s += "・風帯あり";
+    return s;
+  }
+
+  function fabricSummaryLines(layout) {
+    const groups = effectiveGroups();
+    const out = [];
+    Object.keys(groups).forEach((k) => {
+      const g = groups[k];
+      if (g.linkedInto) return; // 別グループへ統合済み(例: 柱→天地)は重複表示しない
+      const presentKeys = g.keys.filter((key) => layout.parts[key]);
+      if (presentKeys.length === 0) return; // この形式に存在しない部位
+      let name = "無地(お任せ)";
+      for (const key of presentKeys) {
+        const id = state.assignments[key];
+        if (id) {
+          const fab = state.fabrics.find((f) => f.id === id);
+          if (fab) { name = fab.name; break; }
+        }
+      }
+      out.push(g.label + ": " + name);
+    });
+    return out;
+  }
+
+  // ---- プレビューを PNG(canvas)に書き出す ----
+  // on-screen と同じレイアウト計算を使い、本紙長辺を固定 px にして高解像度で描く。
+  function renderPreviewToCanvas() {
+    const EXPORT_HONSHI_LONG = 720;
+    const scale = EXPORT_HONSHI_LONG / Math.max(state.honshiW, state.honshiH);
+    const layout = computeLayout(activePreset(), state.honshiW, state.honshiH, partOptions());
+    const bodyW = layout.totalW * scale;
+    const bodyH = layout.totalH * scale;
+    const u = bodyW * 0.02; // 軸棒・軸先の装飾サイズの基準
+    const padX = Math.round(u * 1.6);
+    const padTop = Math.round(u * 1.2);
+    const padBottom = Math.round(u * 2.0);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bodyW + padX * 2);
+    canvas.height = Math.round(bodyH + padTop + padBottom);
+    const ctx = canvas.getContext("2d");
+    const ox = padX, oy = padTop;
+
+    const fabSrc = (fab) => (fab.cropRect && fab._croppedDataUrl ? fab._croppedDataUrl : fab.dataUrl);
+    const srcSet = {};
+    if (state.honshiImage) srcSet[state.honshiImage.dataUrl] = true;
+    Object.keys(state.assignments).forEach((key) => {
+      const fab = state.fabrics.find((f) => f.id === state.assignments[key]);
+      if (fab) srcSet[fabSrc(fab)] = true;
+    });
+
+    return loadImageMap(Object.keys(srcSet)).then((imgs) => {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const drawOrder = [
+        "ten", "nakaUe", "honshi", "ichimonjiUe", "ichimonjiShita",
+        "hashiraLeft", "hashiraRight", "nakaShita", "chi",
+        "fuutaiLeft", "fuutaiRight", "heriLeft", "heriRight",
+      ];
+      drawOrder.forEach((key) => {
+        const rect = layout.parts[key];
+        if (!rect) return;
+        const x = ox + rect.x * scale, y = oy + rect.y * scale;
+        const w = rect.w * scale, h = rect.h * scale;
+        if (rect.part === "honshi") {
+          drawHonshiCover(ctx, imgs[state.honshiImage && state.honshiImage.dataUrl], x, y, w, h);
+        } else {
+          const fab = state.fabrics.find((f) => f.id === state.assignments[key]);
+          if (fab && imgs[fabSrc(fab)]) {
+            fillTiled(ctx, imgs[fabSrc(fab)], x, y, w, h, fab.tileW * scale, fab.tileH * scale);
+          } else {
+            ctx.fillStyle = "#efe9de"; // 無地
+            ctx.fillRect(x, y, w, h);
+          }
+        }
+        ctx.strokeStyle = "rgba(80,15,30,0.12)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+      });
+
+      // 軸棒(上下)・軸先
+      const tenFab = state.fabrics.find((f) => f.id === state.assignments.ten);
+      const chiFab = state.fabrics.find((f) => f.id === state.assignments.chi);
+      const rodH = u * 1.1;
+      drawRod(ctx, imgs[tenFab && fabSrc(tenFab)], tenFab, scale, ox - u * 0.2, oy - rodH * 0.4, bodyW + u * 0.4, rodH);
+      const bottomY = oy + bodyH - rodH * 0.2;
+      drawRod(ctx, imgs[chiFab && fabSrc(chiFab)], chiFab, scale, ox - u * 0.2, bottomY, bodyW + u * 0.4, rodH * 1.3);
+      const capW = u * 1.4, capH = rodH * 1.4;
+      drawJikuEnd(ctx, ox - capW * 0.8, bottomY, capW, capH);
+      drawJikuEnd(ctx, ox + bodyW - capW * 0.2, bottomY, capW, capH);
+
+      return canvas;
+    });
+  }
+
+  function loadImageMap(srcs) {
+    return Promise.all(srcs.map((src) => new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve([src, img]);
+      img.onerror = () => resolve([src, null]);
+      img.src = src;
+    }))).then((pairs) => {
+      const map = {};
+      pairs.forEach((p) => { if (p[1]) map[p[0]] = p[1]; });
+      return map;
+    });
+  }
+
+  function fillTiled(ctx, img, x, y, w, h, tileW, tileH) {
+    tileW = Math.max(2, tileW); tileH = Math.max(2, tileH);
+    const tile = document.createElement("canvas");
+    tile.width = Math.round(tileW); tile.height = Math.round(tileH);
+    tile.getContext("2d").drawImage(img, 0, 0, tile.width, tile.height);
+    const pat = ctx.createPattern(tile, "repeat");
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+    ctx.translate(x, y);
+    ctx.fillStyle = pat;
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+  }
+
+  function drawHonshiCover(ctx, img, x, y, w, h) {
+    if (!img) { ctx.fillStyle = "#f6f2ea"; ctx.fillRect(x, y, w, h); return; }
+    const crop = state.honshiImage.cropRect;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+    if (!crop) {
+      const s = Math.max(w / img.width, h / img.height);
+      const dw = img.width * s, dh = img.height * s;
+      ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+    } else {
+      const sc = Math.max(w / crop.sw, h / crop.sh);
+      const dx = x - crop.sx * sc + (w - crop.sw * sc) / 2;
+      const dy = y - crop.sy * sc + (h - crop.sh * sc) / 2;
+      ctx.drawImage(img, dx, dy, img.width * sc, img.height * sc);
+    }
+    ctx.restore();
+  }
+
+  function drawRod(ctx, img, fab, scale, x, y, w, h) {
+    if (fab && img) {
+      fillTiled(ctx, img, x, y, w, h, fab.tileW * scale, fab.tileH * scale);
+    } else {
+      ctx.fillStyle = "#e3dccd";
+      ctx.fillRect(x, y, w, h);
+    }
+    ctx.strokeStyle = "rgba(80,15,30,0.14)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  }
+
+  function drawJikuEnd(ctx, x, y, w, h) {
+    const c = JIKU_GRAD[state.jikuColor] || JIKU_GRAD.brown;
+    const grad = ctx.createLinearGradient(0, y, 0, y + h);
+    grad.addColorStop(0, c[0]); grad.addColorStop(0.4, c[1]); grad.addColorStop(1, c[2]);
+    roundRect(ctx, x, y, w, h, Math.min(w, h) * 0.3);
+    ctx.fillStyle = grad; ctx.fill();
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function downloadCanvas(canvas, filename) {
+    let url;
+    try { url = canvas.toDataURL("image/png"); } catch (e) { return false; }
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => a.remove(), 0);
+    return true;
+  }
+
+  function savePreviewImage() {
+    return renderPreviewToCanvas()
+      .then((canvas) => downloadCanvas(canvas, "kakephoto-kakejiku-preview.png"))
+      .catch(() => false);
+  }
+
+  function showToast(msg) {
+    let t = document.getElementById("share-toast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "share-toast";
+      t.className = "share-toast";
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    // 再表示でアニメーションさせるため一度クラスを外す
+    t.classList.remove("show");
+    void t.offsetWidth;
+    t.classList.add("show");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove("show"), 6000);
+  }
+
+  function onSaveImageClick() {
+    savePreviewImage().then((ok) => {
+      showToast(ok ? "プレビュー画像を保存しました。" : "画像の保存に失敗しました。お手数ですが画面の写真をお撮りください。");
+    });
+  }
+
+  // LINE: 本文をコピー＋画像を保存し、LINE は既定の動作(新規タブ)で開く。
+  // preventDefault しないのは、プログラム的な window.open がポップアップブロックされるのを避けるため。
+  function onLineClick() {
+    const summary = buildOrderSummary();
+    let copied = false;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(summary).then(() => { copied = true; }).catch(() => {});
+    }
+    savePreviewImage().then((imgOk) => {
+      showToast(
+        (imgOk ? "プレビュー画像を保存し、" : "") +
+        "ご希望内容をコピーしました。LINE のトーク画面で画像を添付し、本文を貼り付けて送信してください。"
+      );
+    });
+  }
+
+  // フォーム: 選択内容をクエリに載せて /contact へ。フォームの本文に初期表示される。
+  function onFormClick(e) {
+    e.preventDefault();
+    const href = e.currentTarget.getAttribute("href") || "/contact";
+    const sep = href.indexOf("?") >= 0 ? "&" : "?";
+    window.location.href = href + sep + "summary=" + encodeURIComponent(buildOrderSummary());
   }
 
   // ---- ユーティリティ ----

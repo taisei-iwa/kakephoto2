@@ -380,7 +380,7 @@ function SpPage() {
         </p>
 
         {/* Fully Custom Order */}
-        <div className="bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden mb-[20px]">
+        <div className="bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden mb-[90px]">
           <div className="relative w-full h-[220px]">
             <Image src="/images/order-photo.jpg" alt="Fully Custom Order" fill className="object-cover" />
           </div>
@@ -389,61 +389,12 @@ function SpPage() {
               <h3 className="text-[18px] tracking-[3px]">Fully Custom Order</h3>
               <span className="text-[12px] tracking-[2px] text-[#323232]">Photo size FREE</span>
             </div>
-            <div className="text-[12px] tracking-[1px] text-black leading-[24px] mb-2">
-              <p>Height: 110&ndash;130cm / Width: 30cm+</p>
-            </div>
             <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-[16px] tracking-[2px] text-black">From &yen;88,000</span>
-              <span className="text-[11px] tracking-[1px] text-black">(tax &amp; shipping incl., Japan only)</span>
+              <span className="text-[16px] tracking-[2px] text-black">From &yen;46,000</span>
+              <span className="text-[11px] tracking-[1px] text-black">(tax incl., shipping separate)</span>
             </div>
             <p className="text-[12px] tracking-[1px] text-black leading-[22px]">
-              Choose any print size from postcard to A3. No restrictions on kireji fabric or final form &mdash; every detail can be customized to your vision.
-            </p>
-          </div>
-        </div>
-
-        {/* Miyabi */}
-        <div className="bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden mb-[20px]">
-          <div className="relative w-full h-[220px]">
-            <Image src="/images/order-photo-miyabi.jpg" alt="Miyabi course" fill className="object-cover" />
-          </div>
-          <div className="p-[16px]">
-            <div className="mb-1">
-              <h3 className="text-[18px] tracking-[3px]">Miyabi</h3>
-              <span className="text-[12px] tracking-[2px] text-[#323232]">Photo size A4</span>
-            </div>
-            <div className="text-[12px] tracking-[1px] text-black leading-[24px] mb-2">
-              <p>Height: 100&ndash;120cm / Width: 23cm+</p>
-            </div>
-            <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-[16px] tracking-[2px] text-black">&yen;46,000</span>
-              <span className="text-[11px] tracking-[1px] text-black">(tax &amp; shipping incl., Japan only)</span>
-            </div>
-            <p className="text-[12px] tracking-[1px] text-black leading-[22px]">
-              Your photograph enlarged and printed at A4. Choose your favorite combination from a curated lineup of kireji fabrics and forms.
-            </p>
-          </div>
-        </div>
-
-        {/* Kiwami */}
-        <div className="bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden mb-[90px]">
-          <div className="relative w-full h-[220px]">
-            <Image src="/images/order-photo-kiwami.jpg" alt="Kiwami course" fill className="object-cover" />
-          </div>
-          <div className="p-[16px]">
-            <div className="mb-1">
-              <h3 className="text-[18px] tracking-[3px]">Kiwami</h3>
-              <span className="text-[12px] tracking-[2px] text-[#323232]">Photo size A3</span>
-            </div>
-            <div className="text-[12px] tracking-[1px] text-black leading-[24px] mb-2">
-              <p>Height: 110&ndash;130cm / Width: 30cm+</p>
-            </div>
-            <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-[16px] tracking-[2px] text-black">&yen;77,000</span>
-              <span className="text-[11px] tracking-[1px] text-black">(tax &amp; shipping incl., Japan only)</span>
-            </div>
-            <p className="text-[12px] tracking-[1px] text-black leading-[22px]">
-              Your photograph enlarged to a striking A3. Dynamic in size, yet rendered with vivid detail.
+              Choose any print size from postcard to A3. No restrictions on kireji fabric or final form &mdash; every detail can be customized to your vision. Pricing may vary depending on the kireji fabric you choose. Please make use of our order simulator to preview the finished piece and an estimate.
             </p>
           </div>
         </div>
@@ -633,7 +584,7 @@ export default function HomeEn() {
       <div className="vp-pc-only vp-pc-root">
         <main className="w-[1920px]">
           {/* ===== Order + Footer ===== */}
-          <section className="relative w-[1920px] h-[3298px] bg-[#710b26] text-white">
+          <section className="relative w-[1920px] h-[2698px] bg-[#710b26] text-white">
             <h2 className="absolute z-10 left-[99px] top-[118px] text-[40px] tracking-[16px]">Order</h2>
             <p className="absolute z-10 left-[523px] top-[308px] w-[875px] text-[18px] tracking-[2px] leading-[42px] text-center" style={{ fontFamily: "Zen Old Mincho" }}>
               Every scroll is made to order. Not only the photograph,<br />but the kireji fabric &mdash; its color, its texture &mdash; and the balance of the whole composition.<br />We treasure the time spent imagining your space,<br />shaping each piece together with you.
@@ -646,52 +597,15 @@ export default function HomeEn() {
               </div>
               <h3 className="absolute left-[801px] top-[88px] text-[28px] tracking-[5px] leading-[50px]">Fully Custom Order</h3>
               <span className="absolute left-[801px] top-[145px] text-[18px] tracking-[5px] text-[#323232] leading-[40px]">Photo size FREE</span>
-              <div className="absolute left-[802px] top-[210px] text-[14px] tracking-[3px] text-black leading-[30px]">
-                <p>Height: 110&ndash;130cm</p>
-                <p>Width: 30cm+</p>
-              </div>
-              <span className="absolute left-[1500px] top-[200px] text-[18px] tracking-[3px] text-black leading-[40px]">From &yen;88,000</span>
-              <span className="absolute left-[1500px] top-[235px] text-[14px] tracking-[1.5px] text-black leading-[30px]">(tax &amp; shipping incl., Japan only)</span>
-              <p className="absolute left-[802px] top-[300px] w-[860px] text-[16px] tracking-[3px] text-black leading-[28px]">
-                Choose any print size from postcard to A3. No restrictions on kireji fabric or final form &mdash; every detail can be customized to your vision.<br />Recommended for those who want their preferences realized without compromise.
+              <span className="absolute left-[1500px] top-[200px] text-[18px] tracking-[3px] text-black leading-[40px]">From &yen;46,000</span>
+              <span className="absolute left-[1500px] top-[235px] text-[14px] tracking-[1.5px] text-black leading-[30px]">(tax incl., shipping separate)</span>
+              <p className="absolute left-[802px] top-[270px] w-[860px] text-[16px] tracking-[3px] text-black leading-[28px]">
+                Choose any print size from postcard to A3. No restrictions on kireji fabric or final form &mdash; every detail can be customized to your vision.<br />Recommended for those who want their preferences realized without compromise.<br />Pricing may vary depending on the kireji fabric you choose. Please make use of our order simulator to preview the finished piece and an estimate.
               </p>
-            </div>
-
-            {/* Miyabi & Kiwami */}
-            <div className="absolute left-[99px] top-[1175px] w-[1721px] h-[522px] bg-[#FFFFFB] text-[#710b26] rounded-sm overflow-hidden">
-              <h3 className="absolute left-[54px] top-[54px] text-[28px] tracking-[5px] leading-[50px]">Miyabi</h3>
-              <span className="absolute left-[54px] top-[110px] text-[18px] tracking-[5px] text-[#323232] leading-[40px]">Photo size A4</span>
-              <div className="absolute left-[54px] top-[170px] w-[382px] h-[252px] overflow-hidden">
-                <Image src="/images/order-photo-miyabi.jpg" alt="Miyabi course" fill className="object-cover" />
-              </div>
-              <p className="absolute left-[475px] top-[170px] w-[326px] text-[14px] tracking-[2px] text-black leading-[26px]">
-                Your photograph enlarged and printed at A4. Choose your favorite combination from a curated lineup of kireji fabrics and forms, and we will shape your ideal finished image together.
-              </p>
-              <div className="absolute left-[54px] top-[440px] text-[14px] tracking-[3px] text-black leading-[28px]">
-                <p>Height: 100&ndash;120cm</p>
-                <p>Width: 23cm+</p>
-              </div>
-              <span className="absolute left-[327px] top-[435px] text-[18px] tracking-[3px] text-black leading-[30px]">&yen;46,000</span>
-              <span className="absolute left-[327px] top-[465px] text-[14px] tracking-[1.5px] text-black leading-[30px]">(tax &amp; shipping incl., Japan only)</span>
-
-              <h3 className="absolute left-[913px] top-[51px] text-[28px] tracking-[5px] leading-[50px]">Kiwami</h3>
-              <span className="absolute left-[913px] top-[110px] text-[18px] tracking-[5px] text-[#323232] leading-[40px]">Photo size A3</span>
-              <div className="absolute left-[913px] top-[170px] w-[382px] h-[252px] overflow-hidden">
-                <Image src="/images/order-photo-kiwami.jpg" alt="Kiwami course" fill className="object-cover" />
-              </div>
-              <p className="absolute left-[1334px] top-[170px] w-[326px] text-[14px] tracking-[2px] text-black leading-[26px]">
-                Your photograph enlarged to a striking A3. Dynamic in size yet rendered with vivid detail, so your treasured memories return with renewed presence. A scale that anchors the room &mdash; equally welcome at home and as a memento or celebration gift.
-              </p>
-              <div className="absolute left-[918px] top-[440px] text-[14px] tracking-[3px] text-black leading-[28px]">
-                <p>Height: 110&ndash;130cm</p>
-                <p>Width: 30cm+</p>
-              </div>
-              <span className="absolute left-[1176px] top-[435px] text-[18px] tracking-[3px] text-black leading-[30px]">&yen;77,000</span>
-              <span className="absolute left-[1176px] top-[465px] text-[14px] tracking-[1.5px] text-black leading-[30px]">(tax &amp; shipping incl., Japan only)</span>
             </div>
 
             {/* Ordering process */}
-            <div className="absolute left-[300px] top-[1899px] w-[1320px]">
+            <div className="absolute left-[300px] top-[1299px] w-[1320px]">
               <h3 className="text-[28px] tracking-[7px] text-center underline mb-[60px]">How to Order</h3>
               <div>
                 {[
@@ -716,14 +630,14 @@ export default function HomeEn() {
               href="https://line.me/R/ti/p/@447updgf"
               target="_blank"
               rel="noopener noreferrer"
-              className="absolute left-[300px] top-[2430px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[3px] hover:opacity-90 transition-opacity"
+              className="absolute left-[300px] top-[1830px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[3px] hover:opacity-90 transition-opacity"
             >
               Order via KAKEPHOTO Official LINE
               <Image src="/images/line-icon.svg" alt="LINE" width={57} height={54} />
             </a>
             <Link
               href="/en/contact"
-              className="absolute left-[980px] top-[2430px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[3px] hover:opacity-90 transition-opacity"
+              className="absolute left-[980px] top-[1830px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[3px] hover:opacity-90 transition-opacity"
             >
               Order via Contact Form
               <span className="inline-block w-[41px] h-[1px] bg-[#710b26] relative ml-2">
@@ -732,7 +646,7 @@ export default function HomeEn() {
             </Link>
 
             {/* Gallery */}
-            <div className="absolute left-0 top-[2729px] w-[1920px] overflow-hidden">
+            <div className="absolute left-0 top-[2129px] w-[1920px] overflow-hidden">
               <motion.div
                 className="flex w-max"
                 animate={{ x: [0, -3990] }}
@@ -747,7 +661,7 @@ export default function HomeEn() {
             </div>
 
             {/* Footer */}
-            <footer className="absolute left-[100px] top-[3081px] w-[1720px] h-[217px] text-white">
+            <footer className="absolute left-[100px] top-[2481px] w-[1720px] h-[217px] text-white">
               <button
                 type="button"
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
