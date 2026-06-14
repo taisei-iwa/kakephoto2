@@ -483,7 +483,7 @@ function SpPage() {
               <span className="text-[11px] tracking-[1px] text-black">(税込/送料別)</span>
             </div>
             <p className="text-[12px] tracking-[1.5px] text-black leading-[22px]">
-              写真の印刷サイズは、ハガキサイズからA3サイズまで自由にお選びいただけます。使用する裂地（きれじ）や完成形に制限はなく、自由なカスタマイズが可能です。使用する裂地によって価格が変動することがあります。仕上がりイメージとお見積もりは、オーダーシミュレーターをぜひご活用ください。
+              写真の印刷サイズは、ハガキサイズからA3サイズまで自由にお選びいただけます。使用する裂地（きれじ）や完成形に制限はなく、自由なカスタマイズが可能です。使用する裂地によって価格が変動することがあります。仕上がりイメージとお見積もりは、<a href="/simulator/index.html" className="text-[#710b26] underline underline-offset-2 hover:opacity-80">オーダーシミュレーター</a>をぜひご活用ください。
             </p>
           </div>
         </div>
@@ -755,7 +755,7 @@ export default function Home() {
             <span className="absolute left-[1532px] top-[182px] text-[14px] tracking-[2.8px] text-black leading-[50px]">(税込/送料別)</span>
             {/* 説明テキスト */}
             <p className="absolute left-[802px] top-[230px] w-[860px] text-[16px] tracking-[7.2px] text-black leading-[28px]">
-              写真の印刷サイズは、ハガキサイズからA3サイズまで自由にお選びいただけます。<br />使用する裂地（きれじ）や完成形に制限はなく、自由なカスタマイズが可能です。ご自身のこだわりを妥協なく形にしたい方には、こちらのコースをおすすめいたします。<br />使用する裂地によって価格が変動することがあります。仕上がりイメージとお見積もりは、オーダーシミュレーターをぜひご活用ください。
+              写真の印刷サイズは、ハガキサイズからA3サイズまで<br />自由にお選びいただけます。<br />使用する裂地（きれじ）や完成形に制限はなく、<br />自由なカスタマイズが可能です。<br />使用する裂地によって価格が変動することがあります。<br />仕上がりイメージとお見積もりは、<br /><a href="/simulator/index.html" className="text-[#710b26] underline underline-offset-2 hover:opacity-80">オーダーシミュレーター</a>をぜひご活用ください。
             </p>
           </div>
 
