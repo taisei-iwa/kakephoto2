@@ -541,6 +541,7 @@
       sizePrice: state.sizePrice,
       assignments: state.assignments,
       fabrics: state.fabrics,
+      groups: effectiveGroups(),
       boxKey: state.boxKey,
       optionSurcharge: optionSurcharge,
     });

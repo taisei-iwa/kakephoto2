@@ -31,17 +31,31 @@ function priceForFixed(sizeKey) {
   return s ? s.price : 0;
 }
 
-// 割り当て済み裂地から等級加算の合計を返す(各部位ぶん合算 = 仮実装の方針)。
+// 割り当て済み裂地から等級加算の合計を返す。
 // assignments: { layoutKey: fabricId }, fabrics: 裂地配列。
-// 重複加算を避けるため、同一 layoutKey 群(連動部位)で 1 つの裂地につき 1 回だけ数える。
-//   ここでは「割り当てキーごと」に等級加算を足す簡易方式(部位ごとに加算)。
-function fabricSurchargeTotal(assignments, fabrics) {
+// groups: effectiveGroups() の戻り値(任意)。渡された場合は「部位グループごと」に
+//   等級加算を 1 回だけ数える(本人確定の課金方針):
+//     中廻し+柱 = セットで +¥3,000 / 天地 = セットで +¥3,000 / 一文字(上下+風帯) = セットで加算。
+//   連動して親に併合された子グループ(linkedInto あり)は親側で 1 回だけ数える。
+// groups 未指定のときは後方互換で「割り当てキーごと」に加算する。
+function fabricSurchargeTotal(assignments, fabrics, groups) {
+  assignments = assignments || {};
+  fabrics = fabrics || [];
+  const findFab = (id) => fabrics.find((f) => f.id === id);
+  if (groups) {
+    let total = 0;
+    Object.keys(groups).forEach((gk) => {
+      const g = groups[gk];
+      if (g.linkedInto) return; // 子グループは親グループで数える
+      // グループ内で割り当てのあるキーの裂地を 1 回だけ加算する。
+      for (const k of g.keys) {
+        if (assignments[k]) { total += fabricSurcharge(findFab(assignments[k])); break; }
+      }
+    });
+    return total;
+  }
   let total = 0;
-  Object.keys(assignments || {}).forEach((key) => {
-    const id = assignments[key];
-    const fab = (fabrics || []).find((f) => f.id === id);
-    total += fabricSurcharge(fab);
-  });
+  Object.keys(assignments).forEach((key) => { total += fabricSurcharge(findFab(assignments[key])); });
   return total;
 }
 
@@ -51,7 +65,7 @@ function fabricSurchargeTotal(assignments, fabrics) {
 function computeTotal(args) {
   const sizePrice = args.sizePrice || 0;
   // スプリント2: 裂地加算と箱を合計に反映する。
-  const fabric = fabricSurchargeTotal(args.assignments, args.fabrics);
+  const fabric = fabricSurchargeTotal(args.assignments, args.fabrics, args.groups);
   const box = args.boxKey && BOX_OPTIONS[args.boxKey] ? BOX_OPTIONS[args.boxKey].surcharge : 0;
   // 仕立てオプション(風帯あり 等)の加算。
   const option = args.optionSurcharge || 0;
