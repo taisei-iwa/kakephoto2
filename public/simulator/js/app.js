@@ -137,6 +137,16 @@
       pickerCtx = null;
     });
 
+    // 全部位の裂地を一括で無地に戻す(PC/スマホの 2 ボタン両方に同じ動作)
+    document.querySelectorAll(".fabric-reset-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (Object.keys(state.assignments).length === 0) return;
+        state.assignments = {};
+        render();
+        updatePrice();
+      });
+    });
+
     // トリミング
     document.getElementById("trim-confirm-btn").addEventListener("click", onTrimConfirm);
     document.getElementById("trim-cancel-btn").addEventListener("click", onTrimCancel);
@@ -1072,6 +1082,10 @@
     el.preview.appendChild(bottom);
     el.preview.appendChild(endL);
     el.preview.appendChild(endR);
+
+    // 裂地が1つでも割り当てられていれば「すべてリセット」を有効化(PC/スマホ両方)
+    const noFabric = Object.keys(state.assignments).length === 0;
+    document.querySelectorAll(".fabric-reset-btn").forEach((b) => { b.disabled = noFabric; });
 
     // スマホ等で 1 画面に収めるため、描画後にプレビュー枠を実測し、
     // 掛軸全体(寸法ラベル込み)が枠からはみ出すなら縮小して描き直す。
