@@ -83,6 +83,17 @@ const FABRIC_CATALOG = [
   { id: "cust_1781495775833", file: "assets/fabrics/custom_1781495798367.png", name: "緑　唐草牡丹", tileW: 40, tileH: 40, uses: ["nakamawashi"], grade: "joh" },
   { id: "cust_1781495869599", file: "assets/fabrics/custom_1781495886584.png", name: "紺色　小花紋緞子", tileW: 40, tileH: 40, uses: ["tenchi","nakamawashi"], grade: "joh" },
   { id: "cust_1781495949883", file: "assets/fabrics/custom_1781495949883.png", name: "金色　鶴紋金襴", tileW: 40, tileH: 40, uses: ["nakamawashi","ichimonji"], grade: "joh" },
+  { id: "cust_1782515049911", file: "assets/fabrics/custom_1782515093774.png", name: "菱紋（茶紺系）", tileW: 40, tileH: 40, uses: ["tenchi","nakamawashi"], grade: "standard" },
+  { id: "cust_1782515169873", file: "assets/fabrics/custom_1782515169873.png", name: "紅色　着物帯", tileW: 40, tileH: 40, uses: ["tenchi","nakamawashi"], grade: "standard" },
+  { id: "cust_1782515268163", file: "assets/fabrics/custom_1782515268163.png", name: "橙色　波模様", tileW: 40, tileH: 40, uses: ["tenchi","nakamawashi"], grade: "standard" },
+  { id: "cust_1782515304920", file: "assets/fabrics/custom_1782515304920.png", name: "紺色　縞模様", tileW: 40, tileH: 40, uses: ["tenchi","nakamawashi"], grade: "standard" },
+  { id: "cust_1782515339747", file: "assets/fabrics/custom_1782515339747.png", name: "茶系縦縞模様", tileW: 40, tileH: 40, uses: ["tenchi","nakamawashi"], grade: "standard" },
+  { id: "cust_1782515387782", file: "assets/fabrics/custom_1782515387782.png", name: "白地裂　鶴模様", tileW: 40, tileH: 40, uses: ["tenchi","nakamawashi"], grade: "standard" },
+  { id: "cust_1782515424424", file: "assets/fabrics/custom_1782515424424.png", name: "紫地　菱紋", tileW: 40, tileH: 40, uses: ["tenchi","nakamawashi"], grade: "standard" },
+  { id: "cust_1782515470218", file: "assets/fabrics/custom_1782515516482.png", name: "青地　花びら紋", tileW: 40, tileH: 40, uses: ["tenchi","nakamawashi"], grade: "standard" },
+  { id: "cust_1782515562151", file: "assets/fabrics/custom_1782515562151.png", name: "茶系　縦縞模様", tileW: 40, tileH: 40, uses: ["tenchi","nakamawashi"], grade: "standard" },
+  { id: "cust_1782515632615", file: "assets/fabrics/custom_1782515632615.png", name: "紅色　紺縦縞", tileW: 40, tileH: 40, uses: ["tenchi","nakamawashi"], grade: "standard" },
+  { id: "cust_1782515691102", file: "assets/fabrics/custom_1782515691102.png", name: "薄緑　帯裂", tileW: 40, tileH: 40, uses: ["tenchi","nakamawashi"], grade: "standard" },
 ];
 
 // 裂地の等級加算額を引く(等級が未定義なら 0)。
