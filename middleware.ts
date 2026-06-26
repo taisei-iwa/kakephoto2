@@ -17,6 +17,14 @@ export function middleware(req: NextRequest) {
 
   // No cookie: detect browser preference once.
   const acceptLang = req.headers.get("accept-language") ?? "";
+
+  // クローラー(Googlebot 等)は Accept-Language を送らない。
+  // ヘッダが空のリクエストはリダイレクトせず、その URL の内容をそのまま返す。
+  // これをしないと日本語ページが検索インデックスから隠れる。
+  if (acceptLang === "") {
+    return NextResponse.next();
+  }
+
   const prefersJa = acceptLang
     .toLowerCase()
     .split(",")
