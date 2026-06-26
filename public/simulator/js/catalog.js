@@ -9,7 +9,7 @@
 // width/height は「縦向き(ポートレート)基準」の実寸。判定は幅・高さの両方が枠内かで行う。
 const SIZE_TIERS = [
   { id: "b5", label: "B5", w: 257, h: 182, price: 33000 },
-  { id: "a4", label: "A4", w: 297, h: 210, price: 46000 },
+  { id: "a4", label: "A4", w: 297, h: 210, price: 44000 },
   { id: "a3", label: "A3", w: 420, h: 297, price: 77000 },
 ];
 
@@ -18,7 +18,7 @@ const MAX_TIER = SIZE_TIERS[SIZE_TIERS.length - 1]; // A3
 
 // 定型(A4/A3)選択肢。縦・横で実寸を入れ替える。
 const FIXED_SIZES = {
-  a4: { label: "A4 定型", longSide: 297, shortSide: 210, price: 46000 },
+  a4: { label: "A4 定型", longSide: 297, shortSide: 210, price: 44000 },
   a3: { label: "A3 定型", longSide: 420, shortSide: 297, price: 77000 },
 };
 

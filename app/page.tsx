@@ -479,7 +479,7 @@ function SpPage() {
               <span className="text-[12px] tracking-[2px] text-[#323232]">Photo size FREE</span>
             </div>
             <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-[16px] tracking-[2px] text-black">46,000円～</span>
+              <span className="text-[16px] tracking-[2px] text-black">44,000円～</span>
               <span className="text-[11px] tracking-[1px] text-black">(税込/送料別)</span>
             </div>
             <p className="text-[12px] tracking-[1.5px] text-black leading-[22px]">
@@ -570,6 +570,7 @@ function SpPage() {
 export default function Home() {
   return (
     <>
+      <h1 className="sr-only">KAKEPHOTO（かけフォト）｜写真から作るオーダーメイド掛け軸</h1>
       <div className="vp-sp-only vp-sp-root">
         <SpPage />
       </div>
@@ -751,7 +752,7 @@ export default function Home() {
             {/* Photo size FREE */}
             <span className="absolute left-[1140px] top-[88px] text-[18px] tracking-[7.2px] text-[#323232] leading-[50px]">Photo size FREE</span>
             {/* 価格 */}
-            <span className="absolute left-[1520px] top-[157px] text-[18px] tracking-[7.2px] text-black leading-[50px]">46,000円～</span>
+            <span className="absolute left-[1520px] top-[157px] text-[18px] tracking-[7.2px] text-black leading-[50px]">44,000円～</span>
             <span className="absolute left-[1532px] top-[182px] text-[14px] tracking-[2.8px] text-black leading-[50px]">(税込/送料別)</span>
             {/* 説明テキスト */}
             <p className="absolute left-[802px] top-[230px] w-[860px] text-[16px] tracking-[7.2px] text-black leading-[28px]">

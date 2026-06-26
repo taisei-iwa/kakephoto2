@@ -125,7 +125,7 @@ function PolicyContent() {
               ["Operations Manager", "Masakatsu Iwasaki"],
               ["Address", "355 Iwaya, Nanto City, Toyama 932-0203, Japan"],
               ["Contact", "Phone: 0763-82-3529\nEmail: iwasaki.seishodo@gmail.com"],
-              ["Sales Price", "Fully custom order (from ¥46,000, tax incl., shipping separate)"],
+              ["Sales Price", "Fully custom order (from ¥44,000, tax incl., shipping separate)"],
               ["Additional Fees", "Consumption tax, shipping fees, bank transfer fees (where applicable). For international shipments, any customs / import duties at destination."],
               ["Delivery Time", "As a fully made-to-order product, items ship approximately 1–2 months after the order (design confirmation).\n* Delivery may be delayed depending on demand and weather."],
               ["Payment Methods", "Credit card / Bank transfer / PayPal"],
