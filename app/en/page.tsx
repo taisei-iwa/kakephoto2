@@ -389,9 +389,16 @@ function SpPage() {
               <h3 className="text-[18px] tracking-[3px]">Fully Custom Order</h3>
               <span className="text-[12px] tracking-[2px] text-[#323232]">Photo size FREE</span>
             </div>
-            <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-[16px] tracking-[2px] text-black">From &yen;44,000</span>
-              <span className="text-[11px] tracking-[1px] text-black">(tax incl., shipping separate)</span>
+            <div className="mb-3 text-black">
+              <div className="flex items-baseline gap-[10px] leading-[26px]">
+                <span className="text-[12px] tracking-[1px]">A4 size</span>
+                <span className="text-[16px] tracking-[2px]">From &yen;44,000</span>
+              </div>
+              <div className="flex items-baseline gap-[10px] leading-[26px]">
+                <span className="text-[12px] tracking-[1px]">A3 size</span>
+                <span className="text-[16px] tracking-[2px]">From &yen;77,000</span>
+              </div>
+              <span className="block text-[11px] tracking-[1px] leading-[20px]">(tax incl., shipping separate)</span>
             </div>
             <p className="text-[12px] tracking-[1px] text-black leading-[22px]">
               Choose any print size from postcard to A3. No restrictions on kireji fabric or final form &mdash; every detail can be customized to your vision. Pricing may vary depending on the print size and the kireji fabric you choose. Please make use of our order simulator to preview the finished piece and an estimate (best on desktop).
@@ -597,9 +604,18 @@ export default function HomeEn() {
               </div>
               <h3 className="absolute left-[801px] top-[88px] text-[28px] tracking-[5px] leading-[50px]">Fully Custom Order</h3>
               <span className="absolute left-[801px] top-[145px] text-[18px] tracking-[5px] text-[#323232] leading-[40px]">Photo size FREE</span>
-              <span className="absolute left-[1500px] top-[200px] text-[18px] tracking-[3px] text-black leading-[40px]">From &yen;44,000</span>
-              <span className="absolute left-[1500px] top-[235px] text-[14px] tracking-[1.5px] text-black leading-[30px]">(tax incl., shipping separate)</span>
-              <p className="absolute left-[802px] top-[270px] w-[860px] text-[16px] tracking-[3px] text-black leading-[28px]">
+              <div className="absolute left-[802px] top-[190px] w-[860px] text-right text-black">
+                <div className="flex items-baseline justify-end gap-[20px] leading-[32px]">
+                  <span className="text-[15px] tracking-[2px]">A4 size</span>
+                  <span className="text-[18px] tracking-[3px]">From &yen;44,000</span>
+                </div>
+                <div className="flex items-baseline justify-end gap-[20px] leading-[32px]">
+                  <span className="text-[15px] tracking-[2px]">A3 size</span>
+                  <span className="text-[18px] tracking-[3px]">From &yen;77,000</span>
+                </div>
+                <span className="block text-[14px] tracking-[1.5px] leading-[28px]">(tax incl., shipping separate)</span>
+              </div>
+              <p className="absolute left-[802px] top-[296px] w-[860px] text-[16px] tracking-[3px] text-black leading-[28px]">
                 Choose any print size from postcard to A3. No restrictions on kireji fabric or final form &mdash; every detail can be customized to your vision.<br />Pricing may vary depending on the print size and the kireji fabric you choose. Please make use of our order simulator to preview the finished piece and an estimate (best on desktop).
               </p>
             </div>

@@ -478,9 +478,16 @@ function SpPage() {
               <h3 className="text-[18px] tracking-[4px]">特注オーダーメイド</h3>
               <span className="text-[12px] tracking-[2px] text-[#323232]">Photo size FREE</span>
             </div>
-            <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-[16px] tracking-[2px] text-black">44,000円～</span>
-              <span className="text-[11px] tracking-[1px] text-black">(税込/送料別)</span>
+            <div className="mb-3 text-black">
+              <div className="flex items-baseline gap-[10px] leading-[26px]">
+                <span className="text-[12px] tracking-[1.5px]">A4サイズ</span>
+                <span className="text-[16px] tracking-[2px]">44,000円～</span>
+              </div>
+              <div className="flex items-baseline gap-[10px] leading-[26px]">
+                <span className="text-[12px] tracking-[1.5px]">A3サイズ</span>
+                <span className="text-[16px] tracking-[2px]">77,000円～</span>
+              </div>
+              <span className="block text-[11px] tracking-[1px] leading-[20px]">(税込/送料別)</span>
             </div>
             <p className="text-[12px] tracking-[1.5px] text-black leading-[22px]">
               写真の印刷サイズは、ハガキサイズから<br />A3サイズまで自由にお選びいただけます。<br />使用する裂地（きれじ）や<br />完成形に制限はなく、<br />自由なカスタマイズが可能です。<br />印刷する写真のサイズや<br />使用する裂地によって価格が変動します。<br />仕上がりイメージとお見積もりは、<br /><a href="/simulator/index.html" className="text-[#710b26] underline underline-offset-2 hover:opacity-80">オーダーシミュレーター</a>を<br />ぜひご活用ください。（PC推奨）
@@ -751,11 +758,20 @@ export default function Home() {
             <h3 className="absolute left-[801px] top-[88px] text-[24px] tracking-[9.6px] leading-[50px]">特注オーダーメイド</h3>
             {/* Photo size FREE */}
             <span className="absolute left-[1140px] top-[88px] text-[18px] tracking-[7.2px] text-[#323232] leading-[50px]">Photo size FREE</span>
-            {/* 価格 */}
-            <span className="absolute left-[1520px] top-[157px] text-[18px] tracking-[7.2px] text-black leading-[50px]">44,000円～</span>
-            <span className="absolute left-[1532px] top-[182px] text-[14px] tracking-[2.8px] text-black leading-[50px]">(税込/送料別)</span>
+            {/* 価格 — A4/A3 の2段。右端を説明テキストに揃える */}
+            <div className="absolute left-[802px] top-[145px] w-[860px] text-right text-black">
+              <div className="flex items-baseline justify-end gap-[24px] leading-[32px]">
+                <span className="text-[15px] tracking-[3px]">A4サイズ</span>
+                <span className="text-[18px] tracking-[7.2px]">44,000円～</span>
+              </div>
+              <div className="flex items-baseline justify-end gap-[24px] leading-[32px]">
+                <span className="text-[15px] tracking-[3px]">A3サイズ</span>
+                <span className="text-[18px] tracking-[7.2px]">77,000円～</span>
+              </div>
+              <span className="block text-[14px] tracking-[2.8px] leading-[28px]">(税込/送料別)</span>
+            </div>
             {/* 説明テキスト */}
-            <p className="absolute left-[802px] top-[230px] w-[860px] text-[16px] tracking-[7.2px] text-black leading-[28px]">
+            <p className="absolute left-[802px] top-[252px] w-[860px] text-[16px] tracking-[7.2px] text-black leading-[28px]">
               写真の印刷サイズは、ハガキサイズからA3サイズまで<br />自由にお選びいただけます。<br />使用する裂地（きれじ）や完成形に制限はなく、<br />自由なカスタマイズが可能です。<br />印刷する写真のサイズや使用する裂地によって価格が変動します。<br />仕上がりイメージとお見積もりは、<br /><a href="/simulator/index.html" className="text-[#710b26] underline underline-offset-2 hover:opacity-80">オーダーシミュレーター</a>をぜひご活用ください。（PC推奨）
             </p>
           </div>
