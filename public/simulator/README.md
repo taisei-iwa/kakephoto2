@@ -11,7 +11,7 @@
 依存ゼロ。Node 標準モジュールのみで動く静的サーバーです。
 
 ```
-cd /Users/t/Claude_Code_Minimum_Harness/kakephoto-order
+cd /Users/t/Claude_Code_Minimum_Harness/library/開発/仕事/kakephoto-order
 node server.js
 ```
 
