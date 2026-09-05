@@ -80,7 +80,7 @@ API キー・環境変数は不要です。外部送信もありません（注�
 ### AR 検証(2026-09-05、`#ar` のときだけ表示)
 
 - URL 末尾に `#ar` を付けると価格カードに「壁に掛けてみる(AR 検証)」ボタンが出る(例: `https://kakephoto.com/simulator/index.html#ar`)。通常 URL には出ない。
-- 押すと `renderPreviewToCanvas()` の PNG を前面に貼った実寸(mm→m、厚み 15mm)の箱を `js/ar.js` が GLB として組み立て、`<model-viewer>`(Google CDN 4.0.0、押した時だけ読み込み)経由で AR を起動する。iPhone は AR Quick Look(USDZ は model-viewer が自動生成)、Android は WebXR / Scene Viewer。`ar-placement="wall"`、`ar-scale="fixed"`(実寸固定・拡縮不可)。
+- 押すと `renderPreviewToCanvas()` の PNG を前面に貼った実寸(mm→m、厚み 15mm)の箱を `js/ar.js` が GLB として組み立て、`<model-viewer>`(Google CDN 4.0.0、押した時だけ読み込み)経由で AR を起動する。iPhone は AR Quick Look(USDZ は model-viewer が自動生成)、Android は WebXR / Scene Viewer。`ar-placement="wall"`、`ar-scale="auto"`(二本指で拡縮可。Quick Look は拡縮中に倍率を表示するので 100% に戻せる。当初は fixed で実寸固定にしていたが本人希望で解除、2026-09-05)。
 - PC では「この端末では AR を起動できません」と出るのが正常(モデル生成までは動く)。
 - 検証項目: iPhone Safari で Quick Look が開くか / 壁面に置けるか / 実寸で表示されるか / 色味。結果次第で本番機能化(ボタン常時表示・案3 写真合成のフォールバック)へ進む。
 
