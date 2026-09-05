@@ -180,7 +180,8 @@
   // ---- AR 検証(#ar のときだけ表示。iPhone は Quick Look、Android は WebXR)----
   // #ar のほか ?ar=1 でも有効(共有時にハッシュが落ちる場合の保険)。
   function isARMode() {
-    return (location.hash || "").indexOf("ar") >= 0 || /[?&]ar=1(&|$)/.test(location.search || "");
+    if ((location.hash || "").indexOf("ar") >= 0 || /[?&]ar=1(&|$)/.test(location.search || "")) return true;
+    try { return localStorage.getItem("kakephotoArTest") === "1"; } catch (e) { return false; } // ar-test.html で付けた印
   }
 
   function initAR() {
