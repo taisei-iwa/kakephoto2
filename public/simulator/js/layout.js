@@ -31,23 +31,40 @@ function computeLayout(preset, honshiW, honshiH, opts) {
   const shortSide = Math.min(honshiW, honshiH);
 
   // --- 高さ方向の各寸法(mm) ---
-  const ichimonjiTotal = longSide * r.ichimonjiTotalOfHonshiH;
-  const ichiSum = r.ichimonjiTopRatio + r.ichimonjiBottomRatio;
-  const ichimonjiTop = ichimonjiTotal * (r.ichimonjiTopRatio / ichiSum);
-  const ichimonjiBottom = ichimonjiTotal * (r.ichimonjiBottomRatio / ichiSum);
+  // 一文字: mm 固定値(ichimonjiTopMm / ichimonjiBottomMm)があればそれを使う(本紙の大きさに比例させない)。
+  //         無ければ従来どおり本紙長辺比で算出。
+  let ichimonjiTop, ichimonjiBottom;
+  if (r.ichimonjiTopMm != null) {
+    ichimonjiTop = r.ichimonjiTopMm;
+    ichimonjiBottom = r.ichimonjiBottomMm != null ? r.ichimonjiBottomMm : r.ichimonjiTopMm;
+  } else {
+    const ichimonjiTotalRatio = longSide * r.ichimonjiTotalOfHonshiH;
+    const ichiSum = r.ichimonjiTopRatio + r.ichimonjiBottomRatio;
+    ichimonjiTop = ichimonjiTotalRatio * (r.ichimonjiTopRatio / ichiSum);
+    ichimonjiBottom = ichimonjiTotalRatio * (r.ichimonjiBottomRatio / ichiSum);
+  }
+  const ichimonjiTotal = ichimonjiTop + ichimonjiBottom;
 
   const nakaShita = hasNaka ? ichimonjiTotal * r.nakaShitaOfIchimonjiTotal : 0; // 中廻し下高
   const nakaUe = hasNaka ? nakaShita * r.nakaUeOfNakaShita : 0; // 中廻し上高
 
   // 地: 中廻し連鎖(地 = 中廻し上下合計)か、本紙長辺基準の直接指定
-  const chi = r.chiOfHonshiH != null ? longSide * r.chiOfHonshiH : nakaUe + nakaShita;
+  const chi = r.chiOfIchimonjiTotal != null
+    ? ichimonjiTotal * r.chiOfIchimonjiTotal
+    : r.chiOfHonshiH != null ? longSide * r.chiOfHonshiH : nakaUe + nakaShita;
   const ten = chi * r.tenOfChi; // 天
 
   // --- 幅方向 ---
-  const hashiraW = r.hashiraOfHonshiW != null
-    ? shortSide * r.hashiraOfHonshiW
-    : nakaShita * r.hashiraOfNakaShita; // 柱(片側)幅
-  const heriW = r.heriOfHonshiW != null && pp.heri ? shortSide * r.heriOfHonshiW : 0; // 明朝縁(片側)幅
+  // 柱(片側)幅: mm 固定 > 本紙幅比 > 中廻し下比。中廻しを持たない形式では一文字合計(=三段の中廻し下相当)を基準にする。
+  const hashiraBase = hasNaka ? nakaShita : ichimonjiTotal;
+  const hashiraW = r.hashiraMm != null
+    ? r.hashiraMm
+    : r.hashiraOfHonshiW != null
+      ? shortSide * r.hashiraOfHonshiW
+      : hashiraBase * r.hashiraOfNakaShita;
+  const heriW = !pp.heri ? 0
+    : r.heriMm != null ? r.heriMm
+    : r.heriOfHonshiW != null ? shortSide * r.heriOfHonshiW : 0; // 明朝縁(片側)幅
   const totalW = honshiW + hashiraW * 2 + heriW * 2; // 掛軸全体幅
   const bodyX = heriW; // 明朝縁の内側(本体)の左端
   const bodyW = totalW - heriW * 2; // 本体幅
