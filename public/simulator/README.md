@@ -77,12 +77,12 @@ API キー・環境変数は不要です。外部送信もありません（注�
 - **重要**: API はローカルで `node server.js` を動かしているときだけ機能（静的ホストは書き込み不可）。運用は「**ローカルで追加 → 再デプロイ**」。これで全お客様に反映される。
 - 画像はトリミング後に最大 400px へ縮小して保存。catalog.js への追記は JSON.stringify で安全にエスケープ。
 
-### AR 検証(2026-09-05、`#ar` のときだけ表示)
+### AR 体験「壁に掛けてみる」(2026-09-05 本番化)
 
-- URL 末尾に `#ar` を付けると価格カードに「壁に掛けてみる(AR 検証)」ボタンが出る(例: `https://kakephoto.com/simulator/index.html#ar`)。通常 URL には出ない。
-- 押すと `renderPreviewToCanvas()` の PNG を前面に貼った実寸(mm→m、厚み 15mm)の箱を `js/ar.js` が GLB として組み立て、`<model-viewer>`(Google CDN 4.0.0、押した時だけ読み込み)経由で AR を起動する。iPhone は AR Quick Look(USDZ は model-viewer が自動生成)、Android は WebXR / Scene Viewer。`ar-placement="wall"`、`ar-scale="auto"`(二本指で拡縮可。Quick Look は拡縮中に倍率を表示するので 100% に戻せる。当初は fixed で実寸固定にしていたが本人希望で解除、2026-09-05)。
-- PC では「この端末では AR を起動できません」と出るのが正常(モデル生成までは動く)。
-- 検証項目: iPhone Safari で Quick Look が開くか / 壁面に置けるか / 実寸で表示されるか / 色味。結果次第で本番機能化(ボタン常時表示・案3 写真合成のフォールバック)へ進む。
+- スマホ・タブレット(iPhone / iPad / Android)で価格カードに「壁に掛けてみる(AR体験)」ボタンを表示(UA 判定、`isARCapableDevice()`)。PC では表示しない(PC 向けの写真合成フォールバックは後続)。
+- 押すと `renderPreviewToCanvas()` の PNG を前面に貼った実寸(mm→m、厚み 15mm)の箱を `js/ar.js` が GLB として組み立て、`<model-viewer>`(Google CDN 4.0.0、押した時だけ読み込み)経由で AR を起動する。iPhone は AR Quick Look(USDZ は model-viewer が自動生成)、Android は WebXR / Scene Viewer。`ar-placement="wall"`、`ar-scale="auto"`(二本指で拡縮可。Quick Look は拡縮中に倍率を表示するので 100% に戻せる)。
+- GA4 に `ar_open` イベント(size / format)を送る。
+- 2026-09-05 に本人の iPhone で実際の壁への配置を確認済み。検証時の `#ar` 切替と `ar-test.html` は本番化に伴い撤去。
 
 ### 寸法ルールの更新(2026-09-05)
 

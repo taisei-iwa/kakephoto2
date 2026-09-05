@@ -174,36 +174,35 @@
     render();
     updatePrice();
     initAdmin(); // 裏方の裂地追加パネル(#admin のときだけ表示)
-    initAR(); // AR 検証ボタン(#ar のときだけ表示)
+    initAR(); // AR 体験ボタン(スマホ・タブレットのみ表示)
   }
 
-  // ---- AR 検証(#ar のときだけ表示。iPhone は Quick Look、Android は WebXR)----
-  // #ar のほか ?ar=1 でも有効(共有時にハッシュが落ちる場合の保険)。
-  function isARMode() {
-    if ((location.hash || "").indexOf("ar") >= 0 || /[?&]ar=1(&|$)/.test(location.search || "")) return true;
-    try { return localStorage.getItem("kakephotoArTest") === "1"; } catch (e) { return false; } // ar-test.html で付けた印
+  // ---- AR 体験(スマホ・タブレットで表示。iPhone は Quick Look、Android は WebXR / Scene Viewer)----
+  // PC では AR を起動できないため出さない(PC 向けの写真合成は後続)。
+  function isARCapableDevice() {
+    const ua = navigator.userAgent || "";
+    const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1; // iPadOS はデスクトップ UA
+    return /iPhone|iPad|iPod|Android/i.test(ua) || iPadOS;
   }
 
   function initAR() {
     const btn = document.getElementById("ar-btn");
     const viewer = document.getElementById("ar-viewer");
     if (!btn || !viewer) return;
-    const update = () => { btn.hidden = !isARMode(); };
-    update();
-    window.addEventListener("hashchange", update);
+    btn.hidden = !isARCapableDevice();
+    const label = btn.textContent;
     btn.addEventListener("click", () => {
-      if (!window.KakeAR) { showToast("AR の部品が読み込めていません。"); return; }
+      if (!window.KakeAR) { showToast("AR の部品が読み込めていません。通信状態をご確認ください。"); return; }
+      if (typeof gtag === "function") gtag("event", "ar_open", { size: state.sizeMode, format: state.formatId });
       btn.disabled = true;
       btn.textContent = "準備中…";
       renderPreviewToCanvas()
         .then((canvas) => KakeAR.openAR(viewer, canvas, canvas._mmPerPx, 15))
         .then((info) => {
-          const w = Math.round(info.widthM * 100), h = Math.round(info.heightM * 100);
-          showToast("実寸 約" + w + " × " + h + " cm のモデルを用意しました。" +
-            (info.canActivate ? "" : " この端末では AR を起動できません。"));
+          if (!info.canActivate) showToast("この端末では AR を起動できませんでした。iPhone または Android のブラウザでお試しください。");
         })
-        .catch((e) => showToast("AR の準備に失敗しました: " + (e && e.message ? e.message : e)))
-        .then(() => { btn.disabled = false; btn.textContent = "壁に掛けてみる(AR 検証)"; });
+        .catch(() => showToast("AR の準備に失敗しました。時間をおいてもう一度お試しください。"))
+        .then(() => { btn.disabled = false; btn.textContent = label; });
     });
   }
 
