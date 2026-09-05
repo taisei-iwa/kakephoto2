@@ -178,7 +178,10 @@
   }
 
   // ---- AR 検証(#ar のときだけ表示。iPhone は Quick Look、Android は WebXR)----
-  function isARMode() { return (location.hash || "").indexOf("ar") >= 0; }
+  // #ar のほか ?ar=1 でも有効(共有時にハッシュが落ちる場合の保険)。
+  function isARMode() {
+    return (location.hash || "").indexOf("ar") >= 0 || /[?&]ar=1(&|$)/.test(location.search || "");
+  }
 
   function initAR() {
     const btn = document.getElementById("ar-btn");

@@ -875,6 +875,7 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
     grid-template-areas:
       "head  total"
       "tax   tax"
+      "ar    ar"
       "cta   cta";
     align-items: center;
     column-gap: 0.7rem;
@@ -887,6 +888,8 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
   .price-note { display: none; }
   /* スマホでは価格バーを薄く保つため省略。画像保存は LINE ボタンが自動で行う。 */
   .save-image-btn { display: none; }
+  .ar-btn { grid-area: ar; margin-top: 0.15rem; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
+  .ar-btn[hidden] { display: none; }
   .cta-row { grid-area: cta; flex-direction: row; gap: 0.5rem; margin-top: 0.15rem; }
   .cta { flex: 1; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
   .cta-icon { width: 1.1em; height: 1.1em; }
