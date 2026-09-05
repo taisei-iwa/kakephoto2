@@ -174,6 +174,33 @@
     render();
     updatePrice();
     initAdmin(); // 裏方の裂地追加パネル(#admin のときだけ表示)
+    initAR(); // AR 検証ボタン(#ar のときだけ表示)
+  }
+
+  // ---- AR 検証(#ar のときだけ表示。iPhone は Quick Look、Android は WebXR)----
+  function isARMode() { return (location.hash || "").indexOf("ar") >= 0; }
+
+  function initAR() {
+    const btn = document.getElementById("ar-btn");
+    const viewer = document.getElementById("ar-viewer");
+    if (!btn || !viewer) return;
+    const update = () => { btn.hidden = !isARMode(); };
+    update();
+    window.addEventListener("hashchange", update);
+    btn.addEventListener("click", () => {
+      if (!window.KakeAR) { showToast("AR の部品が読み込めていません。"); return; }
+      btn.disabled = true;
+      btn.textContent = "準備中…";
+      renderPreviewToCanvas()
+        .then((canvas) => KakeAR.openAR(viewer, canvas, canvas._mmPerPx, 15))
+        .then((info) => {
+          const w = Math.round(info.widthM * 100), h = Math.round(info.heightM * 100);
+          showToast("実寸 約" + w + " × " + h + " cm のモデルを用意しました。" +
+            (info.canActivate ? "" : " この端末では AR を起動できません。"));
+        })
+        .catch((e) => showToast("AR の準備に失敗しました: " + (e && e.message ? e.message : e)))
+        .then(() => { btn.disabled = false; btn.textContent = "壁に掛けてみる(AR 検証)"; });
+    });
   }
 
   // ---- 裂地候補(catalog から)を読み込む ----
@@ -1588,6 +1615,7 @@
       drawJikuEnd(ctx, ox - capW * 0.8, bottomY, capW, capH);
       drawJikuEnd(ctx, ox + bodyW - capW * 0.2, bottomY, capW, capH);
 
+      canvas._mmPerPx = 1 / scale; // AR 検証で実寸に戻すための換算(1px あたりの mm)
       return canvas;
     });
   }

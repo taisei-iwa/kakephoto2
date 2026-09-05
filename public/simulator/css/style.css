@@ -521,6 +521,21 @@ button:focus-visible, select:focus-visible, input:focus-visible, a.cta:focus-vis
 }
 .cta-note { margin: 1rem 0 0; font-size: 0.71rem; color: var(--ink-faint); }
 
+/* AR 検証ボタン(#ar のときだけ表示。スマホでも出す) */
+.ar-btn {
+  width: 100%;
+  margin-top: 0.8rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  border-color: var(--brand-soft);
+  color: var(--brand);
+  background: transparent;
+}
+.ar-btn:disabled { opacity: 0.6; }
+/* model-viewer は AR 起動の足場としてだけ使う(画面には出さない) */
+.ar-viewer { position: fixed; width: 2px; height: 2px; left: 0; bottom: 0; opacity: 0.01; pointer-events: none; }
+
 /* プレビューを画像で保存(控えめなアウトラインボタン) */
 .save-image-btn {
   width: 100%;
