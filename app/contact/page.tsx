@@ -85,6 +85,7 @@ function useContactForm() {
       });
       const data = await res.json();
       setStatus(data.success ? "done" : "error");
+      if (data.success && typeof window.gtag === "function") window.gtag("event", "contact_submit");
     } catch {
       setStatus("error");
     }

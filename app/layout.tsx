@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Zen_Old_Mincho } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import TrackClicks from "./_components/TrackClicks";
 
 const zenOldMincho = Zen_Old_Mincho({
   weight: ["400", "500", "700"],
@@ -149,6 +150,7 @@ export default function RootLayout({
         <Script id="google-analytics" strategy="afterInteractive">
           {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-KRCSGD4ZWP');`}
         </Script>
+        <TrackClicks />
       </body>
     </html>
   );
