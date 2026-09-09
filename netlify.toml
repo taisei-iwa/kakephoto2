@@ -38,3 +38,4 @@
 # (Site settings > Environment variables) — do NOT commit them:
 #   NEXT_PUBLIC_SITE_URL = "https://kakephoto.com"
 #   NEXT_PUBLIC_GA_ID    = "G-XXXXXXXXXX"  (if Google Analytics is wired up)
+#   NEXT_PUBLIC_META_PIXEL_ID = "1234567890"  (Meta ピクセル ID。未設定ならピクセルは出力されない)
