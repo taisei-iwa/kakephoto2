@@ -75,7 +75,16 @@ const content = [
     ],
   },
   {
-    title: "Article 6 (Contact Information)",
+    title: "Article 6 (Analytics and Advertising Tools)",
+    body: "To understand how this website is used, to improve our service, and to measure the effect of our advertising, we use the tools listed below. These tools use cookies and similar technologies to collect information about browsing. They do not collect information that directly identifies you, such as your name or address.",
+    list: [
+      "Google Analytics (Google LLC): used to analyse how this website is used. Where Google signals is enabled, we may receive aggregated estimates of age, gender and interests for users who are signed in to Google and have allowed ad personalisation. You can opt out through the browser add-on provided by Google, or through the ad settings of your Google account. (Terms https://marketingplatform.google.com/about/analytics/terms/ , Privacy Policy https://policies.google.com/privacy)",
+      "Meta Pixel (Meta Platforms, Inc.): used to measure visits and enquiries on this website, and to deliver and measure advertising. You can opt out through the ad settings of Facebook and Instagram. (Privacy Policy https://www.facebook.com/privacy/policy/)",
+      "You may also refuse this collection by disabling cookies in your browser. Some features of this website may then be unavailable.",
+    ],
+  },
+  {
+    title: "Article 7 (Contact Information)",
     body: "For inquiries regarding this policy, please contact us at the following.\n\nBusiness Name: Iwasaki Seishodo\nAddress: 355 Iwaya, Nanto City, Toyama 932-0203, Japan\nEmail: iwasaki.seishodo@gmail.com",
   },
 ];
