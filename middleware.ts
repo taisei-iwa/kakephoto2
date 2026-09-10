@@ -4,8 +4,28 @@ import { NextResponse, type NextRequest } from "next/server";
 // Accept-Language doesn't include Japanese, send them to the /en counterpart.
 // Once the user picks a language explicitly (LangSwitcher sets the cookie),
 // the cookie is respected forever and the middleware stops redirecting.
+// SNS のプロフィール欄に貼る短い URL。Threads はプロフィールのリンクから
+// クエリ文字列を削ってしまうので、UTM を直接貼れない。パラメータを持たない
+// パスで受けて、こちら側で UTM を付けたトップページへ送る。
+const SNS_LINKS: Record<string, string> = {
+  "/threads": "threads",
+  "/ig": "instagram",
+  "/line": "line",
+};
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  const snsSource = SNS_LINKS[pathname.replace(/\/$/, "")];
+  if (snsSource) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
+    url.searchParams.set("utm_source", snsSource);
+    url.searchParams.set("utm_medium", "bio");
+    return NextResponse.redirect(url);
+  }
+
   const cookieLang = req.cookies.get("lang")?.value;
 
   // If user already picked, respect it.
