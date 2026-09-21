@@ -876,6 +876,7 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
       "head  total"
       "tax   tax"
       "ar    ar"
+      "room  room"
       "cta   cta";
     align-items: center;
     column-gap: 0.7rem;
@@ -890,6 +891,8 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
   .save-image-btn { display: none; }
   .ar-btn { grid-area: ar; margin-top: 0.15rem; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
   .ar-btn[hidden] { display: none; }
+  /* AR と同じ「壁での見え方」を見る導線。AR が出ない端末でも使えるよう独立した行に置く。 */
+  .room-btn { grid-area: room; margin-top: 0.15rem; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
   .cta-row { grid-area: cta; flex-direction: row; gap: 0.5rem; margin-top: 0.15rem; }
   .cta { flex: 1; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
   .cta-icon { width: 1.1em; height: 1.1em; }
@@ -964,6 +967,9 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
   .room-controls { flex-wrap: wrap; }
   .room-scale-note { min-width: 0; width: 100%; text-align: left; }
   .room-dialog .dialog-btns { flex-wrap: wrap; }
-  .room-dialog .dialog-btns button { flex: 1 1 100%; white-space: nowrap; }
-  .room-canvas { max-height: 52vh; }
+  .room-dialog .dialog-btns button { white-space: nowrap; }
+  /* 保存だけ全幅。「位置を戻す」と「閉じる」は 2 つ並べて、閉じるが画面外に出ないようにする */
+  .room-dialog .dialog-btns button:first-child { flex: 1 1 100%; }
+  .room-dialog .dialog-btns button:not(:first-child) { flex: 1 1 calc(50% - 0.3rem); }
+  .room-canvas { max-height: 44vh; }
 }
