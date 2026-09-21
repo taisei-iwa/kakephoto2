@@ -897,3 +897,64 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
 
   .fabric-list { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ---- 部屋に飾ってみる(写真合成) ---- */
+.room-btn {
+  width: 100%;
+  margin-top: 0.8rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  border-color: var(--brand-soft);
+  color: var(--brand);
+  background: transparent;
+}
+.room-btn:hover { background: var(--surface-2); }
+
+.room-dialog { max-width: 720px; width: min(720px, 94vw); max-height: 92vh; overflow-y: auto; }
+
+.room-list {
+  list-style: none;
+  margin: 0 0 0.8rem;
+  padding: 0;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.room-list button {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  background: transparent;
+  width: auto;
+}
+.room-list button[aria-pressed="true"] {
+  border-color: var(--brand);
+  color: var(--brand);
+  background: var(--surface-2);
+}
+
+.room-canvas-wrap {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+/* ドラッグで掛軸を動かすので、指のスクロールには渡さない */
+/* ダイアログ内に収めるため、縦にも上限を置く(canvas は比率を保って縮む) */
+.room-canvas { display: block; max-width: 100%; max-height: 46vh; width: auto; height: auto; touch-action: none; cursor: grab; }
+.room-canvas.dragging { cursor: grabbing; }
+
+.room-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 0.8rem;
+}
+.room-scale-label { font-size: 0.78rem; color: var(--ink-soft); white-space: nowrap; }
+.room-controls input[type="range"] { flex: 1; accent-color: var(--brand); width: auto; }
+.room-scale-note { font-size: 0.75rem; color: var(--ink-faint); white-space: nowrap; min-width: 7.5em; text-align: right; }

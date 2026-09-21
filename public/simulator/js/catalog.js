@@ -102,3 +102,19 @@ function fabricSurcharge(fab) {
   const g = FABRIC_GRADES[fab.grade];
   return g ? g.surcharge : 0;
 }
+
+// ---- 部屋に飾ったイメージ(写真合成)で使う背景 ----
+// 掛軸を実寸感で載せるための較正値。画像を差し替えても効くよう、すべて画像サイズに対する割合で持つ。
+//   ceilYPct / floorYPct … 壁と天井・壁と床の境目の y 位置(0=上端, 1=下端)
+//   wallHeightMm         … その2本の線のあいだの実際の高さ。住宅は 2400、天井の高い店舗は 2600 を既定にした
+//   centerXPct           … 掛軸を最初に置く x 位置(何も掛かっていない壁の中央)
+// 値は写真から目視で読んだ推定。実物と見比べて違和感があればここだけ直せばよい(画面の「大きさ」でも微調整できる)。
+const ROOM_SCENES = [
+  { id: "living",   name: "リビング", file: "assets/rooms/living.jpg",   ceilYPct: 0.065, floorYPct: 0.846, wallHeightMm: 2400, centerXPct: 0.586 },
+  { id: "bedroom",  name: "寝室",     file: "assets/rooms/bedroom.jpg",  ceilYPct: 0.059, floorYPct: 0.752, wallHeightMm: 2400, centerXPct: 0.534 },
+  { id: "entrance", name: "玄関",     file: "assets/rooms/entrance.jpg", ceilYPct: 0.049, floorYPct: 0.566, wallHeightMm: 2400, centerXPct: 0.410 },
+  { id: "cafe",     name: "カフェ",   file: "assets/rooms/cafe.jpg",     ceilYPct: 0.059, floorYPct: 0.781, wallHeightMm: 2600, centerXPct: 0.508 },
+];
+
+// 掛軸の下端を床から何 mm の高さに置くか(既定の掛け位置)。
+const ROOM_DEFAULT_BOTTOM_MM = 900;

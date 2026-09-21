@@ -175,6 +175,7 @@
     updatePrice();
     initAdmin(); // 裏方の裂地追加パネル(#admin のときだけ表示)
     initAR(); // AR 体験ボタン(スマホ・タブレットのみ表示)
+    initRoom(); // 部屋に飾ったイメージ(写真合成。PC でも使える)
   }
 
   // ---- AR 体験(スマホ・タブレットで表示。iPhone は Quick Look、Android は WebXR / Scene Viewer)----
@@ -203,6 +204,183 @@
         })
         .catch(() => showToast("AR の準備に失敗しました。時間をおいてもう一度お試しください。"))
         .then(() => { btn.disabled = false; btn.textContent = label; });
+    });
+  }
+
+  // ---- 部屋に飾ったイメージ(写真合成)。AR と違い PC でも使える ----
+  // 掛軸は実寸で置く。背景ごとの較正値(catalog.js の ROOM_SCENES)から 1px 当たりの mm を出し、
+  // 掛軸キャンバスの _mmPerPx と突き合わせて描画サイズを決める。
+  function initRoom() {
+    const btn = document.getElementById("room-btn");
+    const dlg = document.getElementById("room-dialog");
+    if (!btn || !dlg || typeof ROOM_SCENES === "undefined" || !ROOM_SCENES.length) return;
+
+    const canvas = document.getElementById("room-canvas");
+    const ctx = canvas.getContext("2d");
+    const listEl = document.getElementById("room-list");
+    const scaleEl = document.getElementById("room-scale");
+    const noteEl = document.getElementById("room-scale-note");
+
+    const bgCache = {};
+    let scene = ROOM_SCENES[0];
+    let bg = null;        // 背景の Image
+    let scrollCv = null;  // 掛軸のキャンバス(透明余白)
+    let pos = null;       // 掛軸の左上(背景の座標系)
+    let dragging = false;
+    let grabDx = 0, grabDy = 0;
+    let lastScale = 1;  // スライダーの直前の倍率(中心を保って拡縮するために使う)
+
+    function bgMmPerPx() {
+      const span = (scene.floorYPct - scene.ceilYPct) * bg.height;
+      return scene.wallHeightMm / span;
+    }
+    function userScale() { return (parseInt(scaleEl.value, 10) || 100) / 100; }
+    function scrollSizePx() {
+      const hMm = scrollCv.height * scrollCv._mmPerPx;
+      const h = (hMm / bgMmPerPx()) * userScale();
+      return { w: h * (scrollCv.width / scrollCv.height), h: h, hMm: hMm };
+    }
+    function resetPos() {
+      const s = scrollSizePx();
+      const floorY = scene.floorYPct * bg.height;
+      const bottom = floorY - ROOM_DEFAULT_BOTTOM_MM / bgMmPerPx();
+      pos = { x: scene.centerXPct * bg.width - s.w / 2, y: bottom - s.h };
+    }
+    function clampPos() {
+      const s = scrollSizePx();
+      pos.x = Math.max(-s.w * 0.3, Math.min(bg.width - s.w * 0.7, pos.x));
+      pos.y = Math.max(-s.h * 0.3, Math.min(bg.height - s.h * 0.7, pos.y));
+    }
+
+    function draw() {
+      if (!bg || !scrollCv) return;
+      canvas.width = bg.width;
+      canvas.height = bg.height;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bg, 0, 0);
+      const s = scrollSizePx();
+      clampPos();
+      // 壁との馴染みのため、うっすら影を落とす
+      ctx.save();
+      ctx.shadowColor = "rgba(40,25,20,0.30)";
+      ctx.shadowBlur = Math.max(6, s.w * 0.06);
+      ctx.shadowOffsetX = s.w * 0.02;
+      ctx.shadowOffsetY = s.w * 0.03;
+      ctx.drawImage(scrollCv, pos.x, pos.y, s.w, s.h);
+      ctx.restore();
+      // 表示するのは仕上がりの実寸。スライダーは背景側の見え方を合わせるためのもので、掛軸の寸法は変わらない。
+      noteEl.textContent = "高さ 約" + Math.round(s.hMm / 10) + "cm";
+    }
+
+    function loadBg(sc) {
+      if (bgCache[sc.id]) return Promise.resolve(bgCache[sc.id]);
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => { bgCache[sc.id] = img; resolve(img); };
+        img.onerror = reject;
+        img.src = sc.file;
+      });
+    }
+
+    function selectScene(sc, keepPos) {
+      scene = sc;
+      Array.prototype.forEach.call(listEl.querySelectorAll("button"), (b) => {
+        b.setAttribute("aria-pressed", String(b.dataset.room === sc.id));
+      });
+      return loadBg(sc).then((img) => {
+        bg = img;
+        if (!keepPos || !pos) resetPos();
+        draw();
+      });
+    }
+
+    function renderList() {
+      listEl.innerHTML = "";
+      ROOM_SCENES.forEach((sc) => {
+        const li = document.createElement("li");
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = sc.name;
+        b.dataset.room = sc.id;
+        b.setAttribute("aria-pressed", "false");
+        b.addEventListener("click", () => {
+          selectScene(sc, false);
+          if (typeof gtag === "function") gtag("event", "room_view", { room: sc.id, size: state.sizeMode, format: state.formatId });
+        });
+        li.appendChild(b);
+        listEl.appendChild(li);
+      });
+    }
+
+    // 画面上の座標 → 背景画像の座標
+    function toCanvasXY(e) {
+      const r = canvas.getBoundingClientRect();
+      return { x: (e.clientX - r.left) * (canvas.width / r.width), y: (e.clientY - r.top) * (canvas.height / r.height) };
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (!pos) return;
+      const p = toCanvasXY(e);
+      const s = scrollSizePx();
+      if (p.x < pos.x || p.x > pos.x + s.w || p.y < pos.y || p.y > pos.y + s.h) return;
+      dragging = true;
+      grabDx = p.x - pos.x;
+      grabDy = p.y - pos.y;
+      canvas.classList.add("dragging");
+      canvas.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const p = toCanvasXY(e);
+      pos.x = p.x - grabDx;
+      pos.y = p.y - grabDy;
+      draw();
+    });
+    ["pointerup", "pointercancel"].forEach((type) => canvas.addEventListener(type, () => {
+      dragging = false;
+      canvas.classList.remove("dragging");
+    }));
+
+    scaleEl.addEventListener("input", () => {
+      if (!pos || !bg || !scrollCv) return;
+      // 拡縮しても掛軸の中心が動かないようにする。
+      // input が来た時点で value は新しい値なので、直前の倍率を覚えておいて元の大きさを割り戻す。
+      const next = userScale();
+      const ratio = next / lastScale;
+      const s = scrollSizePx();
+      pos.x = (pos.x + s.w / ratio / 2) - s.w / 2;
+      pos.y = (pos.y + s.h / ratio / 2) - s.h / 2;
+      lastScale = next;
+      draw();
+    });
+
+    document.getElementById("room-reset-btn").addEventListener("click", () => {
+      scaleEl.value = 100;
+      lastScale = 1;
+      resetPos();
+      draw();
+    });
+    document.getElementById("room-close-btn").addEventListener("click", () => dlg.close());
+    document.getElementById("room-save-btn").addEventListener("click", () => {
+      const ok = downloadCanvas(canvas, "kakephoto-room-" + scene.id + ".png");
+      showToast(ok ? "画像を保存しました。" : "画像の保存に失敗しました。お手数ですが画面の写真をお撮りください。");
+    });
+
+    btn.addEventListener("click", () => {
+      btn.disabled = true;
+      renderPreviewToCanvas({ transparent: true })
+        .then((cv) => {
+          scrollCv = cv;
+          pos = null;
+          scaleEl.value = 100;
+          lastScale = 1;
+          if (!listEl.children.length) renderList();
+          if (typeof gtag === "function") gtag("event", "room_view", { room: scene.id, size: state.sizeMode, format: state.formatId });
+          return selectScene(scene, false);
+        })
+        .then(() => { if (!dlg.open) dlg.showModal(); })
+        .catch(() => showToast("背景の読み込みに失敗しました。通信状態をご確認ください。"))
+        .then(() => { btn.disabled = false; });
     });
   }
 
@@ -1553,7 +1731,8 @@
 
   // ---- プレビューを PNG(canvas)に書き出す ----
   // on-screen と同じレイアウト計算を使い、本紙長辺を固定 px にして高解像度で描く。
-  function renderPreviewToCanvas() {
+  // opts.transparent: 余白を白で塗らない(部屋の写真に載せるときに使う)
+  function renderPreviewToCanvas(opts) {
     const EXPORT_HONSHI_LONG = 720;
     const scale = EXPORT_HONSHI_LONG / Math.max(state.honshiW, state.honshiH);
     const layout = computeLayout(activePreset(), state.honshiW, state.honshiH, partOptions());
@@ -1578,8 +1757,10 @@
     });
 
     return loadImageMap(Object.keys(srcSet)).then((imgs) => {
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (!(opts && opts.transparent)) {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
 
       const drawOrder = [
         "ten", "nakaUe", "honshi", "ichimonjiUe", "ichimonjiShita",

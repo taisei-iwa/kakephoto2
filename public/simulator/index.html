@@ -159,6 +159,8 @@
         <p class="price-note">表示の価格はお見積もりの目安です。確定の金額ではありません。</p>
 
         <button type="button" id="save-image-btn" class="save-image-btn">プレビューを画像で保存</button>
+        <!-- 部屋に飾ったイメージ(写真合成)。AR と違って PC でも使える。 -->
+        <button type="button" id="room-btn" class="room-btn">部屋に飾ってみる</button>
         <!-- AR 体験(スマホ・タブレットのときだけ JS が表示。PC では非表示) -->
         <button type="button" id="ar-btn" class="ar-btn" hidden>壁に掛けてみる(AR体験)</button>
         <model-viewer id="ar-viewer" class="ar-viewer" ar ar-modes="webxr scene-viewer quick-look" ar-placement="wall" ar-scale="auto" loading="eager" reveal="auto" alt="掛軸の完成イメージ"></model-viewer>
@@ -240,6 +242,26 @@
     <div class="dialog-btns">
       <button type="button" id="trim-confirm-btn">確定</button>
       <button type="button" id="trim-cancel-btn" class="secondary">キャンセル</button>
+    </div>
+  </dialog>
+
+  <!-- 部屋に飾ったイメージ(写真合成)ダイアログ -->
+  <dialog id="room-dialog" class="picker-dialog room-dialog" aria-modal="true" aria-labelledby="room-dialog-title">
+    <h2 id="room-dialog-title" class="dialog-title">部屋に飾ってみる</h2>
+    <p class="dialog-note">背景を選び、掛軸をドラッグして位置を決めてください。大きさは実際の寸法で表示しています。</p>
+    <ul id="room-list" class="room-list" aria-label="背景を選ぶ"></ul>
+    <div class="room-canvas-wrap">
+      <canvas id="room-canvas" class="room-canvas"></canvas>
+    </div>
+    <div class="room-controls">
+      <label class="room-scale-label" for="room-scale">見え方の調整</label>
+      <input type="range" id="room-scale" min="70" max="130" value="100" step="1" />
+      <span id="room-scale-note" class="room-scale-note"></span>
+    </div>
+    <div class="dialog-btns">
+      <button type="button" id="room-save-btn">画像で保存</button>
+      <button type="button" id="room-reset-btn" class="secondary">位置を戻す</button>
+      <button type="button" id="room-close-btn" class="secondary">閉じる</button>
     </div>
   </dialog>
 
