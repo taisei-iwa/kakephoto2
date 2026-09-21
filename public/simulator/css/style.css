@@ -958,3 +958,12 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
 .room-scale-label { font-size: 0.78rem; color: var(--ink-soft); white-space: nowrap; }
 .room-controls input[type="range"] { flex: 1; accent-color: var(--brand); width: auto; }
 .room-scale-note { font-size: 0.75rem; color: var(--ink-faint); white-space: nowrap; min-width: 7.5em; text-align: right; }
+
+/* 画面が狭いとき: 寸法表示と操作ボタンが潰れないように縦に積む */
+@media (max-width: 640px) {
+  .room-controls { flex-wrap: wrap; }
+  .room-scale-note { min-width: 0; width: 100%; text-align: left; }
+  .room-dialog .dialog-btns { flex-wrap: wrap; }
+  .room-dialog .dialog-btns button { flex: 1 1 100%; white-space: nowrap; }
+  .room-canvas { max-height: 52vh; }
+}
