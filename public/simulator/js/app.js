@@ -176,6 +176,7 @@
     initAdmin(); // 裏方の裂地追加パネル(#admin のときだけ表示)
     initAR(); // AR 体験ボタン(スマホ・タブレットのみ表示)
     initRoom(); // 部屋に飾ったイメージ(写真合成。PC でも使える)
+    initSuggest(); // 写真から裂地の取り合わせを3案出す
   }
 
   // ---- AR 体験(スマホ・タブレットで表示。iPhone は Quick Look、Android は WebXR / Scene Viewer)----
@@ -203,6 +204,111 @@
           if (!info.canActivate) showToast("この端末では AR を起動できませんでした。iPhone または Android のブラウザでお試しください。");
         })
         .catch(() => showToast("AR の準備に失敗しました。時間をおいてもう一度お試しください。"))
+        .then(() => { btn.disabled = false; btn.textContent = label; });
+    });
+  }
+
+  // ---- 写真から裂地の取り合わせを3案出す ----
+  // 判定は js/suggest.js(外部 API は使わない)。ここは UI と、選ばれた案の反映だけを持つ。
+  function applyPlan(plan) {
+    const groups = effectiveGroups();
+    Object.keys(state.assignments).forEach((k) => delete state.assignments[k]);
+    const set = (groupKey, fab) => {
+      const g = groups[groupKey];
+      if (!g || g.linkedInto || !fab) return;
+      g.keys.forEach((k) => { state.assignments[k] = fab.id; });
+    };
+    set("tenchi", plan.picks.tenchi);
+    set("nakamawashi", plan.picks.nakamawashi);
+    set("ichimonji", plan.picks.ichimonji);
+  }
+
+  // 案ごとの小さなプレビュー。割り当てを一時的に差し替えて描き、必ず元へ戻す。
+  function renderPlanThumb(plan) {
+    const backup = Object.assign({}, state.assignments);
+    const restore = () => { state.assignments = backup; };
+    applyPlan(plan);
+    return renderPreviewToCanvas().then(
+      (cv) => { restore(); return cv; },
+      (e) => { restore(); throw e; }
+    );
+  }
+
+  function updateSuggestVisibility() {
+    const btn = document.getElementById("suggest-btn");
+    if (!btn) return;
+    btn.hidden = !state.honshiImage || typeof KakeSuggest === "undefined";
+  }
+
+  function initSuggest() {
+    const btn = document.getElementById("suggest-btn");
+    const dlg = document.getElementById("suggest-dialog");
+    if (!btn || !dlg || typeof KakeSuggest === "undefined") return;
+    const listEl = document.getElementById("suggest-list");
+    document.getElementById("suggest-close-btn").addEventListener("click", () => dlg.close());
+
+    function loadPhoto() {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = state.honshiImage.dataUrl;
+      });
+    }
+
+    function renderPlans(plans) {
+      listEl.innerHTML = "";
+      // 案は順に描く(同時に描くと割り当ての差し替えがぶつかる)
+      return plans.reduce((chain, plan) => chain.then(() => renderPlanThumb(plan).then((cv) => {
+        const li = document.createElement("li");
+        li.className = "suggest-card";
+        const thumb = document.createElement("div");
+        thumb.className = "suggest-thumb";
+        cv.style.maxHeight = "100%";
+        cv.style.width = "auto";
+        thumb.appendChild(cv);
+        const body = document.createElement("div");
+        body.className = "suggest-body";
+        const h = document.createElement("p");
+        h.className = "suggest-label";
+        h.textContent = plan.label + "　" + plan.summary;
+        const p = document.createElement("p");
+        p.className = "suggest-reason";
+        p.textContent = plan.reason;
+        const pick = document.createElement("button");
+        pick.type = "button";
+        pick.textContent = "この案にする";
+        pick.addEventListener("click", () => {
+          applyPlan(plan);
+          if (typeof gtag === "function") gtag("event", "suggest_pick", { plan: plan.id, size: state.sizeMode, format: state.formatId });
+          dlg.close();
+          render();
+          updatePrice();
+          showToast(plan.label + "を反映しました。ここから裂地を変えることもできます。");
+        });
+        body.appendChild(h); body.appendChild(p); body.appendChild(pick);
+        li.appendChild(thumb); li.appendChild(body);
+        listEl.appendChild(li);
+      })), Promise.resolve());
+    }
+
+    btn.addEventListener("click", () => {
+      if (!state.honshiImage) return;
+      btn.disabled = true;
+      const label = btn.textContent;
+      btn.textContent = "考えています…";
+      if (typeof gtag === "function") gtag("event", "suggest_open", { size: state.sizeMode, format: state.formatId });
+      loadPhoto()
+        .then((img) => {
+          const photo = KakeSuggest.measurePhoto(img);
+          if (!photo) throw new Error("photo");
+          return KakeSuggest.measureFabrics(state.fabrics).then((fm) => KakeSuggest.buildPlans(photo, fm));
+        })
+        .then((plans) => {
+          if (!plans.length) { showToast("ご提案できる裂地が足りませんでした。"); return; }
+          return renderPlans(plans).then(() => { if (!dlg.open) dlg.showModal(); });
+        })
+        .catch(() => showToast("ご提案の作成に失敗しました。写真を入れ直してお試しください。"))
         .then(() => { btn.disabled = false; btn.textContent = label; });
     });
   }
@@ -1191,6 +1297,7 @@
   // 実際の寸法は数字(cm)で別に表示する。スケールは本紙基準で固定し、
   // 仕立て(形式・一文字・風帯)を変えても本紙の大きさは変わらない。
   function render(forcedScale) {
+    updateSuggestVisibility(); // 写真が入っているときだけ 3案ボタンを出す
     el.previewWarning.hidden = true;
 
     const opts = partOptions();

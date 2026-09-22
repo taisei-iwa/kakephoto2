@@ -158,6 +158,8 @@
 
         <p class="price-note">表示の価格はお見積もりの目安です。確定の金額ではありません。</p>
 
+        <!-- 写真が入っているときだけ JS が表示する -->
+        <button type="button" id="suggest-btn" class="suggest-btn" hidden>裂地の取り合わせを3案見る</button>
         <button type="button" id="save-image-btn" class="save-image-btn">プレビューを画像で保存</button>
         <!-- 部屋に飾ったイメージ(写真合成)。AR と違って PC でも使える。 -->
         <button type="button" id="room-btn" class="room-btn">部屋に飾ってみる</button>
@@ -245,6 +247,16 @@
     </div>
   </dialog>
 
+  <!-- 写真から裂地の取り合わせを3案出すダイアログ -->
+  <dialog id="suggest-dialog" class="picker-dialog suggest-dialog" aria-modal="true" aria-labelledby="suggest-dialog-title">
+    <h2 id="suggest-dialog-title" class="dialog-title">裂地の取り合わせ 3案</h2>
+    <p class="dialog-note">お写真の色みから3通りの組み方をご提案します。選ぶとプレビューに反映されます。そのあとご自分で裂地を変えることもできます。</p>
+    <ul id="suggest-list" class="suggest-list" aria-label="取り合わせの提案"></ul>
+    <div class="dialog-btns">
+      <button type="button" id="suggest-close-btn" class="secondary">閉じる</button>
+    </div>
+  </dialog>
+
   <!-- 部屋に飾ったイメージ(写真合成)ダイアログ -->
   <dialog id="room-dialog" class="picker-dialog room-dialog" aria-modal="true" aria-labelledby="room-dialog-title">
     <h2 id="room-dialog-title" class="dialog-title">部屋に飾ってみる</h2>
@@ -270,6 +282,7 @@
   <script src="js/presets.js"></script>
   <script src="js/layout.js"></script>
   <script src="js/ar.js"></script>
+  <script src="js/suggest.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

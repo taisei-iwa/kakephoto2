@@ -742,7 +742,10 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
     min-height: 0;
     display: grid;
     grid-template-columns: 150px 1fr;
-    grid-template-rows: 1fr auto;
+    /* minmax(0,1fr): 既定の 1fr は中身の最小高より小さくなれないため、プレビュー枠が
+       中身の分だけ広がり、JS の「枠に収まったか」判定が常に真になって価格カードへ
+       はみ出していた。0 まで縮められるようにして、実際の残り高さを測れるようにする。 */
+    grid-template-rows: minmax(0, 1fr) auto;
     grid-template-areas:
       "controls preview"
       "price    price";
@@ -816,6 +819,9 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
     display: flex;
     flex-direction: column;
     align-items: stretch;
+    /* .layout は align-items:flex-start(PC 用)。指定しないとトラック高ではなく
+       中身の高さになり、価格カードへはみ出す(.panel-controls と同じ対策)。 */
+    align-self: stretch;
   }
   .preview-size-note { display: block; flex: none; font-size: 0.62rem; line-height: 1.45; margin: 0 0 0.25rem; }
   .preview-size-note .act-tap { display: inline; }   /* スマホはタップ */
@@ -873,11 +879,12 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
     display: grid;
     grid-template-columns: auto 1fr;
     grid-template-areas:
-      "head  total"
-      "tax   tax"
-      "ar    ar"
-      "room  room"
-      "cta   cta";
+      "head    total"
+      "tax     tax"
+      "suggest suggest"
+      "ar      ar"
+      "room    room"
+      "cta     cta";
     align-items: center;
     column-gap: 0.7rem;
     row-gap: 0.2rem;
@@ -972,4 +979,50 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
   .room-dialog .dialog-btns button:first-child { flex: 1 1 100%; }
   .room-dialog .dialog-btns button:not(:first-child) { flex: 1 1 calc(50% - 0.3rem); }
   .room-canvas { max-height: 44vh; }
+}
+
+/* ---- 裂地の取り合わせ 3案 ---- */
+.suggest-btn {
+  width: 100%;
+  margin-top: 1.4rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  border-color: var(--brand);
+  color: var(--brand);
+  background: transparent;
+}
+.suggest-btn:hover { background: var(--surface-2); }
+.suggest-btn[hidden] { display: none; }
+
+.suggest-dialog { max-width: 720px; width: min(720px, 94vw); max-height: 92vh; overflow-y: auto; }
+.suggest-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.8rem; }
+.suggest-card {
+  display: flex;
+  gap: 0.9rem;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  padding: 0.7rem;
+  background: var(--surface-2);
+}
+.suggest-thumb {
+  flex: none;
+  width: 84px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.suggest-thumb canvas { max-width: 100%; max-height: 100%; display: block; }
+.suggest-body { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+.suggest-label { margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--brand); letter-spacing: 0.04em; }
+.suggest-reason { margin: 0; font-size: 0.78rem; color: var(--ink-soft); line-height: 1.65; flex: 1; }
+.suggest-body button { align-self: flex-start; width: auto; padding: 0.45rem 1.1rem; font-size: 0.78rem; }
+
+@media (max-width: 640px) {
+  .suggest-btn { grid-area: suggest; margin-top: 0.15rem; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
+  .suggest-thumb { width: 64px; height: 114px; }
+  .suggest-body button { align-self: stretch; width: 100%; }
 }
