@@ -16,7 +16,8 @@ export default function TrackClicks() {
         window.gtag?.("event", "line_click");
         window.fbq?.("track", "Contact");
       } else if (href.includes("/simulator")) {
-        window.gtag?.("event", "simulator_click");
+        // どこから押されたか(sticky = 画面に固定したボタン / text = 料金説明の中の文字リンク)を添える
+        window.gtag?.("event", "simulator_click", { location: a.getAttribute("data-track") || "other" });
         window.fbq?.("track", "ViewContent");
       } else if (href.includes("instagram.com")) {
         window.gtag?.("event", "instagram_click");

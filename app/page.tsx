@@ -247,38 +247,110 @@ function StickyMessageSection() {
   );
 }
 
-function SpBackToTop() {
-  const [visible, setVisible] = useState(false);
-  const idleTimer = useRef<number | null>(null);
-
+// シミュレーターへの固定ボタン。
+// 目印より先へスクロールすると画面下に出し、「お問い合わせからオーダーする」の下にある
+// 着地先(本物のボタン)まで来たら入れ替えて、そこに止まったように見せる。上へ戻れば逆をたどる。
+const pastFv = (r: DOMRect) => r.bottom < 0;
+const reachedOrder = (r: DOMRect) => r.top < window.innerHeight * 0.5;
+function useScrolledPast(id: string, test: (r: DOMRect) => boolean) {
+  const [on, setOn] = useState(false);
   useEffect(() => {
-    const onScroll = () => {
-      setVisible(false);
-      if (idleTimer.current !== null) window.clearTimeout(idleTimer.current);
-      idleTimer.current = window.setTimeout(() => {
-        if (window.scrollY > 400) setVisible(true);
-      }, 400);
+    const update = () => {
+      const el = document.getElementById(id);
+      if (el) setOn(test(el.getBoundingClientRect()));
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
     return () => {
-      if (idleTimer.current !== null) window.clearTimeout(idleTimer.current);
-      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
     };
-  }, []);
+  }, [id, test]);
+  return on;
+}
 
+// 着地先が、固定ボタンの居場所(画面下から bottom 分上)まで上がってきたか。
+// ページは拡大縮小されているので、着地先の実際の高さから倍率を割り出して比べる。
+function useDocked(slotId: string, designH: number, designBottom: number) {
+  const [docked, setDocked] = useState(false);
+  useEffect(() => {
+    const update = () => {
+      const el = document.getElementById(slotId);
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (r.height === 0) return; // 非表示側(スマホ/PC の反対)は測らない
+      const zoom = r.height / designH;
+      setDocked(r.top <= window.innerHeight - (designBottom + designH) * zoom + 0.5);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [slotId, designH, designBottom]);
+  return docked;
+}
+
+// 出し入れの動き。目印をまたぐときはふわっと、着地先との入れ替えは一瞬で(二重に見せない)。
+function useFloatMotion(inRange: boolean, docked: boolean, offsetY: number) {
+  const prevDocked = useRef(docked);
+  const justUndocked = prevDocked.current && !docked;
+  useEffect(() => { prevDocked.current = docked; }, [docked]);
+  const visible = inRange && !docked;
+  const instant = { duration: 0 };
+  const fade = { duration: 0.35, ease: "easeOut" as const };
+  const animate = visible
+    ? { opacity: 1, y: 0, transition: justUndocked ? instant : fade }
+    : docked
+      ? { opacity: 0, y: 0, transition: instant }
+      : { opacity: 0, y: offsetY, transition: fade };
+  return { visible, animate };
+}
+
+// スマホ: ファーストビューを過ぎたら画面下に出す。幅は Order の相談ボタンと同じ(左右 20px)。
+const SP_BAR_H = 56, SP_BAR_BOTTOM = 24;
+function SpSimulatorBar() {
+  const inRange = useScrolledPast("sp-fv", pastFv);
+  const docked = useDocked("sp-sim-slot", SP_BAR_H, SP_BAR_BOTTOM);
+  const { visible, animate } = useFloatMotion(inRange, docked, 16);
   return (
-    <motion.button
-      type="button"
-      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      aria-label="トップに戻る"
+    <motion.a
+      href="/simulator/index.html"
+      data-track="sticky"
       initial={{ opacity: 0, y: 16 }}
-      animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="fixed bottom-[24px] right-[16px] z-50 w-[44px] h-[44px] rounded-full bg-[#710b26]/80 backdrop-blur-sm flex items-center justify-center shadow-md"
-      style={{ pointerEvents: visible ? "auto" : "none" }}
+      animate={animate}
+      className="fixed left-[20px] right-[20px] z-50 flex items-center justify-center bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] border border-[#710b26]/20 shadow-md"
+      style={{ bottom: SP_BAR_BOTTOM, height: SP_BAR_H, pointerEvents: visible ? "auto" : "none" }}
+      aria-hidden={!visible}
+      tabIndex={visible ? 0 : -1}
     >
-      <span className="block w-[10px] h-[10px] border-t-[2px] border-l-[2px] border-white rotate-45 translate-y-[2px]" />
-    </motion.button>
+      オーダーシミュレーターを使用する
+    </motion.a>
+  );
+}
+
+// PC: Order セクションに入ったら画面下に出す。幅は上の相談ボタン2つの並び(300〜1620)に合わせる。
+const PC_BAR_H = 110, PC_BAR_BOTTOM = 40;
+function PcSimulatorBar() {
+  const inRange = useScrolledPast("pc-order", reachedOrder);
+  const docked = useDocked("pc-sim-slot", PC_BAR_H, PC_BAR_BOTTOM);
+  const { visible, animate } = useFloatMotion(inRange, docked, 24);
+  return (
+    <motion.a
+      href="/simulator/index.html"
+      data-track="sticky"
+      initial={{ opacity: 0, y: 24 }}
+      animate={animate}
+      className="fixed left-[300px] right-[300px] z-50 flex items-center justify-center bg-[#f7f7f7] text-[#710b26] text-[20px] tracking-[4.4px] border border-[#710b26]/20 shadow-lg hover:opacity-90"
+      style={{ bottom: PC_BAR_BOTTOM, height: PC_BAR_H, pointerEvents: visible ? "auto" : "none" }}
+      aria-hidden={!visible}
+      tabIndex={visible ? 0 : -1}
+    >
+      オーダーシミュレーターを使用する
+    </motion.a>
   );
 }
 
@@ -294,9 +366,9 @@ function SpPage() {
 
   return (
     <main className="w-[375px] overflow-hidden" style={{ fontFamily: 'Zen Old Mincho, serif' }}>
-      <SpBackToTop />
+      <SpSimulatorBar />
       {/* ===== FV ===== */}
-      <section data-sp-theme="dark" className="relative w-[375px] h-[680px] overflow-hidden">
+      <section id="sp-fv" data-sp-theme="dark" className="relative w-[375px] h-[680px] overflow-hidden">
         <div className="absolute inset-0">
           <Image
             src="/images/sp-fv-bg.jpg"
@@ -490,7 +562,7 @@ function SpPage() {
               <span className="block text-[11px] tracking-[1px] leading-[20px]">(税込/送料別)</span>
             </div>
             <p className="text-[12px] tracking-[1.5px] text-black leading-[22px]">
-              写真の印刷サイズは、ハガキサイズから<br />A3サイズまで自由にお選びいただけます。<br />使用する裂地（きれじ）や<br />完成形に制限はなく、<br />自由なカスタマイズが可能です。<br />印刷する写真のサイズや<br />使用する裂地によって価格が変動します。<br />仕上がりイメージとお見積もりは、<br /><a href="/simulator/index.html" className="text-[#710b26] underline underline-offset-2 hover:opacity-80">オーダーシミュレーター</a>を<br />ぜひご活用ください。（PC推奨）
+              写真の印刷サイズは、ハガキサイズから<br />A3サイズまで自由にお選びいただけます。<br />使用する裂地（きれじ）や<br />完成形に制限はなく、<br />自由なカスタマイズが可能です。<br />印刷する写真のサイズや<br />使用する裂地によって価格が変動します。<br />仕上がりイメージとお見積もりは、<br /><a href="/simulator/index.html" data-track="text" className="text-[#710b26] underline underline-offset-2 hover:opacity-80">オーダーシミュレーター</a>を<br />ぜひご活用ください。
             </p>
           </div>
         </div>
@@ -526,11 +598,10 @@ function SpPage() {
             <span className="absolute right-0 top-1/2 -translate-y-1/2 border-r-[1.5px] border-t-[1.5px] border-[#710b26] w-[6px] h-[6px] rotate-45" />
           </span>
         </Link>
-        {/* オーダーシミュレーター */}
-        <a href="/simulator/index.html" className="flex items-center justify-center w-full h-[56px] bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] mb-[30px]">
+        {/* オーダーシミュレーター: 画面下の固定ボタンがここに着地する */}
+        <a id="sp-sim-slot" href="/simulator/index.html" data-track="sticky" className="flex items-center justify-center w-full h-[56px] bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] border border-[#710b26]/20 mb-[30px]">
           オーダーシミュレーターを使用する
         </a>
-
         {/* Gallery */}
         <div className="overflow-hidden -mx-[20px] mb-[30px]">
           <motion.div
@@ -736,8 +807,9 @@ export default function Home() {
 
       <div className="vp-pc-only vp-pc-root">
         <main className="w-[1920px]">
+        <PcSimulatorBar />
         {/* ===== Order + Footer — Figma: bg 1920x3143 ===== */}
-        <section className="relative w-[1920px] h-[2698px] bg-[#710b26] text-white">
+        <section id="pc-order" className="relative w-[1920px] h-[2698px] bg-[#710b26] text-white">
           <h2 className="absolute z-10 left-[99px] top-[118px] text-[40px] tracking-[16px]">Order</h2>
           <p className="absolute z-10 left-[523px] top-[308px] w-[875px] text-[18px] tracking-[3.6px] leading-[50px] text-center" style={{ fontFamily: 'Zen Old Mincho' }}>
             掛け軸は、　オーダーにてお作りしています。<br />写真の内容だけでなく、　裂地の色や質感、　全体の配色バランスまで。<br />空間や飾る場所を想像しながら、<br />一緒に仕立てていく時間も　大切にしています。
@@ -772,7 +844,7 @@ export default function Home() {
             </div>
             {/* 説明テキスト */}
             <p className="absolute left-[802px] top-[252px] w-[860px] text-[16px] tracking-[7.2px] text-black leading-[28px]">
-              写真の印刷サイズは、ハガキサイズからA3サイズまで<br />自由にお選びいただけます。<br />使用する裂地（きれじ）や完成形に制限はなく、<br />自由なカスタマイズが可能です。<br />印刷する写真のサイズや使用する裂地によって価格が変動します。<br />仕上がりイメージとお見積もりは、<br /><a href="/simulator/index.html" className="text-[#710b26] underline underline-offset-2 hover:opacity-80">オーダーシミュレーター</a>をぜひご活用ください。（PC推奨）
+              写真の印刷サイズは、ハガキサイズからA3サイズまで<br />自由にお選びいただけます。<br />使用する裂地（きれじ）や完成形に制限はなく、<br />自由なカスタマイズが可能です。<br />印刷する写真のサイズや使用する裂地によって価格が変動します。<br />仕上がりイメージとお見積もりは、<br /><a href="/simulator/index.html" data-track="text" className="text-[#710b26] underline underline-offset-2 hover:opacity-80">オーダーシミュレーター</a>をぜひご活用ください。
             </p>
           </div>
 
@@ -818,10 +890,12 @@ export default function Home() {
               <span className="absolute right-0 top-1/2 -translate-y-1/2 border-r-[2px] border-t-[2px] border-[#710b26] w-[8px] h-[8px] rotate-45" />
             </span>
           </Link>
-          {/* オーダーシミュレーター(2ボタンの下・中央) */}
+          {/* オーダーシミュレーター: 画面下の固定ボタンがここに着地する(相談ボタン2つの下・同じ幅) */}
           <a
+            id="pc-sim-slot"
             href="/simulator/index.html"
-            className="absolute left-[640px] top-[1960px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[4.4px] hover:opacity-90 transition-opacity"
+            data-track="sticky"
+            className="absolute left-[300px] top-[1960px] flex items-center justify-center w-[1320px] h-[110px] bg-[#f7f7f7] border border-[#710b26]/20 text-[#710b26] text-[20px] tracking-[4.4px] hover:opacity-90 transition-opacity"
           >
             オーダーシミュレーターを使用する
           </a>
