@@ -147,6 +147,8 @@ body::before {
   text-transform: none;
 }
 .block legend + * { clear: both; }
+/* 手順の番号(1〜5)。見出しと同じ色のまま、少しだけ離す */
+.step-num { margin-right: 0.5em; font-variant-numeric: tabular-nums; }
 .lead, .block .lead {
   font-size: 0.82rem;
   color: var(--ink-soft);
@@ -370,13 +372,6 @@ button:focus-visible, select:focus-visible, input:focus-visible, a.cta:focus-vis
   background: var(--paper);
   box-shadow: 0 12px 40px rgba(80,15,30,0.18), 0 2px 8px rgba(80,15,30,0.10);
 }
-.preview-hint {
-  margin: 1.6rem 0 0;
-  font-size: 0.76rem;
-  color: var(--ink);
-  text-align: center;
-  letter-spacing: 0.05em;
-}
 
 /* 各部位領域(絶対配置) */
 .part {
@@ -599,6 +594,23 @@ button:focus-visible, select:focus-visible, input:focus-visible, a.cta:focus-vis
   color: var(--brand);
 }
 .dialog-note { font-size: 0.78rem; color: var(--ink-faint); margin: 0 0 0.8rem; }
+/* 裂地ピッカーの見出し: 右側に「ほかにも裂地があります」の一文。狭い画面では見出しの下へ回る */
+.picker-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 1.2rem;
+  margin-bottom: 0.8rem;
+}
+.picker-head .dialog-title { margin: 0; }
+.picker-more {
+  flex: 1 1 15rem;
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+.picker-more a { color: var(--brand); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
 .show-all-label {
   font-size: 0.82rem;
   display: inline-flex;
@@ -780,6 +792,8 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
   .block { padding: 0; }
   .block + .block { border-top: 1px solid var(--line); padding-top: 0.55rem; }
   .block legend { font-size: 0.73rem; margin-bottom: 0.22rem; letter-spacing: 0.04em; }
+  /* 「本紙(写真)の大きさを選ぶ」は狭い列だと折り返すので、ここだけ小さくして1行に収める */
+  .block legend.legend-long { font-size: 0.64rem; letter-spacing: 0; white-space: nowrap; }
   .block .lead { display: none; }
   /* 説明ラベル(「写真ファイル」「表装の形式」)だけ隠す。セグメントや
      チェックボックスの <label> は隠さない。.block label より詳細度を上げる。 */
@@ -837,14 +851,6 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
        食み出し量ぶんの内側余白を確保してから中央寄せする。 */
     padding: 10px 22px 12px;
     overflow: hidden;
-  }
-  .preview-hint {
-    flex: none;
-    margin: 0.3rem 0 0;
-    font-size: 0.62rem;
-    line-height: 1.4;
-    text-align: center;
-    white-space: nowrap;
   }
   .preview-stage-row { gap: 0.3rem; }
   .dim { font-size: 0.66rem; }
@@ -1025,4 +1031,77 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
   .suggest-btn { grid-area: suggest; margin-top: 0.15rem; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
   .suggest-thumb { width: 64px; height: 114px; }
   .suggest-body button { align-self: stretch; width: 100%; }
+}
+
+/* ---- 「掛軸の各部はタップできる」のヒント ----
+   写真の位置合わせを閉じた直後に、天の上で指がトントンと2回叩く。これを3回くり返して消える。 */
+.tap-hint {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none; /* 下の部位はそのまま押せる */
+  transform: translate(-50%, -22%); /* 指先が天の中央に来るように */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: tap-hint-in 0.3s ease-out both, tap-hint-out 0.4s ease-in 5.1s forwards;
+}
+.tap-hint svg {
+  width: 36px;
+  height: 36px;
+  fill: #fff;
+  filter: drop-shadow(0 1px 3px rgba(40,10,18,0.55));
+  transform-origin: 50% 25%;
+  animation: tap-hint-press 1.6s ease-in-out 0.3s 3;
+}
+.tap-hint-ripple {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  margin-left: -15px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  opacity: 0;
+  animation: tap-hint-ripple 1.6s ease-out 0.3s 3;
+}
+.tap-hint-label {
+  margin-top: 4px;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: #fff;
+  background: var(--brand);
+  border-radius: 2px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(40,10,18,0.3);
+}
+.tap-hint-label .act-tap { display: none; } /* PC 既定はクリック */
+
+/* トントン(1周で2回押す) */
+@keyframes tap-hint-press {
+  0%, 60%, 100% { transform: translateY(0) scale(1); }
+  12% { transform: translateY(3px) scale(0.9); }
+  24% { transform: translateY(0) scale(1); }
+  36% { transform: translateY(3px) scale(0.9); }
+  48% { transform: translateY(0) scale(1); }
+}
+@keyframes tap-hint-ripple {
+  0%, 10% { opacity: 0; transform: scale(0.4); }
+  14% { opacity: 0.9; transform: scale(0.5); }
+  26% { opacity: 0; transform: scale(1.5); }
+  34% { opacity: 0.9; transform: scale(0.5); }
+  48%, 100% { opacity: 0; transform: scale(1.5); }
+}
+@keyframes tap-hint-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tap-hint-out { to { opacity: 0; } }
+
+/* 動きを減らす設定の人には、動かさずに少しの間だけ見せる */
+@media (prefers-reduced-motion: reduce) {
+  .tap-hint svg, .tap-hint-ripple { animation: none; }
+}
+
+@media (max-width: 960px) {
+  .tap-hint-label .act-tap { display: inline; }   /* スマホはタップ */
+  .tap-hint-label .act-click { display: none; }
 }

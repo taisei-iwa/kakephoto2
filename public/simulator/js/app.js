@@ -150,6 +150,12 @@
     // トリミング
     document.getElementById("trim-confirm-btn").addEventListener("click", onTrimConfirm);
     document.getElementById("trim-cancel-btn").addEventListener("click", onTrimCancel);
+    document.getElementById("trim-change-photo-btn").addEventListener("click", () => el.honshiImageFile.click());
+    document.getElementById("trim-dialog").addEventListener("close", () => {
+      const f = trimOnClose;
+      trimOnClose = null;
+      if (f) f();
+    });
     document.getElementById("trim-lock-aspect").addEventListener("change", onTrimLockToggle);
     setupTrimCanvasDrag();
 
@@ -1083,7 +1089,44 @@
     });
   }
 
+  // ---- 「掛軸の各部はタップできる」を指の動きで見せる ----
+  // 写真の位置合わせを閉じた直後に、天を指がトントンと叩く。
+  // 一度でも部位を押した人には、このブラウザでは二度と出さない。
+  const TAP_HINT_KEY = "kakephoto.tapHintDone";
+  // 指のアイコン(Material Icons "touch_app"、Apache License 2.0)
+  const FINGER_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11.24V7.5a2.5 2.5 0 0 1 5 0v3.74c1.21-.81 2-2.18 2-3.74a4.5 4.5 0 0 0-9 0c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg>';
+
+  function tapHintDone() {
+    try { return localStorage.getItem(TAP_HINT_KEY) === "1"; } catch (e) { return false; }
+  }
+  function hideTapHint() {
+    const h = el.preview.querySelector(".tap-hint");
+    if (h) h.remove();
+  }
+  function markTapHintDone() {
+    try { localStorage.setItem(TAP_HINT_KEY, "1"); } catch (e) { /* 保存できない環境では毎回出るだけ */ }
+    hideTapHint();
+  }
+  function showTapHint() {
+    if (tapHintDone() || !state.honshiImage) return;
+    hideTapHint();
+    // 天がいちばん広く、札を出しても入れたばかりの写真にかぶらない
+    const target = el.preview.querySelector('.part[data-part="ten"]') || el.preview.querySelector('.part[data-part="nakaUe"]');
+    if (!target) return;
+    const hint = document.createElement("div");
+    hint.className = "tap-hint";
+    hint.setAttribute("aria-hidden", "true");
+    hint.style.left = target.offsetLeft + target.offsetWidth / 2 + "px";
+    hint.style.top = target.offsetTop + target.offsetHeight / 2 + "px";
+    hint.innerHTML = '<span class="tap-hint-ripple"></span>' + FINGER_SVG +
+      '<span class="tap-hint-label">ここを<span class="act-tap">タップ</span><span class="act-click">クリック</span></span>';
+    // 叩き終えたら消える。押されなくても、次に写真を位置合わせしたときにまた出る
+    hint.addEventListener("animationend", (e) => { if (e.animationName === "tap-hint-out") hint.remove(); });
+    el.preview.appendChild(hint);
+  }
+
   function openPartFabricPicker(partKind) {
+    markTapHintDone();
     const groups = effectiveGroups();
     const useCat = {
       tenchi: "tenchi",
@@ -1188,6 +1231,8 @@
         el.trimHonshiBtn.style.display = "";
         el.honshiImageFile.value = "";
         render();
+        // 取り込んだらそのまま位置合わせへ(トリミング画面の「写真を変更」から来た場合は開いたまま差し替わる)
+        openTrimDialog();
       };
       img.onerror = function () {
         el.honshiImageWarning.textContent = "画像として読み込めませんでした。";
@@ -1471,6 +1516,7 @@
   // ---- 写真のトリミング(位置調整)ダイアログ ----
   let trimCtx = null;
   let _trimCachedImg = null;
+  let trimOnClose = null; // トリミング画面が閉じたら一度だけ呼ぶ(Esc で閉じた場合も含む)
 
   // 本紙の位置調整(従来)。トリミングは汎用の openTrimDialogWith に委譲する。
   function openTrimDialog() {
@@ -1487,6 +1533,8 @@
       lockDefault: true,
       title: "写真の位置を調整",
       needCropped: false,
+      allowChangePhoto: true,
+      onClose: showTapHint,
       onConfirm: function (cropRect) { state.honshiImage.cropRect = cropRect; render(); },
     });
   }
@@ -1523,8 +1571,13 @@
       lockCheck.checked = false;
     }
 
+    document.getElementById("trim-change-photo-btn").hidden = !opts.allowChangePhoto;
+    trimOnClose = opts.onClose || null;
+
     initTrimCanvas();
-    document.getElementById("trim-dialog").showModal();
+    // すでに開いている(写真を変更した)ときは開き直さない。showModal は二重に呼ぶと例外になる
+    const trimDialog = document.getElementById("trim-dialog");
+    if (!trimDialog.open) trimDialog.showModal();
   }
 
   function onTrimLockToggle(e) {

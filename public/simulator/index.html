@@ -32,7 +32,7 @@
 
       <!-- F1: 写真(本紙)の取り込み -->
       <fieldset class="block">
-        <legend>写真を選ぶ</legend>
+        <legend><span class="step-num">1</span>写真を選ぶ</legend>
         <p class="lead">本紙となる、お手元の一枚をお選びください。</p>
         <label for="honshi-image-file" class="file-label">写真ファイル</label>
         <input type="file" id="honshi-image-file" accept="image/*" />
@@ -45,7 +45,7 @@
 
       <!-- F2: 本紙サイズ選択 -->
       <fieldset class="block" id="size-block">
-        <legend>本紙(写真)の大きさを選ぶ</legend>
+        <legend class="legend-long"><span class="step-num">2</span>本紙(写真)の大きさを選ぶ</legend>
         <div class="seg" role="radiogroup" aria-label="サイズの種類">
           <label class="seg-item"><input type="radio" name="size-mode" value="a4" /> <span>A4 定型</span></label>
           <label class="seg-item"><input type="radio" name="size-mode" value="a3" /> <span>A3 定型</span></label>
@@ -75,7 +75,7 @@
 
       <!-- F4: 表装形式(全形式を顧客にも見せる) -->
       <fieldset class="block">
-        <legend>仕立てを選ぶ</legend>
+        <legend><span class="step-num">3</span>仕立てを選ぶ</legend>
         <label for="format-select">表装の形式</label>
         <select id="format-select" aria-label="表装形式の選択"></select>
         <div class="row pair-row">
@@ -90,7 +90,7 @@
 
       <!-- 軸先(端の飾り)の色 -->
       <fieldset class="block" id="jiku-color-block">
-        <legend>軸先の色</legend>
+        <legend><span class="step-num">4</span>軸先の色</legend>
         <div class="seg jiku-seg" role="radiogroup" aria-label="軸先の色">
           <label class="seg-item"><input type="radio" name="jiku-color" value="black" /> <span>黒</span></label>
           <label class="seg-item"><input type="radio" name="jiku-color" value="brown" checked /> <span>茶</span></label>
@@ -100,7 +100,7 @@
 
       <!-- F8/スプリント2: 箱(梱包)オプション -->
       <fieldset class="block" id="box-block">
-        <legend>箱の種類</legend>
+        <legend><span class="step-num">5</span>箱の種類</legend>
         <div class="seg box-seg" role="radiogroup" aria-label="箱の種類">
           <label class="seg-item"><input type="radio" name="box-option" value="paper" checked /> <span>紙箱<br /><span class="seg-sub">無料</span></span></label>
           <label class="seg-item"><input type="radio" name="box-option" value="kiri" /> <span>桐箱<br /><span class="seg-sub">+¥11,000</span></span></label>
@@ -125,7 +125,6 @@
           </div>
         </div>
       </div>
-      <p class="preview-hint">中央の写真をタップしてトリミング</p>
       <!-- スマホではリセットをプレビューの下に置く(PC は仕立て内の方を表示) -->
       <button type="button" class="fabric-reset-btn fabric-reset-sp secondary" disabled>裂地をすべてリセット</button>
     </section>
@@ -215,7 +214,11 @@
 
   <!-- F5: 部位クリック → 用途別の裂地ピッカー -->
   <dialog id="part-fabric-dialog" class="picker-dialog" aria-modal="true" aria-labelledby="part-fabric-title">
-    <h2 id="part-fabric-title" class="dialog-title"></h2>
+    <div class="picker-head">
+      <h2 id="part-fabric-title" class="dialog-title"></h2>
+      <!-- 選んでいる途中の内容が消えないよう、フォームは別タブで開く -->
+      <p class="picker-more">ほかにも裂地をご用意しています。ご希望があれば<a href="/contact" target="_blank" rel="noopener">お問い合わせフォーム</a>よりお知らせください。</p>
+    </div>
     <label class="show-all-label">
       <input type="checkbox" id="part-fabric-showall" />
       すべての裂地を表示する
@@ -242,6 +245,7 @@
     </div>
     <div id="trim-warning" class="warning" role="alert" hidden></div>
     <div class="dialog-btns">
+      <button type="button" id="trim-change-photo-btn" class="secondary" hidden>写真を変更</button>
       <button type="button" id="trim-confirm-btn">確定</button>
       <button type="button" id="trim-cancel-btn" class="secondary">キャンセル</button>
     </div>
