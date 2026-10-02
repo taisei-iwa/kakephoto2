@@ -87,11 +87,13 @@
         <label for="format-select">表装の形式</label>
         <select id="format-select" aria-label="表装形式の選択"></select>
         <div class="row pair-row">
-          <label><input type="checkbox" id="opt-ichimonji-ari" /> 一文字追加</label>
-          <label id="fuutai-ari-label" hidden><input type="checkbox" id="opt-fuutai-ari" /> 風帯あり(+¥3,000)</label>
-          <label id="mincho-label" hidden><input type="checkbox" id="opt-mincho" /> 明朝仕立て</label>
+          <label><input type="checkbox" id="opt-ichimonji-ari" /> 一文字追加<button type="button" class="guide-q" data-guide="guide-ichimonji" aria-label="一文字とは(図で見る)">?</button></label>
+          <label id="fuutai-ari-label" hidden><input type="checkbox" id="opt-fuutai-ari" /> 風帯あり(+¥3,000)<button type="button" class="guide-q" data-guide="guide-fuutai" aria-label="風帯とは(図で見る)">?</button></label>
+          <label id="mincho-label" hidden><input type="checkbox" id="opt-mincho" /> 明朝仕立て<button type="button" class="guide-q" data-guide="guide-mincho" aria-label="明朝仕立てとは(図で見る)">?</button></label>
         </div>
         <p id="format-note" class="note" hidden></p>
+        <!-- 形式・一文字・風帯の違いを図で見る(一般の方には違いが分からないため。2026-10-03 本人) -->
+        <button type="button" class="guide-link" data-guide="guide-formats">形式・一文字・風帯の違いを図で見る</button>
       </fieldset>
 
       <!-- 作り方(3 択)。素材(和紙 / 裂地)はお客様に判断させず、選んだ作り方の結果として決まる。
@@ -105,16 +107,16 @@
             <span class="method-desc">写真に合わせて天地の絵柄を描き、和紙に印刷して仕立てます。</span>
           </button>
           <button type="button" id="suggest-btn" class="method-card" data-method="suggest">
-            <span class="method-title">裂地の見本から選ぶ</span>
+            <span class="method-title"><ruby>裂地<rt>きれじ</rt></ruby>の見本から選ぶ</span>
             <span class="method-desc">写真の色に合う裂地の取り合わせを3案お見せします。</span>
           </button>
           <button type="button" id="self-btn" class="method-card" data-method="self">
-            <span class="method-title">裂地を自分で選ぶ</span>
+            <span class="method-title"><ruby>裂地<rt>きれじ</rt></ruby>を自分で選ぶ</span>
             <span class="method-desc">掛軸の各部をタップして、裂地を一つずつ選びます。</span>
           </button>
         </div>
         <p class="note method-note">お手持ちの柄のデータで和紙を作りたい方は、LINE でご相談ください。</p>
-        <button type="button" class="fabric-reset-btn fabric-reset-pc secondary" disabled>裂地をすべてリセット</button>
+        <button type="button" class="fabric-reset-btn fabric-reset-pc secondary" disabled><ruby>裂地<rt>きれじ</rt></ruby>をすべてリセット</button>
       </fieldset>
 
       <!-- 軸先(端の飾り)の色 -->
@@ -169,7 +171,7 @@
         サイズを正しく入力してください。
       </div>
       <!-- 指のアイコン+薄い地の札で、操作の案内だと一目で分かるように(2026-10-02 本人「もう少し読みやすく」)。アイコンは Material Icons "touch_app"(Apache License 2.0) -->
-      <p class="preview-size-note"><svg class="note-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11.24V7.5a2.5 2.5 0 0 1 5 0v3.74c1.21-.81 2-2.18 2-3.74a4.5 4.5 0 0 0-9 0c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg><span><span class="nw">掛軸を<strong class="act-tap">タップ</strong><strong class="act-click">クリック</strong>して</span><span class="nw">裂地をお選びください</span></span></p>
+      <p class="preview-size-note"><svg class="note-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11.24V7.5a2.5 2.5 0 0 1 5 0v3.74c1.21-.81 2-2.18 2-3.74a4.5 4.5 0 0 0-9 0c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg><span><span class="nw">掛軸を<strong class="act-tap">タップ</strong><strong class="act-click">クリック</strong>して</span><span class="nw"><ruby>裂地<rt>きれじ</rt></ruby>をお選びください</span></span></p>
       <div class="preview-frame">
         <div class="preview-stage">
           <div class="dim dim-w" id="dim-w"></div>
@@ -188,7 +190,7 @@
         <div id="design-history-list" class="design-history-list"></div>
       </div>
       <!-- スマホではリセットをプレビューの下に置く(PC は仕立て内の方を表示) -->
-      <button type="button" class="fabric-reset-btn fabric-reset-sp secondary" disabled>裂地をすべてリセット</button>
+      <button type="button" class="fabric-reset-btn fabric-reset-sp secondary" disabled><ruby>裂地<rt>きれじ</rt></ruby>をすべてリセット</button>
     </section>
 
     <!-- 価格・注文(右) -->
@@ -208,7 +210,7 @@
             <dd id="bd-fuutai">¥0</dd>
           </div>
           <div class="bd-row" id="bd-fabric-row">
-            <dt>裂地</dt>
+            <dt><ruby>裂地<rt>きれじ</rt></ruby></dt>
             <dd id="bd-fabric">¥0</dd>
           </div>
           <div class="bd-row" id="bd-box-row">
@@ -273,11 +275,11 @@
     <div class="picker-head">
       <h2 id="part-fabric-title" class="dialog-title"></h2>
       <!-- 選んでいる途中の内容が消えないよう、フォームは別タブで開く -->
-      <p class="picker-more">ほかにも裂地をご用意しています。ご希望があれば<a href="/contact" target="_blank" rel="noopener">お問い合わせフォーム</a>よりお知らせください。</p>
+      <p class="picker-more">ほかにも<ruby>裂地<rt>きれじ</rt></ruby>をご用意しています。ご希望があれば<a href="/contact" target="_blank" rel="noopener">お問い合わせフォーム</a>よりお知らせください。</p>
     </div>
     <label class="show-all-label">
       <input type="checkbox" id="part-fabric-showall" />
-      すべての裂地を表示する
+      すべての<ruby>裂地<rt>きれじ</rt></ruby>を表示する
     </label>
     <ul id="part-fabric-list" class="fabric-list" aria-label="部位向け裂地一覧"></ul>
     <div class="dialog-btns">
@@ -312,9 +314,16 @@
     </div>
   </dialog>
 
+  <!-- 図解: 各部の名前・形式の違い・一文字・風帯(中身は app.js が掛軸の寸法計算から描く) -->
+  <dialog id="guide-dialog" class="picker-dialog guide-dialog" aria-modal="true" aria-labelledby="guide-title">
+    <button type="button" id="guide-close" class="dialog-x" aria-label="閉じる">×</button>
+    <h2 id="guide-title" class="dialog-title">掛軸の形と各部の名前</h2>
+    <div id="guide-body" class="guide-body"></div>
+  </dialog>
+
   <!-- 写真から裂地の取り合わせを3案出すダイアログ -->
   <dialog id="suggest-dialog" class="picker-dialog suggest-dialog" aria-modal="true" aria-labelledby="suggest-dialog-title">
-    <h2 id="suggest-dialog-title" class="dialog-title">裂地の取り合わせ 3案</h2>
+    <h2 id="suggest-dialog-title" class="dialog-title"><ruby>裂地<rt>きれじ</rt></ruby>の取り合わせ 3案</h2>
     <p class="dialog-note">お写真の色みから3通りの組み方をご提案します。選ぶとプレビューに反映されます。そのあとご自分で裂地を変えることもできます。</p>
     <ul id="suggest-list" class="suggest-list" aria-label="取り合わせの提案"></ul>
     <div class="dialog-btns">
@@ -402,7 +411,7 @@
     <button type="button" id="design-choice-close" class="dialog-x" aria-label="閉じる">×</button>
     <h2 id="design-choice-title" class="dialog-title">2つの案ができました</h2>
     <p class="design-choice-concept" id="design-choice-concept"></p>
-    <p class="mat-alert">どちらも、和紙に絵柄を印刷して仕立てます(布の裂地ではありません)。</p>
+    <p class="mat-alert">どちらも、和紙に絵柄を印刷して仕立てます(布の<ruby>裂地<rt>きれじ</rt></ruby>ではありません)。</p>
     <ul id="design-choice-list" class="design-choice-list" aria-label="デザインの案"></ul>
     <p class="dialog-note">選ばなかった案も、あとから「これまでのデザイン」で切り替えられます。</p>
   </dialog>

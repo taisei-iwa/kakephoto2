@@ -176,7 +176,10 @@ function ContactSp() {
                   メッセージ内容
                   <span className="text-[10px] bg-[#710b26] text-white px-2 py-[2px] rounded-sm">必須</span>
                 </label>
+                {/* data-lenis-prevent: ページのなめらかスクロール(Lenis)が欄の中のスクロールを奪わないように。
+                    シミュレーターの注文内容は長く、欄の中をスクロールできないと読めなかった(2026-10-03 本人) */}
                 <textarea
+                  data-lenis-prevent
                   name="message"
                   rows={5}
                   required
@@ -295,7 +298,9 @@ function ContactPc() {
                     メッセージ内容
                     <span className="text-[12px] bg-[#710b26] text-white px-3 py-[2px] rounded-sm">必須</span>
                   </label>
+                  {/* data-lenis-prevent: 上と同じ(欄の中をスクロールできるように) */}
                   <textarea
+                    data-lenis-prevent
                     name="message"
                     rows={6}
                     required

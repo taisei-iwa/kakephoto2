@@ -188,6 +188,182 @@
     initSuggest(); // 写真から裂地の取り合わせを3案出す
     initDesign(); // 写真に合わせて天地をデザインする(同意のうえで写真を読み取りに送る)
     initSteps(); // 一本道の段階と作り方の 3 択
+    initGuide(); // 図解(形式・一文字・風帯)
+    initJikuSpot(); // 軸先を選ぶときにプレビューの軸先を目立たせる
+  }
+
+  // ---- 裂地名のふりがな(2026-10-03 本人「裂地にはフリガナを」)。裏方で裂地を足したら、ここにも読みを足す ----
+  const FABRIC_KANA = {
+    "オレンジ　無地": "オレンジ むじ",
+    "グレー白　市松模様": "グレーしろ いちまつもよう",
+    "ドット　黒白": "ドット くろしろ",
+    "ベージュ　無地": "ベージュ むじ",
+    "橙色　波模様": "だいだいいろ なみもよう",
+    "白地裂　鶴模様": "しろじぎれ つるもよう",
+    "紅色　着物帯": "べにいろ きものおび",
+    "紅色　紺縦縞": "べにいろ こんたてじま",
+    "紫　ボーダー": "むらさき ボーダー",
+    "紫地　菱紋": "むらさきじ ひしもん",
+    "紺色　小花紋緞子": "こんいろ こばなもんどんす",
+    "紺色　縞模様": "こんいろ しまもよう",
+    "緑　唐草牡丹": "みどり からくさぼたん",
+    "茶系　縦縞模様": "ちゃけい たてじまもよう",
+    "茶系縦縞模様": "ちゃけい たてじまもよう",
+    "茶色　細四角柄": "ちゃいろ ほそしかくがら",
+    "菱紋（茶紺系）": "ひしもん(ちゃこんけい)",
+    "薄緑　帯裂": "うすみどり おびぎれ",
+    "赤　菱紋": "あか ひしもん",
+    "金色　鶴紋金襴": "きんいろ つるもんきんらん",
+    "銀色　ドット柄": "ぎんいろ ドットがら",
+    "青　ボーダー": "あお ボーダー",
+    "青地　花びら紋": "あおじ はなびらもん",
+    "黄緑　無地": "きみどり むじ",
+  };
+
+  // ---- 軸先の場所を示す: 軸先の色にカーソルを合わせる(またはタップする)と、プレビューの軸先を光らせて「軸先」と出す ----
+  let jikuSpot = false;
+  let jikuSpotTimer = null;
+  function setJikuSpot(on) {
+    jikuSpot = on;
+    el.preview.querySelectorAll(".jiku-end").forEach((e) => e.classList.toggle("spot", on));
+  }
+  function initJikuSpot() {
+    const block = document.getElementById("jiku-color-block");
+    if (!block) return;
+    block.querySelectorAll(".seg-item").forEach((item) => {
+      item.addEventListener("mouseenter", () => { clearTimeout(jikuSpotTimer); setJikuSpot(true); });
+      item.addEventListener("mouseleave", () => setJikuSpot(false));
+      // スマホ(カーソルなし)やキーボードでは、選んだときに少しのあいだ光らせる
+      item.addEventListener("focusin", () => { clearTimeout(jikuSpotTimer); setJikuSpot(true); jikuSpotTimer = setTimeout(() => setJikuSpot(false), 1800); });
+      item.addEventListener("click", () => { clearTimeout(jikuSpotTimer); setJikuSpot(true); jikuSpotTimer = setTimeout(() => setJikuSpot(false), 1800); });
+    });
+  }
+
+  // ---- 図解: 各部の名前・形式の違い・一文字・風帯(2026-10-03 本人「一般の方は違いが分からない」) ----
+  // 図は掛軸の寸法計算(computeLayout)から描くので、プレビューと同じ比率になる。A4 縦で描く。
+  const FORMAT_GUIDE = {
+    "santan-gyo": { kana: "さんだんひょうそう", text: "本紙のまわりを中廻しで囲み、その上下に天と地を付ける、いちばん一般的な形です。きちんとした印象で、和室にも洋室にも合います。" },
+    chagake: { kana: "ちゃがけ", text: "茶室に掛けるために生まれた形です。本紙の左右の柱が細く、すっきりと控えめ。写真を主役にしたいときや、小さな空間に向きます。" },
+    maru: { kana: "ふくろひょうぐ", text: "一文字のほかは、一種類の裂地で本紙を包む簡素な形です。中廻しがなく、すっきりとした現代的な印象になります。" },
+  };
+  const GUIDE_FILL = { ten: "#c9b08a", chi: "#c9b08a", nakamawashi: "#e8ddc7", hashira: "#e8ddc7", ichimonji: "#9a7440", fuutai: "#9a7440", honshi: "#dfe5ec", heri: "#7a6648" };
+  const GUIDE_LABELS = [
+    ["fuutaiRight", "風帯", "ふうたい"], ["ten", "天", "てん"], ["nakaUe", "中廻し", "ちゅうまわし"], ["ichimonjiUe", "一文字", "いちもんじ"],
+    ["honshi", "本紙(写真)", "ほんし"], ["hashiraRight", "柱", "はしら"], ["chi", "地", "ち"], ["_jiku", "軸先", "じくさき"],
+  ];
+  function guideSVG(presetId, opt, o) {
+    o = o || {};
+    const preset = getPreset(presetId);
+    const pp = preset.parts || {};
+    const L = computeLayout(preset, 210, 297, { noIchimonji: !!opt.noIchimonji || pp.ichimonji === false, noFuutai: !!opt.noFuutai || pp.fuutai === false });
+    const hasNaka = pp.nakamawashi !== false;
+    const u = L.totalW / 30; // 線や文字の大きさの単位
+    const padL = u * 3, padR = o.labels ? u * 20 : u * 3, padT = u * 2, padB = u * 3;
+    const W = L.totalW + padL + padR, H = L.totalH + padT + padB;
+    const X = (v) => (v + padL).toFixed(1), Y = (v) => (v + padT).toFixed(1);
+    let svg = '<svg class="guide-svg" viewBox="0 0 ' + W.toFixed(0) + " " + H.toFixed(0) + '" role="img" aria-label="' + (o.aria || "") + '">';
+    const order = ["ten", "nakaUe", "hashiraLeft", "hashiraRight", "nakaShita", "chi", "heriLeft", "heriRight", "ichimonjiUe", "honshi", "ichimonjiShita", "fuutaiLeft", "fuutaiRight"];
+    order.forEach((k) => {
+      const p = L.parts[k];
+      if (!p) return;
+      let fill = GUIDE_FILL[p.part] || "#ddd";
+      if (p.part === "hashira" && !hasNaka) fill = GUIDE_FILL.ten; // 袋表具は柱も天地と同じ裂地
+      if (o.hi) fill = o.hi.indexOf(p.part) >= 0 ? "#b4531a" : (p.part === "honshi" ? "#eef1f4" : "#ebe5da");
+      svg += '<rect x="' + X(p.x) + '" y="' + Y(p.y) + '" width="' + p.w.toFixed(1) + '" height="' + p.h.toFixed(1) + '" fill="' + fill + '" stroke="rgba(80,40,20,0.3)" stroke-width="' + (u * 0.08).toFixed(2) + '"/>';
+    });
+    // 八双(上)・軸棒(下)・軸先
+    svg += '<rect x="' + X(-u * 0.2) + '" y="' + Y(-u * 0.6) + '" width="' + (L.totalW + u * 0.4).toFixed(1) + '" height="' + (u * 0.7).toFixed(1) + '" fill="#d8cdb8"/>';
+    const rodY = L.totalH - u * 0.2;
+    svg += '<rect x="' + X(-u * 0.2) + '" y="' + Y(rodY) + '" width="' + (L.totalW + u * 0.4).toFixed(1) + '" height="' + (u * 0.9).toFixed(1) + '" fill="#d8cdb8"/>';
+    [-u * 1.4, L.totalW + u * 0.2].forEach((x) => { svg += '<rect x="' + X(x) + '" y="' + Y(rodY) + '" width="' + (u * 1.2).toFixed(1) + '" height="' + (u * 0.9).toFixed(1) + '" fill="#6b4f30"/>'; });
+    if (o.labels) {
+      // 引き出し線つきの名前(重ならないよう、上から順に最小の間隔をあける)
+      const fs = u * 2.4, gap = fs * 1.9, tx = L.totalW + u * 4.5; // 図を縮めて表示しても読める大きさ
+      let lastY = -Infinity;
+      GUIDE_LABELS.forEach(([k, name, kana]) => {
+        let px, py;
+        if (k === "_jiku") { px = L.totalW + u * 1.4; py = rodY + u * 0.45; }
+        else {
+          const p = L.parts[k];
+          if (!p) return;
+          // 風帯は天の上に重なるので、風帯は上寄り・天は下寄りを指して、点が重ならないようにする
+          const fx = { hashiraRight: 0.5, fuutaiRight: 0.5, ten: 0.93 }[k], fy = { fuutaiRight: 0.3, ten: 0.75 }[k];
+          px = p.x + p.w * (fx != null ? fx : 0.85);
+          py = p.y + p.h * (fy != null ? fy : 0.5);
+        }
+        const ly = Math.max(py, lastY + gap);
+        lastY = ly;
+        svg += '<polyline points="' + X(px) + "," + Y(py) + " " + X(tx - u * 1.5) + "," + Y(ly) + " " + X(tx - u * 0.4) + "," + Y(ly) + '" fill="none" stroke="#710b26" stroke-width="' + (u * 0.1).toFixed(2) + '"/>';
+        svg += '<circle cx="' + X(px) + '" cy="' + Y(py) + '" r="' + (u * 0.3).toFixed(2) + '" fill="#710b26"/>';
+        svg += '<text x="' + X(tx) + '" y="' + Y(ly + fs * 0.35) + '" font-size="' + fs.toFixed(1) + '" fill="#333">' + name + '</text>';
+        svg += '<text x="' + X(tx) + '" y="' + Y(ly + fs * 1.15) + '" font-size="' + (fs * 0.55).toFixed(1) + '" fill="#8a8178">' + kana + "</text>";
+      });
+    }
+    return svg + "</svg>";
+  }
+  let guideBuilt = false;
+  function buildGuide() {
+    const body = document.getElementById("guide-body");
+    const fig = (svg, cap) => '<figure class="guide-fig">' + svg + "<figcaption>" + cap + "</figcaption></figure>";
+    let h = '<section id="guide-parts"><h3>各部の名前</h3><div class="guide-one">' + guideSVG("santan-gyo", { noIchimonji: false, noFuutai: false }, { labels: true, aria: "掛軸の各部の名前" }) + "</div></section>";
+    h += '<section id="guide-formats"><h3>表装の形式の違い</h3><div class="guide-formats">';
+    FORMAT_PRESETS.filter((p) => !p.hidden && FORMAT_GUIDE[p.id]).forEach((p) => {
+      const g = FORMAT_GUIDE[p.id];
+      h += '<div class="guide-format">' + guideSVG(p.id, { noIchimonji: true, noFuutai: true }, { aria: p.label }) +
+        '<p class="guide-name"><ruby>' + p.label.replace(/\(.*\)/, "") + "<rt>" + g.kana + "</rt></ruby></p>" +
+        '<p class="guide-text">' + g.text + "</p>" +
+        '<button type="button" class="guide-pick" data-format="' + p.id + '">この形式にする</button></div>';
+    });
+    h += "</div></section>";
+    h += '<section id="guide-ichimonji"><h3><ruby>一文字<rt>いちもんじ</rt></ruby></h3><div class="guide-pair">' +
+      fig(guideSVG("santan-gyo", { noIchimonji: true, noFuutai: true }, { aria: "一文字なし" }), "一文字なし") +
+      fig(guideSVG("santan-gyo", { noIchimonji: false, noFuutai: true }, { hi: ["ichimonji"], aria: "一文字あり" }), "一文字あり(色の部分)") +
+      '</div><p class="guide-text">本紙のすぐ上と下に入れる、細い帯の裂地です。格の高い裂地を使うことが多く、写真のまわりが引き締まって、より改まった仕上がりになります。</p></section>';
+    h += '<section id="guide-fuutai"><h3><ruby>風帯<rt>ふうたい</rt></ruby></h3><div class="guide-pair">' +
+      fig(guideSVG("santan-gyo", { noIchimonji: false, noFuutai: true }, { aria: "風帯なし" }), "風帯なし") +
+      fig(guideSVG("santan-gyo", { noIchimonji: false, noFuutai: false }, { hi: ["fuutai"], aria: "風帯あり" }), "風帯あり(色の部分)") +
+      '</div><p class="guide-text">天から下がる、2本の細い帯です。正式な掛軸に付く飾りで、付けると格式のある印象になります。一文字と同じ裂地で仕立てます(+¥3,000)。</p></section>';
+    // 明朝仕立ては袋表具の中の選択肢(形式一覧には出さず、袋表具のときのチェックで切り替える)
+    h += '<section id="guide-mincho"><h3><ruby>明朝仕立て<rt>みんちょうじたて</rt></ruby></h3><div class="guide-pair">' +
+      fig(guideSVG("maru", { noIchimonji: true, noFuutai: true }, { aria: "袋表具" }), "袋表具") +
+      fig(guideSVG("mincho", { noIchimonji: true, noFuutai: true }, { hi: ["heri"], aria: "明朝仕立て" }), "明朝仕立て(色の部分が明朝縁)") +
+      '</div><p class="guide-text">袋表具の左右の端に、細い縁(明朝縁・約1cm)を通した形です。輪郭が引き締まり、簡素ななかにも品のある印象になります。袋表具を選んだときに付けられます。</p>' +
+      '<button type="button" class="guide-pick guide-pick-mincho">明朝仕立てにする</button></section>';
+    body.innerHTML = h;
+    body.querySelectorAll(".guide-pick").forEach((b) => b.addEventListener("click", () => {
+      el.formatSelect.value = b.dataset.format;
+      onFormatChange();
+      document.getElementById("guide-dialog").close();
+      showToast("形式を変えました。");
+    }));
+    const mincho = body.querySelector(".guide-pick-mincho");
+    if (mincho) mincho.addEventListener("click", () => {
+      el.formatSelect.value = "maru"; // 明朝仕立ては袋表具のチェック
+      onFormatChange();
+      el.optMincho.checked = true;
+      el.optMincho.dispatchEvent(new Event("change"));
+      document.getElementById("guide-dialog").close();
+      showToast("袋表具の明朝仕立てにしました。");
+    });
+    guideBuilt = true;
+  }
+  function openGuide(sectionId) {
+    const dlg = document.getElementById("guide-dialog");
+    if (!dlg) return;
+    if (!guideBuilt) buildGuide();
+    if (!dlg.open) dlg.showModal();
+    const sec = document.getElementById(sectionId);
+    if (sec) sec.scrollIntoView({ block: "start" });
+    if (typeof gtag === "function") gtag("event", "guide_open", { section: sectionId });
+  }
+  function initGuide() {
+    document.querySelectorAll("[data-guide]").forEach((b) => b.addEventListener("click", (e) => {
+      e.preventDefault(); // 「?」はチェックボックスのラベルの中にあるので、チェックを切り替えない
+      e.stopPropagation();
+      openGuide(b.dataset.guide);
+    }));
+    const close = document.getElementById("guide-close");
+    if (close) close.addEventListener("click", () => document.getElementById("guide-dialog").close());
   }
 
   // ---- 一本道の段階(2026-10-02 Tesla 型)と作り方の 3 択 ----
@@ -316,7 +492,7 @@
     const washi = washiPartLabels(layout);
     const alert = document.getElementById("confirm-washi");
     alert.hidden = washi.length === 0;
-    alert.textContent = washi.length ? washi.join("・") + "は、布の裂地ではなく、和紙に印刷して仕立てます。" : "";
+    alert.innerHTML = washi.length ? washi.join("・") + "は、布の<ruby>裂地<rt>きれじ</rt></ruby>ではなく、和紙に印刷して仕立てます。" : ""; // 部位名は定数
   }
 
   // ---- AR 体験(スマホ・タブレットで表示。iPhone は Quick Look、Android は WebXR / Scene Viewer)----
@@ -1610,7 +1786,7 @@
     const ui = buildAssignmentUiMap()[partKind];
     if (!ui) return;
     pickerCtx = { ui, cat: useCat[ui] };
-    document.getElementById("part-fabric-title").textContent = groups[ui].label + " の裂地を選ぶ";
+    document.getElementById("part-fabric-title").innerHTML = groups[ui].label + " の<ruby>裂地<rt>きれじ</rt></ruby>を選ぶ"; // 部位名は定数なので innerHTML で安全
     document.getElementById("part-fabric-showall").checked = false;
     renderPartFabricList();
     document.getElementById("part-fabric-dialog").showModal();
@@ -1667,6 +1843,8 @@
       const cap = document.createElement("div");
       cap.className = "fname";
       cap.textContent = f.name;
+      const kana = FABRIC_KANA[f.name];
+      if (kana) { const k = document.createElement("span"); k.className = "fkana"; k.textContent = kana; cap.prepend(k); }
       cap.addEventListener("click", choose);
       li.appendChild(img);
       li.appendChild(cap);
@@ -1917,9 +2095,9 @@
     if (chiFab && chiFab.cover) applyCover(bottom, chiFab, "chi", "bottom");
     else if (chiFab) applyFabricTiling(bottom, chiFab, Math.max(2, chiFab.tileW * scale), Math.max(2, chiFab.tileH * scale));
     const endL = document.createElement("div");
-    endL.className = "jiku-end left " + state.jikuColor;
+    endL.className = "jiku-end left " + state.jikuColor + (jikuSpot ? " spot" : "");
     const endR = document.createElement("div");
-    endR.className = "jiku-end right " + state.jikuColor;
+    endR.className = "jiku-end right " + state.jikuColor + (jikuSpot ? " spot" : "");
     el.preview.appendChild(top);
     el.preview.appendChild(bottom);
     el.preview.appendChild(endL);
