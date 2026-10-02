@@ -293,8 +293,9 @@
     <p class="design-lead">お写真の情景や色に合わせて、掛軸の天(上)と地(下)の絵柄を描きおこします。描いた絵柄は和紙に印刷して仕立てます。</p>
     <ul class="design-terms">
       <li>絵柄を描くために、お写真を縮小して外部のサービス(Google)に送り、写っているものや色を読み取ります。</li>
-      <li>お写真は読み取りにだけ使います。当店ではお写真を保存しません。外部のサービスでも、学習には使われません(不正な利用を防ぐため、一定期間記録されることがあります)。</li>
+      <li>外部のサービスでは、お写真が学習に使われることはありません(不正な利用を防ぐため、一定期間記録されることがあります)。</li>
       <li>描きあがった絵柄はデザイン番号をつけて当店で保管し、ご注文のときの印刷に使います。</li>
+      <li>シミュレーターでの記録の一部は、デザイン品質向上へ利用されます。</li>
     </ul>
     <p class="dialog-note">詳しくは<a href="/privacy-policy" target="_blank" rel="noopener">プライバシーポリシー</a>をご覧ください。</p>
     <label class="design-agree"><input type="checkbox" id="design-agree" /> 上記に同意して、写真を送ります</label>
@@ -340,6 +341,14 @@
       <button type="button" id="design-wish-auto" class="secondary">おまかせで始める</button>
       <button type="button" id="design-wish-ok">この内容で始める</button>
     </div>
+  </dialog>
+
+  <dialog id="design-choice-dialog" class="picker-dialog design-dialog design-choice-dialog" aria-modal="true" aria-labelledby="design-choice-title">
+    <button type="button" id="design-choice-close" class="dialog-x" aria-label="閉じる">×</button>
+    <h2 id="design-choice-title" class="dialog-title">2つの案ができました</h2>
+    <p class="design-choice-concept" id="design-choice-concept"></p>
+    <ul id="design-choice-list" class="design-choice-list" aria-label="デザインの案"></ul>
+    <p class="dialog-note">選ばなかった案も、あとから「これまでのデザイン」で切り替えられます。</p>
   </dialog>
 
   <dialog id="design-progress-dialog" class="picker-dialog design-dialog" aria-modal="true" aria-labelledby="design-progress-title">

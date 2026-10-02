@@ -338,7 +338,7 @@
   // デザインの天地は「1 枚の絵を敷く特別な裂地」(cover)として裂地の一覧に加える。だから裂地の選択画面から
   // 裂地に変えることも、デザインに戻すこともでき、注文の要約にも名前(デザイン番号入り)が載る。
   // 中廻しは絵柄に合わせた紙(無地)を同じく裂地として加えて割り当てる。選び直しは従来の画面で。
-  const DESIGN_CONSENT_KEY = "kp_design_consent";
+  const DESIGN_CONSENT_KEY = "kp_design_consent_v2"; // 2026-10-02 同意の文面を変えた(評価用の見本の保存)ので取り直す
 
   function currentDesignFabric() {
     const fab = state.fabrics.find((f) => f.id === state.assignments.ten);
@@ -359,9 +359,10 @@
     return { ten: { wMm: Math.round(t.w), hMm: Math.round(t.h) }, chi: { wMm: Math.round(c.w), hMm: Math.round(c.h) } };
   }
 
+  // できた 1 案を裂地の一覧に加える(割り当てはしない)。res = { id, nakaHex, variant }
   function addDesignFabrics(res, tenUrl, chiUrl) {
     const tenchi = {
-      id: "design_" + res.id, designId: res.id, generated: true,
+      id: "design_" + res.id, designId: res.id, generated: true, variant: res.variant,
       name: "写真に合わせたデザイン(" + res.id + ")", uses: ["tenchi"], grade: "standard",
       dataUrl: tenUrl, tileW: 40, tileH: 40,
       cover: { ten: tenUrl, chi: chiUrl, fallbackHex: res.nakaHex },
@@ -373,8 +374,21 @@
     };
     tenchi.paperId = paper.id;
     state.fabrics.unshift(tenchi, paper);
-    applyDesign(tenchi, true);
+    return tenchi;
   }
+
+  // 案ごとの小さなプレビュー(写真入りの掛軸全体)。割り当てを一時的に差し替えて描き、必ず元へ戻す
+  function renderDesignThumb(tenchi) {
+    const backup = Object.assign({}, state.assignments);
+    const restore = () => { state.assignments = backup; };
+    applyDesign(tenchi, true);
+    return renderPreviewToCanvas().then(
+      (cv) => { restore(); return cv; },
+      (e) => { restore(); throw e; }
+    );
+  }
+
+  const VARIANT_LABEL = { blend: "写真になじませる", lift: "写真を引き立てる" };
 
   // デザインを天地に割り当てる。中廻し+柱は、新しいデザインのとき、またはいまデザインの紙が入っているときだけ
   // そのデザインの紙にする(お客様が裂地を選んでいたら、その裂地を残す)
@@ -503,6 +517,53 @@
       dConsent.showModal();
     });
 
+    // 2 案を並べて選んでもらう。小さなプレビューは評価用の見本としても送る(同意画面とポリシー第 7 条に明記)。
+    // 1 案しかできなかったときは、そのまま反映する
+    const dChoice = document.getElementById("design-choice-dialog");
+    function finishWith(tenchi, list) {
+      applyDesign(tenchi, true);
+      render();
+      updatePrice();
+      if (list.length > 1) KakeDesign.pick(tenchi.designId);
+      ga("design_pick", { variant: tenchi.variant || "", count: list.length });
+      showToast("デザインしました(番号 " + tenchi.designId + ")。中廻しや天地は選び直せます。");
+    }
+    function chooseDesign(fabs, concept) {
+      // プレビューは順に描く(同時に描くと割り当ての差し替えがぶつかる)
+      return fabs.reduce((chain, f) => chain.then((arr) => renderDesignThumb(f).then((cv) => arr.concat([{ f, cv }]))), Promise.resolve([]))
+        .then((items) => {
+          items.forEach((it) => KakeDesign.uploadPreview(it.f.designId, it.cv));
+          if (items.length === 1) { finishWith(items[0].f, items); return; }
+          const listEl = document.getElementById("design-choice-list");
+          document.getElementById("design-choice-concept").textContent = concept || "";
+          listEl.innerHTML = "";
+          items.forEach((it) => {
+            const li = document.createElement("li");
+            li.className = "design-choice-card";
+            const thumb = document.createElement("div");
+            thumb.className = "design-choice-thumb";
+            it.cv.style.maxHeight = "100%";
+            it.cv.style.maxWidth = "100%";
+            thumb.appendChild(it.cv);
+            const label = document.createElement("p");
+            label.className = "design-choice-label";
+            label.textContent = VARIANT_LABEL[it.f.variant] || "";
+            const pick = document.createElement("button");
+            pick.type = "button";
+            pick.textContent = "こちらにする";
+            pick.addEventListener("click", () => { dChoice.close(); finishWith(it.f, items); });
+            li.appendChild(thumb); li.appendChild(label); li.appendChild(pick);
+            listEl.appendChild(li);
+          });
+          if (dProgress.open) dProgress.close();
+          dChoice.showModal();
+        });
+    }
+    if (dChoice) {
+      // 選ばずに閉じたときは、天地は変えない(2 案とも「これまでのデザイン」と裂地の一覧から選べる)
+      document.getElementById("design-choice-close").addEventListener("click", () => { dChoice.close(); render(); });
+    }
+
     let running = false; // 作成中に重ねて始めない(連打・二重の呼び出しで費用が二重にかからないように)
     function start() {
       if (running) return;
@@ -526,15 +587,15 @@
           res = r;
           stepRead.className = "done";
           stepDraw.className = "active";
-          return KakeDesign.renderBoth(r.id);
+          // 2 案(なじませる / 引き立てる)を同時に描く。片方が失敗しても、できた方で進める
+          return Promise.all(r.designs.map((d) => KakeDesign.renderBoth(d.id).then((img) => ({ d, img }), (e) => ({ d, e }))));
         })
-        .then((imgs) => {
-          addDesignFabrics(res, imgs.ten, imgs.chi);
-          render();
-          updatePrice();
-          dProgress.close();
-          showToast("デザインしました(番号 " + res.id + ")。中廻しや天地は選び直せます。");
-          ga("design_done", { seconds: Math.round((Date.now() - t0) / 1000) });
+        .then((results) => {
+          const ok = results.filter((x) => x.img);
+          if (!ok.length) throw results[0].e;
+          const fabs = ok.map((x) => addDesignFabrics(x.d, x.img.ten, x.img.chi));
+          ga("design_done", { seconds: Math.round((Date.now() - t0) / 1000), count: fabs.length });
+          return chooseDesign(fabs, res.concept).then(() => dProgress.close());
         })
         .catch((e) => {
           if (dProgress.open) dProgress.close();

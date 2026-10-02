@@ -92,27 +92,35 @@ export const STYLE =
   "on all four sides, no torn edges, no deckled edges, no fold lines, no vertical seams, no white margin.";
 
 // 写真の読み取りと、天地の案づくり(1 回の呼び出しで JSON を返させる)
+// 写真の読み取りと、天地の案づくり(1 回の呼び出しで JSON を返させる)
+// 決まりの根拠: 仕事/かけフォト/資料/2026-10-02_掛軸の美しさ研究_….md(①見やすさ ②ほどよい複雑さ ③自然のリズム ④色の調和 ⑤主役と脇役 ⑥意味と発見)
 export const ANALYZE_PROMPT = `You design the printed paper mounting (the top panel "ten" and the bottom panel "chi") of a Japanese hanging scroll (kakejiku) whose center is the customer's photo.
 Look at the photo and return JSON only.
 
 Rules for the design:
 1. The photo is the star. NEVER draw the photo's main subject again in ten or chi (a fireworks photo gets no fireworks; a flower photo gets no copy of that flower; never draw people or pets). Use what the subject implies instead: the setting, the season, the air, a symbolic traditional motif.
 2. Tell one quiet story from ten (top: sky, distance, above) to chi (bottom: ground, water, near, below) that links the two (for example: a moon in ten and its reflection on water in chi; petals carried by the wind in ten landing beside a pair of clam shells on the shore in chi). Ten and chi are cut from ONE sheet of paper: one painting, one style, one ink, one base paper color.
-3. Elegant and restrained, like a fine traditional Japanese painting or katazome print. Lots of empty space. Few motifs. Avoid cheap clip-art, avoid cliches unless they truly fit the photo.
-4. Colors come from the photo and are named as traditional Japanese colors (for example kon, ai, torinoko, taikou, wasurenagusa, suou, yamabuki, wakatake, nezumi).
-5. Ten: keep the key motif near the horizontal center, or leave it almost empty; avoid important motifs at about one quarter and three quarters of the width (narrow vertical ribbons hang there). Chi: keep motifs within the vertical middle band.
-6. If the photo shows nudity, violence, or anything unsuitable for a family keepsake, set "ok" to false.
+3. Calm with one touch of brilliance, like a fine traditional Japanese painting or katazome print: restrained, never gaudy, but never empty or timid either. The motifs are clearly visible, well sized and drawn with confidence, covering about 15 to 25 percent of the area; the rest is empty paper (yohaku). The main cluster in ten spans at least a third of the width. Avoid cheap clip-art and cliches unless they truly fit the photo.
+4. Natural rhythm: prefer natural forms with nested large-and-small detail (branches, grasses, flowing water, mist, irregular clouds, petals, ripples). Avoid geometric, perfectly symmetric shapes and rows of identical repeated shapes.
+5. Groups in odd numbers (one, three or five), one main cluster plus a small echo, balanced asymmetrically.
+6. Echo color: the mounter gives one small "echo color" picked from a small vivid area of the photo. It will be used on ONE small element only (so the mounting answers the photo).
+7. One point of light: at most one small touch of gold leaf or gold dust, in one place only.
+8. Mitate: include ONE small motif associated with the photo by meaning (the season, the place, a memory, a name), drawn small and low in contrast so that it blends in at a distance and is discovered up close.
+9. Season: infer the season from the photo and prefer motifs of that season.
+10. Colors of motifs come from the photo and are named as traditional Japanese colors (for example kon, ai, torinoko, taikou, wasurenagusa, suou, yamabuki, wakatake, nezumi). The base paper color is decided separately by the mounter (it may be light or deep), so write motifs that work on either.
+11. Ten: keep the key motif near the horizontal center, or leave it almost empty; avoid important motifs at about one quarter and three quarters of the width (narrow vertical ribbons hang there). Chi: keep motifs within the vertical middle band.
+12. If the photo shows nudity, violence, or anything unsuitable for a family keepsake, set "ok" to false.
 
 JSON fields:
 - "ok": boolean
 - "scene_ja": the photo in one short Japanese sentence (what, where, season, mood)
 - "subject": the photo's main subject in English (what must NOT be drawn)
-- "colors": 3 to 5 items, each {"name_ja": traditional color name in Japanese, "hex": "#rrggbb"}
+- "season": spring / summer / autumn / winter / none
+- "colors": 3 to 5 motif colors, each {"name_ja": traditional color name in Japanese, "hex": "#rrggbb"}
 - "concept_ja": the design in Japanese, exactly in the form "天：…／地：…", each side at most 18 characters, plain description of what is drawn (no sales talk, no claims about craftsmen)
-- "ten_prompt": English instruction for the motifs of ten and their positions and colors. Describe motifs only, never the background color (the background is always the base paper color). Do not mention the photo's subject except as something to avoid.
-- "chi_prompt": English instruction for the motifs of chi, continuing the story from ten. Motifs only, never the background color.
-- "base_hex": "#rrggbb" the single base paper color shared by ten and chi (they are cut from one sheet), taken from the photo's mood, calm enough to sit around the photo
-- "naka_hex": "#rrggbb" a calm solid paper color for the middle band (nakamawashi) around the photo that harmonizes with both ten and chi and does not compete with the photo.
+- "mitate_ja": the small associated motif (rule 8) and why, in one short Japanese sentence
+- "ten_prompt": English instruction for the motifs of ten and their positions and colors. Describe motifs only, never the background color. Do not mention the photo's subject except as something to avoid.
+- "chi_prompt": English instruction for the motifs of chi, continuing the story from ten. Motifs only, never the background color. Place the mitate motif here or in ten.
 - "include_subject": true only when the customer's note explicitly asks to draw the photo's main subject; otherwise false.`;
 
 export const ANALYZE_SCHEMA = {
@@ -121,19 +129,36 @@ export const ANALYZE_SCHEMA = {
     ok: { type: "BOOLEAN" },
     scene_ja: { type: "STRING" },
     subject: { type: "STRING" },
+    season: { type: "STRING" },
     colors: {
       type: "ARRAY",
       items: { type: "OBJECT", properties: { name_ja: { type: "STRING" }, hex: { type: "STRING" } }, required: ["name_ja", "hex"] },
     },
     concept_ja: { type: "STRING" },
+    mitate_ja: { type: "STRING" },
     ten_prompt: { type: "STRING" },
     chi_prompt: { type: "STRING" },
-    base_hex: { type: "STRING" },
-    naka_hex: { type: "STRING" },
     include_subject: { type: "BOOLEAN" },
   },
-  required: ["ok", "scene_ja", "subject", "colors", "concept_ja", "ten_prompt", "chi_prompt", "base_hex", "naka_hex", "include_subject"],
+  required: ["ok", "scene_ja", "subject", "season", "colors", "concept_ja", "mitate_ja", "ten_prompt", "chi_prompt", "include_subject"],
 };
+
+// ---- 職人の評価から学ぶ(評価画面で付けた「良い/イマイチ」と理由を、次の案づくりの見本にする)----
+export type Lesson = { rating: "good" | "bad"; tags?: string[]; comment?: string; concept?: string; scene?: string; variant?: string };
+
+export function lessonsSection(lessons: Lesson[]) {
+  const pick = (r: "good" | "bad") => lessons.filter((l) => l.rating === r).slice(-8);
+  const line = (l: Lesson) =>
+    `- ${l.scene ? `photo: ${l.scene} / ` : ""}design: ${l.concept || "?"}${l.variant ? ` (${l.variant === "lift" ? "contrasting paper" : "blending paper"})` : ""}` +
+    `${l.tags && l.tags.length ? ` / points: ${l.tags.join("、")}` : ""}${l.comment ? ` / comment: ${l.comment}` : ""}`;
+  const good = pick("good"), bad = pick("bad");
+  if (!good.length && !bad.length) return "";
+  return `
+
+Past judgments by the master mounter on earlier designs (newest last). Learn his taste: do more of what he liked, avoid what he disliked. These are preferences about the design only.
+${good.length ? "LIKED:\n" + good.map(line).join("\n") : ""}
+${bad.length ? "DISLIKED:\n" + bad.map(line).join("\n") : ""}`;
+}
 
 type Brief = {
   ten_prompt: string;
@@ -141,25 +166,32 @@ type Brief = {
   subject: string;
   colors: { name_ja: string; hex: string }[];
   include_subject?: boolean;
-  base_hex?: string;
 };
+// 計算で決めた色(color.ts)。紙の色は必ずこれ、小さな色は 1 か所だけ
+export type Palette = { base: string; accent: string | null };
 
-// 天地に共通する言葉(雰囲気・描かないもの・色・紙の色)
-function common(brief: Brief, wishes: Wishes) {
+// 天地に共通する言葉(雰囲気・描かないもの・色・紙の色・呼応・一点の光)
+function common(brief: Brief, wishes: Wishes, pal: Palette) {
   const x = wishWords(wishes);
-  const feel = `${x.mood || "quiet and elegant"}, ${x.density || "generous empty space"}${x.tone ? ", " + x.tone : ""}. `;
+  const feel = `${x.mood || "quiet and elegant"}, ${x.density || "clear, well-sized motifs with generous empty space around them"}${x.tone ? ", " + x.tone : ""}. `;
   // お客様が写真の主役を入れてほしいと明記したときだけ、主役を禁止の一覧から外す
   const avoid = brief.include_subject ? "people" : `${brief.subject}, people`;
   const colors = brief.colors.map((c) => `${c.name_ja} ${c.hex}`).join(", ");
-  const paper = brief.base_hex ? `Base paper color ${brief.base_hex}, the same everywhere in the background. ` : "";
-  return `Feeling: ${feel}Absolutely do not draw: ${avoid}, text, names. Colors: ${colors}. ${paper}`;
+  const paper = `Base paper color exactly ${pal.base}, the same everywhere in the background. `;
+  const echo = pal.accent ? `Echo color ${pal.accent}: use it on ONE small element only. ` : "";
+  const gold = "At most one small touch of gold leaf or gold dust, in one place only. ";
+  // 「控えめに」が重なると画像 AI は柄をほとんど描かなくなる(2026-10-02 実測で柄の面積 0.5〜0.8%)。量をはっきり言う
+  const amount =
+    "The motifs must be clearly visible at a glance (not tiny, not faint) and cover about 15 to 25 percent of the whole image; " +
+    "natural forms with nested large-and-small detail, in odd-numbered groups, balanced asymmetrically. ";
+  return `Feeling: ${feel}Absolutely do not draw: ${avoid}, text, names. Motif colors: ${colors}. ${paper}${echo}${gold}${amount}`;
 }
 
 /**
  * 天と地をつなげた 1 枚の絵の指示(2026-10-02 本人「天地で統一感がない」→ 1 枚に描いて上下に切り分ける)。
  * tenFrac: 全体の高さのうち天が占める割合。そこで切るので、切れ目の前後には大事な柄を置かせない。
  */
-export function combinedPrompt(brief: Brief, tenFrac: number, aspect: string, wishes: Wishes = {}) {
+export function combinedPrompt(brief: Brief, tenFrac: number, aspect: string, wishes: Wishes, pal: Palette) {
   // 「ここで切る」「上下のパネル」と書くと、境目の線を引いて上下を塗り分けてしまう(2026-10-02 実測)。
   // 切る話はせず、背景 1 色の継ぎ目のない 1 枚として描かせ、柄を置く範囲だけを指定する(あいだは背景だけ)
   const t = Math.round(tenFrac * 100);
@@ -172,18 +204,30 @@ export function combinedPrompt(brief: Brief, tenFrac: number, aspect: string, wi
     `Lower scene, placed only between ${lowerStart}% of the height and the bottom edge: ${brief.chi_prompt} ` +
     `Between ${upperEnd}% and ${lowerStart}% of the height there is only the plain background. ` +
     `Upper and lower scenes share exactly the same style, ink and line quality, as one work. ` +
-    common(brief, wishes) +
+    common(brief, wishes, pal) +
     STYLE
   );
 }
 
 /** 部位ごとの指示(4K の清書で、見本の画像と一緒に渡す) */
-export function partPrompt(part: "ten" | "chi", brief: Brief, aspect: string, wishes: Wishes = {}) {
+/** 描き直すときに、前回の外れた理由に応じて足す言葉(lib/design/metrics.ts の judge の理由) */
+export function retryNote(why: string[]) {
+  const t: Record<string, string> = {
+    motifs_too_few: "The previous attempt had far too few and too faint motifs: make the motifs larger, bolder and clearly visible, covering about 20 percent of the image.",
+    motifs_too_many: "The previous attempt was too busy: fewer motifs, more empty paper.",
+    louder_than_photo: "The previous attempt was too colorful: use quieter, less saturated colors so the photo stays the star.",
+    paper_color_off: "The previous attempt used the wrong background: the background must be the exact base paper color given.",
+    small_after_trim: "The previous attempt was drawn as a card on a white table: the design itself must fill the entire canvas.",
+  };
+  return why.map((w) => t[w]).filter(Boolean).join(" ");
+}
+
+export function partPrompt(part: "ten" | "chi", brief: Brief, aspect: string, wishes: Wishes, pal: Palette) {
   // 部位の実際の縦横比をそのまま伝える(「横長」と書くと、正方形の画像の中に横長の台紙を描いてしまう)
   const canvas = `The design fills the whole ${aspect} canvas from edge to edge. `;
   const head =
     part === "ten"
       ? "Top panel (ten) of a Japanese hanging scroll mounting. " + canvas
       : "Bottom panel (chi) of the same hanging scroll mounting, continuing the story from the top panel. " + canvas;
-  return head + (part === "ten" ? brief.ten_prompt : brief.chi_prompt) + " " + common(brief, wishes) + STYLE;
+  return head + (part === "ten" ? brief.ten_prompt : brief.chi_prompt) + " " + common(brief, wishes, pal) + STYLE;
 }

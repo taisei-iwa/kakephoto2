@@ -3,13 +3,16 @@
  * 受け取る: { id }
  * 返す:     { ten: "data:image/jpeg;base64,…", chi: "data:image/jpeg;base64,…" }(白い余白を切り、部位の縦横比どおり)
  * 2026-10-02 本人「天地で統一感がない」→ 別々に 2 枚描くのをやめ、1 枚から切り出す(画風・色・紙の色が必ず揃う)。
+ * 2026-10-02 美しさの研究の段階 3: できた絵を測り(柄の割合・鮮やかさ・紙の色とのずれ)、基準外なら 1 回だけ描き直す。
+ * 地の色は計算で決めた紙の色に補正して合わせる(lib/design/metrics.ts)。測った値は記録に残し、評価と突き合わせて基準を直す。
  * 指示文はサーバーに保存した案から作る(画面から任意の指示文を送らせない)。
  */
 import { NextResponse } from "next/server";
 import sharp from "sharp";
-import { IMAGE_MODEL, combinedPrompt, nearestAspect, partPrompt } from "@/lib/design/config";
+import { IMAGE_MODEL, combinedPrompt, nearestAspect, partPrompt, retryNote } from "@/lib/design/config";
 import { generateImage, GeminiError } from "@/lib/design/gemini";
 import { DesignMeta, getFile, getJSON, putFile } from "@/lib/design/store";
+import { correctToBase, judge, measureDesign } from "@/lib/design/metrics";
 import { quietCut, trimAndFit } from "@/lib/design/trim";
 
 export const runtime = "nodejs";
@@ -32,35 +35,61 @@ export async function POST(req: Request) {
   const totalH = ten.hMm + chi.hMm;
   const ratio = ten.wMm / totalH; // 天と地は同じ幅
   const aspect = nearestAspect(ratio);
-  const prompt = combinedPrompt(meta.brief, ten.hMm / totalH, aspect, wishes);
+  const pal = { base: meta.palette?.base || "#e9e2d4", accent: meta.palette?.accent ?? null };
+  const prompt = combinedPrompt(meta.brief, ten.hMm / totalH, aspect, wishes, pal);
   try {
-    // 台紙付きで描かれて、余白を切ると絵が小さくなりすぎたときは 1 回だけ作り直す
-    let raw: Buffer | null = null, fit: Awaited<ReturnType<typeof trimAndFit>> | null = null, tries = 0;
-    while (tries < 2) {
-      tries++;
-      raw = await generateImage(IMAGE_MODEL, prompt, aspect);
-      fit = await trimAndFit(raw, ratio);
-      if (fit.cutArea >= 0.6) break;
+    // 描いて測る。台紙付きで余白を切ると小さすぎる、または基準外(柄が多すぎ・少なすぎ、写真より鮮やか、
+    // 紙の色が大きくずれる)なら 1 回だけ描き直す。2 回目も外れたら、基準に近い方を使う
+    type Try = { raw: Buffer; fit: Awaited<ReturnType<typeof trimAndFit>>; m: Awaited<ReturnType<typeof measureDesign>>; why: string[] };
+    const tried: Try[] = [];
+    while (tried.length < 2) {
+      // 2 回目は、1 回目の外れた理由を指示に足す(同じ失敗を繰り返さないように)
+      const p = tried.length ? retryNote(tried[tried.length - 1].why) + " " + prompt : prompt;
+      const raw = await generateImage(IMAGE_MODEL, p, aspect);
+      const fit = await trimAndFit(raw, ratio);
+      const m = await measureDesign(fit.jpeg, pal.base);
+      const why = judge(m.metrics, meta.photo?.colorfulness ?? 40);
+      if (fit.cutArea < 0.6) why.push("small_after_trim");
+      tried.push({ raw, fit, m, why });
+      if (!why.length) break;
     }
+    const best = tried.slice().sort((x, y) => x.why.length - y.why.length)[0]; // 外れた理由が少ない方
+    const raw = best.raw, fit = best.fit, tries = tried.length;
+    // 地の色を紙の色に合わせる(ずれが目に見えるとき)
+    let combined = fit.jpeg;
+    if (best.m.metrics.bgDelta > 6 && best.m.metrics.bgDelta <= 30) combined = await correctToBase(fit.jpeg, best.m.bgLab, pal.base);
     // 天の高さの割合の近くで、柄がいちばん少ない行で上下に切る。ずれた分は、それぞれの部位の縦横比に
     // 詰め直す(地は空いた上側、天は必要なら左右を、柄の多い位置を残して詰める)
-    const [W, H] = fit!.px;
-    const cut = await quietCut(fit!.jpeg, ten.hMm / totalH);
-    const tenRaw = await sharp(fit!.jpeg).extract({ left: 0, top: 0, width: W, height: cut }).toBuffer();
-    const chiRaw = await sharp(fit!.jpeg).extract({ left: 0, top: cut, width: W, height: H - cut }).toBuffer();
+    const [W, H] = fit.px;
+    const cut = await quietCut(combined, ten.hMm / totalH);
+    const tenRaw = await sharp(combined).extract({ left: 0, top: 0, width: W, height: cut }).toBuffer();
+    const chiRaw = await sharp(combined).extract({ left: 0, top: cut, width: W, height: H - cut }).toBuffer();
     const tenFit = await trimAndFit(tenRaw, ten.wMm / ten.hMm, { trim: false });
     const chiFit = await trimAndFit(chiRaw, chi.wMm / chi.hMm, { trim: false });
     const tenJpg = tenFit.jpeg, chiJpg = chiFit.jpeg;
 
-    const isPng = raw![0] === 0x89;
-    await putFile(`${meta.id}/both_raw.${isPng ? "png" : "jpg"}`, raw!);
-    await putFile(`${meta.id}/both.jpg`, fit!.jpeg);
+    const isPng = raw[0] === 0x89;
+    await putFile(`${meta.id}/both_raw.${isPng ? "png" : "jpg"}`, raw);
+    await putFile(`${meta.id}/both.jpg`, combined);
     await putFile(`${meta.id}/ten.jpg`, tenJpg);
     await putFile(`${meta.id}/chi.jpg`, chiJpg);
     // 部位ごとの記録。prompt は 4K の清書(部位ごと)で使う指示文、combinedPrompt は実際に描かせた指示文
     const rec = (part: "ten" | "chi", px: [number, number]) =>
       JSON.stringify(
-        { prompt: partPrompt(part, meta.brief, meta.parts[part].aspect, wishes), combinedPrompt: prompt, model: IMAGE_MODEL, aspect, px, tries, box: fit!.box, cut, cutTarget: Math.round((H * ten.hMm) / totalH) },
+        {
+          prompt: partPrompt(part, meta.brief, meta.parts[part].aspect, wishes, pal),
+          combinedPrompt: prompt,
+          model: IMAGE_MODEL,
+          aspect,
+          px,
+          tries,
+          box: fit.box,
+          cut,
+          cutTarget: Math.round((H * ten.hMm) / totalH),
+          metrics: best.m.metrics,
+          failed: best.why,
+          attempts: tried.map((t) => ({ metrics: t.m.metrics, why: t.why })),
+        },
         null,
         1
       );

@@ -10,16 +10,27 @@ const KEEP_DAYS = 365;
 export default async () => {
   const store = getStore({ name: "designs", consistency: "strong" });
   const { directories } = await store.list({ directories: true });
+  const { blobs: idx } = await store.list({ prefix: "idx/" }); // 作成順の目印(idx/<日時>_<ID>)
   const limit = Date.now() - KEEP_DAYS * 24 * 60 * 60 * 1000;
   let removed = 0;
+  const removedIds = new Set<string>();
   for (const dir of directories) {
+    if (dir === "idx") continue;
     const meta = (await store.get(`${dir}/meta.json`, { type: "json" })) as { createdAt?: string; ordered?: boolean } | null;
     if (meta?.ordered) continue;
     const created = meta?.createdAt ? Date.parse(meta.createdAt) : 0;
     if (meta && created > limit) continue; // 1 年たっていない(meta の無い壊れたものは消す)
     const { blobs } = await store.list({ prefix: `${dir}/` });
     for (const b of blobs) await store.delete(b.key);
+    for (const b of idx) if (b.key.endsWith(`_${dir}`)) await store.delete(b.key);
+    removedIds.add(dir);
     removed++;
+  }
+  // 評価の記録(lessons.json)からも、消したデザインの分(写真の説明を含む)を除く
+  if (removedIds.size) {
+    const lessons = ((await store.get("lessons.json", { type: "json" })) as { id: string }[] | null) || [];
+    const kept = lessons.filter((l) => !removedIds.has(l.id));
+    if (kept.length !== lessons.length) await store.set("lessons.json", JSON.stringify(kept, null, 1));
   }
   console.log(`design-cleanup: ${removed} 件を削除`);
 };

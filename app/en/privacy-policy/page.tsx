@@ -90,7 +90,9 @@ const content = [
     list: [
       "Recipient and purpose: To draw the designs for the top and bottom panels of the hanging scroll, we send a reduced copy of your photo to the Gemini API of Google LLC, which reads what is in the photo and its colours. It is not used for any other purpose.",
       "Handling by the external service: On the Gemini API (a paid service), the content we send is not used to improve Google's products. It is, however, logged for a limited period to detect and prevent misuse. (Terms https://ai.google.dev/gemini-api/terms )",
-      "What we keep: We do not store the photo itself. A short description of the photo's content and colours, the designs drawn, and the design number are kept by us for printing when you order. Those not used for an order are deleted about one year after creation.",
+      "What we keep: A short description of the photo's content and colours, the designs drawn, the design number, and the option and wishes you chose are kept by us for printing when you order. We never store your photo at its original size.",
+      "Improving the feature: Part of the records from the simulator is used to improve the quality of the designs. We keep a small preview (a reduced image) of the finished scroll including your photo; our craftsman reviews it, and the results are used to improve future designs. Previews and reviews are never published or provided outside our studio.",
+      "Retention: Those not used for an order are deleted about one year after creation.",
     ],
   },
   {

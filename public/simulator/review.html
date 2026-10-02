@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>デザインの評価(職人用)| KAKEPHOTO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/review.css" />
+</head>
+<body>
+  <!-- 職人用: 「写真に合わせてデザインする」で作られたデザインを、良い/イマイチと理由で評価する。
+       評価は次の案づくりの見本になる(サーバーの lessons.json)。合言葉(DESIGN_ADMIN_TOKEN)が必要。
+       2026-10-02 本人「世界中の記録を僕が良い悪いを記録して AI に学ばせ続ける」。スマホ・PC どちらでも使える -->
+  <header class="rv-head">
+    <h1>デザインの評価</h1>
+    <div class="rv-filter" role="group" aria-label="表示">
+      <button type="button" data-filter="unreviewed" aria-pressed="true">未評価</button>
+      <button type="button" data-filter="all" aria-pressed="false">すべて</button>
+    </div>
+  </header>
+
+  <section id="rv-login" class="rv-login" hidden>
+    <p>職人用の画面です。合言葉を入れてください(この端末に記憶します)。</p>
+    <input type="password" id="rv-token" autocomplete="current-password" placeholder="合言葉" />
+    <button type="button" id="rv-login-btn">開く</button>
+    <p id="rv-login-error" class="rv-error" hidden>合言葉が違うようです。</p>
+  </section>
+
+  <main>
+    <p id="rv-summary" class="rv-summary"></p>
+    <ul id="rv-list" class="rv-list"></ul>
+    <p id="rv-empty" class="rv-empty" hidden>評価するデザインはありません。</p>
+    <button type="button" id="rv-more" class="rv-more" hidden>もっと見る</button>
+  </main>
+
+  <script src="js/review.js"></script>
+</body>
+</html>

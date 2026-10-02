@@ -32,7 +32,8 @@
       }));
   }
 
-  // 写真の読み取りと案づくり → { id, concept, nakaHex, colors }。wishes は要望の画面の選択({ mood, tone, density, note })
+  // 写真の読み取りと案づくり → { concept, designs: [{ id, variant, nakaHex, baseHex }, …] }(2 案)。
+  // wishes は要望の画面の選択({ mood, tone, density, note })
   function analyze(photo, tenMm, chiMm, wishes) {
     return post("/api/design/analyze", { consent: true, photo: photo, ten: tenMm, chi: chiMm, wishes: wishes || {} });
   }
@@ -40,6 +41,26 @@
   // 天と地(1 枚に描いて上下に切り分けたもの)→ { ten, chi }(どちらも dataURL)
   function renderBoth(id) {
     return post("/api/design/render", { id: id });
+  }
+
+  // 評価用の小さな見本(写真入りの掛軸全体、長い辺 400px)を送る。失敗してもお客様の操作は止めない
+  function uploadPreview(id, canvas) {
+    try {
+      const k = Math.min(1, 400 / Math.max(canvas.width, canvas.height));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(canvas.width * k));
+      c.height = Math.max(1, Math.round(canvas.height * k));
+      const g = c.getContext("2d");
+      g.fillStyle = "#ffffff";
+      g.fillRect(0, 0, c.width, c.height);
+      g.drawImage(canvas, 0, 0, c.width, c.height);
+      post("/api/design/preview", { id: id, image: c.toDataURL("image/jpeg", 0.82) }).catch(() => {});
+    } catch (e) { /* 見本を送れなくても続ける */ }
+  }
+
+  // 2 案のうち選んだ方を記録する
+  function pick(id) {
+    post("/api/design/pick", { id: id }).catch(() => {});
   }
 
   // 中廻し用の「紙」の見本(無地にごく薄いむら)。裂地と同じくタイル状に敷く
@@ -70,5 +91,5 @@
     return "デザインの作成に失敗しました。お手数ですが、もう一度お試しください。";
   }
 
-  root.KakeDesign = { photoJpeg, analyze, renderBoth, paperSwatch, errorMessage };
+  root.KakeDesign = { photoJpeg, analyze, renderBoth, uploadPreview, pick, paperSwatch, errorMessage };
 })(window);

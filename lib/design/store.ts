@@ -1,6 +1,9 @@
 /**
  * デザインの保存先。本番は Netlify Blobs(ストア名 "designs")、手元の `next dev` では .design-store/ フォルダ。
- * 保存するのは、読み取り結果・指示文・部位の寸法と、作った天地の画像だけ。お客様の写真は保存しない。
+ * 保存するのは、読み取り結果・指示文・部位の寸法・作った天地の画像と、評価用の小さな見本(写真を含む縮小画像。
+ * 2026-10-02 本人決定「小さい見本だけ保存する。評価に使うため」)。写真を元の大きさで保存することはしない。
+ *   idx/<作成日時>_<ID>(作成順の一覧のための目印)  lessons.json(職人の評価の記録。次の案づくりの見本)
+ *   <ID>/preview.jpg(評価用の小さな見本)  <ID>/review.json(職人の評価)
  *   <ID>/meta.json(読み取り結果・案・寸法)  <ID>/ten.jpg(シミュレーターで見せた版)  <ID>/ten_raw.*(画像 AI の出力そのまま)
  *   <ID>/ten.json(清書用の指示文・モデル・切り抜き位置)  地も同じ
  *   <ID>/both.jpg・both_raw.*(天地をつなげて描いた 1 枚。切り分ける前)
@@ -46,6 +49,22 @@ export async function getFile(key: string): Promise<Buffer | null> {
   }
 }
 
+/** prefix で始まるキーの一覧(名前の順) */
+export async function listKeys(prefix: string): Promise<string[]> {
+  const s = await blobStore();
+  if (s) {
+    const { blobs } = await s.list({ prefix });
+    return blobs.map((b) => b.key).sort();
+  }
+  const dir = path.join(LOCAL_DIR, prefix.replace(/\/[^/]*$/, ""));
+  try {
+    const base = prefix.slice(0, prefix.lastIndexOf("/") + 1);
+    return (await fs.readdir(dir)).map((n) => base + n).filter((k) => k.startsWith(prefix)).sort();
+  } catch {
+    return [];
+  }
+}
+
 export async function getJSON<T>(key: string): Promise<T | null> {
   const b = await getFile(key);
   return b ? (JSON.parse(b.toString("utf8")) as T) : null;
@@ -69,10 +88,17 @@ export type DesignMeta = {
     concept_ja: string;
     ten_prompt: string;
     chi_prompt: string;
-    naka_hex: string;
-    base_hex?: string;
+    season?: string;
+    mitate_ja?: string;
     include_subject?: boolean;
   };
+  // 2 案のどちらか(blend = 写真になじませる / lift = 写真を引き立てる)と、同時に作ったもう一方の番号
+  variant?: "blend" | "lift";
+  pair?: string;
+  // 計算で決めた色(lib/design/color.ts)と、写真を測った数値(写真そのものではない)
+  palette?: { base: string; naka: string; accent: string | null };
+  photo?: { dominant: string; accent: string | null; edgeL: number; meanC: number; colorfulness: number };
+  picked?: boolean; // お客様が 2 案からこちらを選んだ
   // お客様の要望(要望の画面。おまかせなら空)
   wishes?: { mood?: string; tone?: string; density?: string; note?: string };
   parts: { ten: { wMm: number; hMm: number; aspect: string }; chi: { wMm: number; hMm: number; aspect: string } };
