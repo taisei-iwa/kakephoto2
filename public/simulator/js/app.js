@@ -183,6 +183,7 @@
     initAR(); // AR 体験ボタン(スマホ・タブレットのみ表示)
     initRoom(); // 部屋に飾ったイメージ(写真合成。PC でも使える)
     initSuggest(); // 写真から裂地の取り合わせを3案出す
+    initDesign(); // 写真に合わせて天地をデザインする(同意のうえで写真を読み取りに送る)
   }
 
   // ---- AR 体験(スマホ・タブレットで表示。iPhone は Quick Look、Android は WebXR / Scene Viewer)----
@@ -308,7 +309,7 @@
         .then((img) => {
           const photo = KakeSuggest.measurePhoto(img);
           if (!photo) throw new Error("photo");
-          return KakeSuggest.measureFabrics(state.fabrics).then((fm) => KakeSuggest.buildPlans(photo, fm));
+          return KakeSuggest.measureFabrics(state.fabrics.filter((f) => !f.generated)).then((fm) => KakeSuggest.buildPlans(photo, fm));
         })
         .then((plans) => {
           if (!plans.length) { showToast("ご提案できる裂地が足りませんでした。"); return; }
@@ -317,6 +318,137 @@
         .catch(() => showToast("ご提案の作成に失敗しました。写真を入れ直してお試しください。"))
         .then(() => { btn.disabled = false; btn.textContent = label; });
     });
+  }
+
+  // ---- 写真に合わせてデザインする ----
+  // 通信と画像の下ごしらえは js/design.js。ここは「同意 → 作成中 → できあがり」の画面と、できた天地の割り当て。
+  // デザインの天地は「1 枚の絵を敷く特別な裂地」(cover)として裂地の一覧に加える。だから裂地の選択画面から
+  // 裂地に変えることも、デザインに戻すこともでき、注文の要約にも名前(デザイン番号入り)が載る。
+  // 中廻しは絵柄に合わせた紙(無地)を同じく裂地として加えて割り当てる。選び直しは従来の画面で。
+  const DESIGN_CONSENT_KEY = "kp_design_consent";
+
+  function currentDesignFabric() {
+    const fab = state.fabrics.find((f) => f.id === state.assignments.ten);
+    return fab && fab.cover ? fab : null;
+  }
+
+  function updateDesignVisibility() {
+    const btn = document.getElementById("design-btn");
+    if (!btn) return;
+    btn.hidden = !state.honshiImage || typeof KakeDesign === "undefined";
+  }
+
+  // 天・地の仕上がり寸法(mm)。絵の縦横比と、印刷のときの寸法の記録に使う
+  function designPartsMm() {
+    const layout = computeLayout(activePreset(), state.honshiW, state.honshiH, partOptions());
+    const t = layout.parts.ten, c = layout.parts.chi;
+    if (!t || !c) return null;
+    return { ten: { wMm: Math.round(t.w), hMm: Math.round(t.h) }, chi: { wMm: Math.round(c.w), hMm: Math.round(c.h) } };
+  }
+
+  function addDesignFabrics(res, tenUrl, chiUrl) {
+    const tenchi = {
+      id: "design_" + res.id, designId: res.id, generated: true,
+      name: "写真に合わせたデザイン(" + res.id + ")", uses: ["tenchi"], grade: "standard",
+      dataUrl: tenUrl, tileW: 40, tileH: 40,
+      cover: { ten: tenUrl, chi: chiUrl, fallbackHex: res.nakaHex },
+    };
+    const paper = {
+      id: "paper_" + res.id, designId: res.id, generated: true,
+      name: "絵柄に合わせた紙(" + res.id + ")", uses: ["nakamawashi"], grade: "standard",
+      dataUrl: KakeDesign.paperSwatch(res.nakaHex), tileW: 40, tileH: 40,
+    };
+    state.fabrics.unshift(tenchi, paper);
+    const groups = effectiveGroups();
+    const set = (gk, fab) => {
+      const g = groups[gk];
+      if (g && !g.linkedInto) g.keys.forEach((k) => { state.assignments[k] = fab.id; });
+    };
+    set("tenchi", tenchi);
+    set("nakamawashi", paper);
+    set("hashira", paper);
+  }
+
+  function initDesign() {
+    const btn = document.getElementById("design-btn");
+    const dConsent = document.getElementById("design-consent-dialog");
+    const dProgress = document.getElementById("design-progress-dialog");
+    const dResult = document.getElementById("design-result-dialog");
+    if (!btn || !dConsent || typeof KakeDesign === "undefined") return;
+    const agree = document.getElementById("design-agree");
+    const okBtn = document.getElementById("design-consent-ok");
+    const stepRead = document.getElementById("design-step-read");
+    const stepDraw = document.getElementById("design-step-draw");
+    const elapsedEl = document.getElementById("design-elapsed");
+    const ga = (name, extra) => { if (typeof gtag === "function") gtag("event", name, Object.assign({ size: state.sizeMode, format: state.formatId }, extra || {})); };
+    const consented = () => { try { return sessionStorage.getItem(DESIGN_CONSENT_KEY) === "1"; } catch (e) { return false; } };
+
+    agree.addEventListener("change", () => { okBtn.disabled = !agree.checked; });
+    document.getElementById("design-consent-cancel").addEventListener("click", () => dConsent.close());
+    okBtn.addEventListener("click", () => {
+      if (!dConsent.open || !agree.checked) return;
+      try { sessionStorage.setItem(DESIGN_CONSENT_KEY, "1"); } catch (e) { /* 保存できなくても今回は進める */ }
+      ga("design_consent");
+      dConsent.close();
+      start();
+    });
+    // 作成中は閉じさせない(Esc でも)
+    dProgress.addEventListener("cancel", (e) => e.preventDefault());
+
+    document.getElementById("design-naka-btn").addEventListener("click", () => { dResult.close(); openPartFabricPicker("nakamawashi"); });
+    document.getElementById("design-again-btn").addEventListener("click", () => { dResult.close(); start(); });
+    document.getElementById("design-close-btn").addEventListener("click", () => dResult.close());
+
+    btn.addEventListener("click", () => {
+      if (!state.honshiImage) return;
+      if (consented()) { start(); return; }
+      agree.checked = false;
+      okBtn.disabled = true;
+      dConsent.showModal();
+    });
+
+    let running = false; // 作成中に重ねて始めない(連打・二重の呼び出しで費用が二重にかからないように)
+    function start() {
+      if (running) return;
+      const parts = designPartsMm();
+      if (!state.honshiImage || !parts) { showToast("お写真を入れてからお試しください。"); return; }
+      running = true;
+      btn.disabled = true;
+      stepRead.className = "active";
+      stepDraw.className = "";
+      const t0 = Date.now();
+      elapsedEl.textContent = "30秒ほどかかります。このままお待ちください。";
+      const timer = setInterval(() => {
+        elapsedEl.textContent = Math.round((Date.now() - t0) / 1000) + "秒経過。このままお待ちください。";
+      }, 1000);
+      dProgress.showModal();
+      ga("design_start");
+      let res = null;
+      KakeDesign.photoJpeg(state.honshiImage.dataUrl, state.honshiImage.cropRect, 768)
+        .then((photo) => KakeDesign.analyze(photo, parts.ten, parts.chi))
+        .then((r) => {
+          res = r;
+          stepRead.className = "done";
+          stepDraw.className = "active";
+          return Promise.all([KakeDesign.renderPart(r.id, "ten"), KakeDesign.renderPart(r.id, "chi")]);
+        })
+        .then((imgs) => {
+          addDesignFabrics(res, imgs[0], imgs[1]);
+          render();
+          updatePrice();
+          dProgress.close();
+          document.getElementById("design-concept").textContent = res.concept || "";
+          document.getElementById("design-id").textContent = res.id;
+          dResult.showModal();
+          ga("design_done", { seconds: Math.round((Date.now() - t0) / 1000) });
+        })
+        .catch((e) => {
+          if (dProgress.open) dProgress.close();
+          showToast(KakeDesign.errorMessage(e));
+          ga("design_error", { code: (e && e.code) || "failed" });
+        })
+        .then(() => { clearInterval(timer); btn.disabled = false; running = false; });
+    }
   }
 
   // ---- 部屋に飾ったイメージ(写真合成)。AR と違い PC でも使える ----
@@ -1343,6 +1475,7 @@
   // 仕立て(形式・一文字・風帯)を変えても本紙の大きさは変わらない。
   function render(forcedScale) {
     updateSuggestVisibility(); // 写真が入っているときだけ 3案ボタンを出す
+    updateDesignVisibility(); // 写真が入っているときだけ「写真に合わせてデザインする」を出す
     el.previewWarning.hidden = true;
 
     const opts = partOptions();
@@ -1413,7 +1546,10 @@
         const fabricId = state.assignments[key];
         if (fabricId) {
           const fab = state.fabrics.find((f) => f.id === fabricId);
-          if (fab) {
+          if (fab && fab.cover) {
+            applyCover(div, fab, key, "center");
+            div.dataset.fabricId = fabricId;
+          } else if (fab) {
             const tilePxW = Math.max(2, fab.tileW * scale);
             const tilePxH = Math.max(2, fab.tileH * scale);
             applyFabricTiling(div, fab, tilePxW, tilePxH);
@@ -1432,8 +1568,11 @@
     bottom.className = "jiku-bar bottom";
     const tenFab = state.fabrics.find((f) => f.id === state.assignments.ten);
     const chiFab = state.fabrics.find((f) => f.id === state.assignments.chi);
-    if (tenFab) applyFabricTiling(top, tenFab, Math.max(2, tenFab.tileW * scale), Math.max(2, tenFab.tileH * scale));
-    if (chiFab) applyFabricTiling(bottom, chiFab, Math.max(2, chiFab.tileW * scale), Math.max(2, chiFab.tileH * scale));
+    // 八双・軸棒には天・地の紙が巻き込まれるので、デザインの天地はその絵の上端・下端を続けて見せる
+    if (tenFab && tenFab.cover) applyCover(top, tenFab, "ten", "top");
+    else if (tenFab) applyFabricTiling(top, tenFab, Math.max(2, tenFab.tileW * scale), Math.max(2, tenFab.tileH * scale));
+    if (chiFab && chiFab.cover) applyCover(bottom, chiFab, "chi", "bottom");
+    else if (chiFab) applyFabricTiling(bottom, chiFab, Math.max(2, chiFab.tileW * scale), Math.max(2, chiFab.tileH * scale));
     const endL = document.createElement("div");
     endL.className = "jiku-end left " + state.jikuColor;
     const endR = document.createElement("div");
@@ -1487,6 +1626,16 @@
     } else {
       applyCroppedBackground(div, src, imgState.naturalW, imgState.naturalH, crop, displayW, displayH);
     }
+  }
+
+  // ---- デザインの天地(1 枚の絵)を部位いっぱいに敷く。天地以外(柱が天地と一緒の形式など)は中廻しの紙の色 ----
+  function applyCover(div, fab, key, pos) {
+    const src = fab.cover[key];
+    if (!src) { div.style.backgroundColor = fab.cover.fallbackHex || "#e9e2d4"; return; }
+    div.style.backgroundImage = "url(" + src + ")";
+    div.style.backgroundSize = "cover";
+    div.style.backgroundPosition = pos === "top" ? "center top" : pos === "bottom" ? "center bottom" : "center";
+    div.style.backgroundRepeat = "no-repeat";
   }
 
   // ---- 裂地タイリングヘルパ ----
@@ -1832,6 +1981,8 @@
     const fin = finishedSizeText(layout);
     if (fin) lines.push("■ 仕上がり寸法(目安): " + fin);
     lines.push("■ 仕立て: " + formatSummaryText());
+    const design = currentDesignFabric();
+    if (design) lines.push("■ デザイン番号: " + design.designId + "(天地を写真に合わせてデザイン)");
     lines.push("■ 裂地:");
     fabricSummaryLines(layout).forEach((l) => lines.push("　・" + l));
     lines.push("■ 軸先の色: " + (JIKU_LABEL[state.jikuColor] || state.jikuColor));
@@ -1913,7 +2064,8 @@
     if (state.honshiImage) srcSet[state.honshiImage.dataUrl] = true;
     Object.keys(state.assignments).forEach((key) => {
       const fab = state.fabrics.find((f) => f.id === state.assignments[key]);
-      if (fab) srcSet[fabSrc(fab)] = true;
+      if (fab && fab.cover) { if (fab.cover.ten) srcSet[fab.cover.ten] = true; if (fab.cover.chi) srcSet[fab.cover.chi] = true; }
+      else if (fab) srcSet[fabSrc(fab)] = true;
     });
 
     return loadImageMap(Object.keys(srcSet)).then((imgs) => {
@@ -1936,7 +2088,9 @@
           drawHonshiCover(ctx, imgs[state.honshiImage && state.honshiImage.dataUrl], x, y, w, h);
         } else {
           const fab = state.fabrics.find((f) => f.id === state.assignments[key]);
-          if (fab && imgs[fabSrc(fab)]) {
+          if (fab && fab.cover) {
+            drawCover(ctx, imgs[fab.cover[key]], x, y, w, h, "center", fab.cover.fallbackHex);
+          } else if (fab && imgs[fabSrc(fab)]) {
             fillTiled(ctx, imgs[fabSrc(fab)], x, y, w, h, fab.tileW * scale, fab.tileH * scale);
           } else {
             ctx.fillStyle = "#efe9de"; // 無地
@@ -1952,9 +2106,11 @@
       const tenFab = state.fabrics.find((f) => f.id === state.assignments.ten);
       const chiFab = state.fabrics.find((f) => f.id === state.assignments.chi);
       const rodH = u * 1.1;
-      drawRod(ctx, imgs[tenFab && fabSrc(tenFab)], tenFab, scale, ox - u * 0.2, oy - rodH * 0.4, bodyW + u * 0.4, rodH);
       const bottomY = oy + bodyH - rodH * 0.2;
-      drawRod(ctx, imgs[chiFab && fabSrc(chiFab)], chiFab, scale, ox - u * 0.2, bottomY, bodyW + u * 0.4, rodH * 1.3);
+      if (tenFab && tenFab.cover) drawCover(ctx, imgs[tenFab.cover.ten], ox - u * 0.2, oy - rodH * 0.4, bodyW + u * 0.4, rodH, "top");
+      else drawRod(ctx, imgs[tenFab && fabSrc(tenFab)], tenFab, scale, ox - u * 0.2, oy - rodH * 0.4, bodyW + u * 0.4, rodH);
+      if (chiFab && chiFab.cover) drawCover(ctx, imgs[chiFab.cover.chi], ox - u * 0.2, bottomY, bodyW + u * 0.4, rodH * 1.3, "bottom");
+      else drawRod(ctx, imgs[chiFab && fabSrc(chiFab)], chiFab, scale, ox - u * 0.2, bottomY, bodyW + u * 0.4, rodH * 1.3);
       const capW = u * 1.4, capH = rodH * 1.4;
       drawJikuEnd(ctx, ox - capW * 0.8, bottomY, capW, capH);
       drawJikuEnd(ctx, ox + bodyW - capW * 0.2, bottomY, capW, capH);
@@ -2006,6 +2162,18 @@
       const dy = y - crop.sy * sc + (h - crop.sh * sc) / 2;
       ctx.drawImage(img, dx, dy, img.width * sc, img.height * sc);
     }
+    ctx.restore();
+  }
+
+  // デザインの天地を cover で描く(pos: 絵のどこを残すか)
+  function drawCover(ctx, img, x, y, w, h, pos, fallbackHex) {
+    if (!img) { ctx.fillStyle = fallbackHex || "#e9e2d4"; ctx.fillRect(x, y, w, h); return; }
+    const s = Math.max(w / img.width, h / img.height);
+    const dw = img.width * s, dh = img.height * s;
+    const dy = pos === "top" ? y : pos === "bottom" ? y + h - dh : y + (h - dh) / 2;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+    ctx.drawImage(img, x + (w - dw) / 2, dy, dw, dh);
     ctx.restore();
   }
 

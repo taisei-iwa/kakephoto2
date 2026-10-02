@@ -72,6 +72,7 @@ const content = [
       "When entrusting shipping operations to a delivery company",
       "When required by law",
       "When necessary to protect a person's life, body, or property, and obtaining the user's consent is difficult",
+      "When, with the customer's consent, we entrust the reading of a photo to an external service in the order simulator (Article 7)",
     ],
   },
   {
@@ -84,7 +85,16 @@ const content = [
     ],
   },
   {
-    title: "Article 7 (Contact Information)",
+    title: "Article 7 (Reading Your Photo in the Order Simulator)",
+    body: "When you use “Design to match my photo” in the order simulator, and only after you agree on the consent screen, we handle your photo as follows.",
+    list: [
+      "Recipient and purpose: To draw the designs for the top and bottom panels of the hanging scroll, we send a reduced copy of your photo to the Gemini API of Google LLC, which reads what is in the photo and its colours. It is not used for any other purpose.",
+      "Handling by the external service: On the Gemini API (a paid service), the content we send is not used to improve Google's products. It is, however, logged for a limited period to detect and prevent misuse. (Terms https://ai.google.dev/gemini-api/terms )",
+      "What we keep: We do not store the photo itself. A short description of the photo's content and colours, the designs drawn, and the design number are kept by us for printing when you order. Those not used for an order are deleted about one year after creation.",
+    ],
+  },
+  {
+    title: "Article 8 (Contact Information)",
     body: "For inquiries regarding this policy, please contact us at the following.\n\nBusiness Name: Iwasaki Seishodo\nAddress: 355 Iwaya, Nanto City, Toyama 932-0203, Japan\nEmail: iwasaki.seishodo@gmail.com",
   },
 ];

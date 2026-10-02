@@ -48,3 +48,4 @@ image copy.png
 next-env.d copy.ts
 
 .vercel
+.design-store

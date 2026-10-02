@@ -887,6 +887,7 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
     grid-template-areas:
       "head    total"
       "tax     tax"
+      "design  design"
       "suggest suggest"
       "ar      ar"
       "room    room"
@@ -902,6 +903,7 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
   .price-note { display: none; }
   /* スマホでは価格バーを薄く保つため省略。画像保存は LINE ボタンが自動で行う。 */
   .save-image-btn { display: none; }
+  .design-btn { grid-area: design; margin-top: 0.15rem; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
   .ar-btn { grid-area: ar; margin-top: 0.15rem; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
   .ar-btn[hidden] { display: none; }
   /* AR と同じ「壁での見え方」を見る導線。AR が出ない端末でも使えるよう独立した行に置く。 */
@@ -1000,6 +1002,44 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
 }
 .suggest-btn:hover { background: var(--surface-2); }
 .suggest-btn[hidden] { display: none; }
+
+/* ---- 写真に合わせてデザインする ---- */
+.design-btn {
+  width: 100%;
+  margin-top: 1.4rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+.design-btn:hover { background: var(--brand-dark); }
+.design-btn:disabled { opacity: 0.6; }
+.design-btn[hidden] { display: none; }
+@media (min-width: 961px) { .design-btn + .suggest-btn { margin-top: 0.6rem; } }
+
+.design-dialog { max-width: 560px; width: min(560px, 94vw); max-height: 92vh; overflow-y: auto; }
+.design-lead { font-size: 0.86rem; line-height: 1.8; margin: 0 0 0.7rem; }
+.design-terms { font-size: 0.78rem; line-height: 1.75; color: var(--ink-soft); margin: 0 0 0.6rem; padding-left: 1.2em; }
+.design-terms li + li { margin-top: 0.3rem; }
+.design-agree { display: flex; gap: 0.5rem; align-items: center; font-size: 0.86rem; margin: 0.4rem 0 0.9rem; cursor: pointer; }
+.design-agree input { width: 1.1rem; height: 1.1rem; accent-color: var(--brand); }
+.design-steps { font-size: 0.86rem; line-height: 2; margin: 0 0 0.8rem; padding-left: 1.4em; color: var(--ink-faint); }
+.design-steps li.active { color: var(--brand); }
+.design-steps li.done { color: var(--ink-soft); }
+.design-steps li.done::after { content: "　済み"; font-size: 0.75rem; }
+.design-bar { height: 3px; background: var(--line-soft); overflow: hidden; margin: 0 0 0.6rem; }
+.design-bar span { display: block; width: 30%; height: 100%; background: var(--brand); animation: design-bar 1.6s ease-in-out infinite; }
+@keyframes design-bar { 0% { transform: translateX(-100%); } 100% { transform: translateX(340%); } }
+@media (prefers-reduced-motion: reduce) { .design-bar span { animation: none; width: 100%; opacity: 0.4; } }
+.design-concept { font-size: 0.95rem; line-height: 1.8; margin: 0 0 0.5rem; }
+.design-id { font-size: 0.86rem; margin: 0 0 0.6rem; }
+.design-id strong { font-family: ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.08em; color: var(--brand); }
+#design-consent-ok, #design-close-btn { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+#design-consent-ok:disabled { opacity: 0.35; cursor: not-allowed; }
+.design-result-btns { flex-wrap: wrap; }
+.design-result-btns button { white-space: nowrap; }
 
 .suggest-dialog { max-width: 720px; width: min(720px, 94vw); max-height: 92vh; overflow-y: auto; }
 .suggest-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.8rem; }

@@ -158,6 +158,7 @@
         <p class="price-note">表示の価格はお見積もりの目安です。確定の金額ではありません。</p>
 
         <!-- 写真が入っているときだけ JS が表示する -->
+        <button type="button" id="design-btn" class="design-btn" hidden>写真に合わせてデザインする</button>
         <button type="button" id="suggest-btn" class="suggest-btn" hidden>裂地の取り合わせを3案見る</button>
         <button type="button" id="save-image-btn" class="save-image-btn">プレビューを画像で保存</button>
         <!-- 部屋に飾ったイメージ(写真合成)。AR と違って PC でも使える。 -->
@@ -281,12 +282,52 @@
     </div>
   </dialog>
 
+  <!-- 写真に合わせてデザインする: 同意 → 作成中 → できあがり -->
+  <dialog id="design-consent-dialog" class="picker-dialog design-dialog" aria-modal="true" aria-labelledby="design-consent-title">
+    <h2 id="design-consent-title" class="dialog-title">写真に合わせてデザインする</h2>
+    <p class="design-lead">お写真の情景や色に合わせて、掛軸の天(上)と地(下)の絵柄を描きおこします。描いた絵柄は和紙に印刷して仕立てます。</p>
+    <ul class="design-terms">
+      <li>絵柄を描くために、お写真を縮小して外部のサービス(Google)に送り、写っているものや色を読み取ります。</li>
+      <li>お写真は読み取りにだけ使います。当店ではお写真を保存しません。外部のサービスでも、学習には使われません(不正な利用を防ぐため、一定期間記録されることがあります)。</li>
+      <li>描きあがった絵柄はデザイン番号をつけて当店で保管し、ご注文のときの印刷に使います。</li>
+    </ul>
+    <p class="dialog-note">詳しくは<a href="/privacy-policy" target="_blank" rel="noopener">プライバシーポリシー</a>をご覧ください。</p>
+    <label class="design-agree"><input type="checkbox" id="design-agree" /> 上記に同意して、写真を送ります</label>
+    <div class="dialog-btns">
+      <button type="button" id="design-consent-cancel" class="secondary">やめる</button>
+      <button type="button" id="design-consent-ok" disabled>デザインする</button>
+    </div>
+  </dialog>
+
+  <dialog id="design-progress-dialog" class="picker-dialog design-dialog" aria-modal="true" aria-labelledby="design-progress-title">
+    <h2 id="design-progress-title" class="dialog-title">デザインしています</h2>
+    <ol class="design-steps">
+      <li id="design-step-read">お写真を読み取っています</li>
+      <li id="design-step-draw">天と地の絵柄を描いています</li>
+    </ol>
+    <div class="design-bar" aria-hidden="true"><span></span></div>
+    <p class="dialog-note" id="design-elapsed">30秒ほどかかります。このままお待ちください。</p>
+  </dialog>
+
+  <dialog id="design-result-dialog" class="picker-dialog design-dialog" aria-modal="true" aria-labelledby="design-result-title">
+    <h2 id="design-result-title" class="dialog-title">天と地をデザインしました</h2>
+    <p class="design-concept" id="design-concept"></p>
+    <p class="design-id">デザイン番号 <strong id="design-id"></strong></p>
+    <p class="dialog-note">ご相談・ご注文のときは、この番号をお伝えください(LINE・フォームの本文には自動で入ります)。中廻しは絵柄に合わせた紙にしてあります。裂地に選び直すこともできます。天地を裂地に戻すときは、天地をクリックして選んでください。</p>
+    <div class="dialog-btns design-result-btns">
+      <button type="button" id="design-naka-btn" class="secondary">中廻しを選び直す</button>
+      <button type="button" id="design-again-btn" class="secondary">もう一度デザインする</button>
+      <button type="button" id="design-close-btn">このまま見る</button>
+    </div>
+  </dialog>
+
   <script src="js/catalog.js"></script>
   <script src="js/pricing.js"></script>
   <script src="js/presets.js"></script>
   <script src="js/layout.js"></script>
   <script src="js/ar.js"></script>
   <script src="js/suggest.js"></script>
+  <script src="js/design.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
