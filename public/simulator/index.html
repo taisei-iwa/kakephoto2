@@ -29,9 +29,17 @@
   <main class="layout">
     <!-- 操作パネル(左) -->
     <section class="panel panel-controls" aria-label="設定パネル">
+      <!-- 一本道の段階(2026-10-02 Tesla 型: 今の段階だけを見せ、合計と次の一歩を常に見せる)。押すとその段階へ跳べる -->
+      <ol class="stepper" id="stepper" aria-label="手順">
+        <li><button type="button" data-go="1"><span class="stepper-n">1</span><span class="stepper-label">写真</span></button></li>
+        <li><button type="button" data-go="2"><span class="stepper-n">2</span><span class="stepper-label">大きさ</span></button></li>
+        <li><button type="button" data-go="3"><span class="stepper-n">3</span><span class="stepper-label">作り方</span></button></li>
+        <li><button type="button" data-go="4"><span class="stepper-n">4</span><span class="stepper-label">仕上げ</span></button></li>
+        <li><button type="button" data-go="5"><span class="stepper-n">5</span><span class="stepper-label">確認</span></button></li>
+      </ol>
 
       <!-- F1: 写真(本紙)の取り込み -->
-      <fieldset class="block">
+      <fieldset class="block" data-step="1">
         <legend><span class="step-num">1</span>写真を選ぶ</legend>
         <p class="lead">本紙となる、お手元の一枚をお選びください。</p>
         <label for="honshi-image-file" class="file-label">写真ファイル</label>
@@ -44,7 +52,7 @@
       </fieldset>
 
       <!-- F2: 本紙サイズ選択 -->
-      <fieldset class="block" id="size-block">
+      <fieldset class="block" id="size-block" data-step="2">
         <legend class="legend-long"><span class="step-num">2</span>本紙(写真)の大きさを選ぶ</legend>
         <div class="seg" role="radiogroup" aria-label="サイズの種類">
           <label class="seg-item"><input type="radio" name="size-mode" value="a4" /> <span>A4 定型</span></label>
@@ -74,8 +82,8 @@
       </fieldset>
 
       <!-- F4: 表装形式(全形式を顧客にも見せる) -->
-      <fieldset class="block">
-        <legend><span class="step-num">3</span>仕立てを選ぶ</legend>
+      <fieldset class="block" data-step="2">
+        <legend>仕立てを選ぶ</legend>
         <label for="format-select">表装の形式</label>
         <select id="format-select" aria-label="表装形式の選択"></select>
         <div class="row pair-row">
@@ -84,12 +92,33 @@
           <label id="mincho-label" hidden><input type="checkbox" id="opt-mincho" /> 明朝仕立て</label>
         </div>
         <p id="format-note" class="note" hidden></p>
-        <p class="note">中央のプレビューで、各部の裂地をお選びいただけます。</p>
+      </fieldset>
+
+      <!-- 作り方(3 択)。素材(和紙 / 裂地)はお客様に判断させず、選んだ作り方の結果として決まる。
+           素材の札は伝わりにくいので付けない(2026-10-02 本人)。和紙であることはプレビューの下・2 案の画面・5 の確認で伝える -->
+      <fieldset class="block" id="method-block" data-step="3">
+        <legend><span class="step-num">3</span>作り方を選ぶ</legend>
+        <p class="lead">写真のまわり(表具)を、どう作るかお選びください。</p>
+        <div class="method-list">
+          <button type="button" id="design-btn" class="method-card" data-method="design">
+            <span class="method-title">おまかせでデザイン</span>
+            <span class="method-desc">写真に合わせて天地の絵柄を描き、和紙に印刷して仕立てます。</span>
+          </button>
+          <button type="button" id="suggest-btn" class="method-card" data-method="suggest">
+            <span class="method-title">裂地の見本から選ぶ</span>
+            <span class="method-desc">写真の色に合う裂地の取り合わせを3案お見せします。</span>
+          </button>
+          <button type="button" id="self-btn" class="method-card" data-method="self">
+            <span class="method-title">裂地を自分で選ぶ</span>
+            <span class="method-desc">掛軸の各部をタップして、裂地を一つずつ選びます。</span>
+          </button>
+        </div>
+        <p class="note method-note">お手持ちの柄のデータで和紙を作りたい方は、LINE でご相談ください。</p>
         <button type="button" class="fabric-reset-btn fabric-reset-pc secondary" disabled>裂地をすべてリセット</button>
       </fieldset>
 
       <!-- 軸先(端の飾り)の色 -->
-      <fieldset class="block" id="jiku-color-block">
+      <fieldset class="block" id="jiku-color-block" data-step="4">
         <legend><span class="step-num">4</span>軸先の色</legend>
         <div class="seg jiku-seg" role="radiogroup" aria-label="軸先の色">
           <label class="seg-item"><input type="radio" name="jiku-color" value="black" /> <span>黒</span></label>
@@ -99,13 +128,38 @@
       </fieldset>
 
       <!-- F8/スプリント2: 箱(梱包)オプション -->
-      <fieldset class="block" id="box-block">
-        <legend><span class="step-num">5</span>箱の種類</legend>
+      <fieldset class="block" id="box-block" data-step="4">
+        <legend>箱の種類</legend>
         <div class="seg box-seg" role="radiogroup" aria-label="箱の種類">
           <label class="seg-item"><input type="radio" name="box-option" value="paper" checked /> <span>紙箱<br /><span class="seg-sub">無料</span></span></label>
           <label class="seg-item"><input type="radio" name="box-option" value="kiri" /> <span>桐箱<br /><span class="seg-sub">+¥11,000</span></span></label>
         </div>
+        <!-- 桐箱を選んだときだけ実物の写真を出す(2026-10-02 本人) -->
+        <figure id="box-photo" class="box-photo" hidden>
+          <img src="assets/box/kiri.jpg" alt="KAKEPHOTO の刻印入りの桐箱" loading="lazy" width="600" height="800" />
+          <figcaption>KAKEPHOTO の刻印入りの桐箱でお届けします。</figcaption>
+        </figure>
       </fieldset>
+
+      <!-- 確認: 部位ごとの素材を書き出し、和紙を使っていれば目立たせる -->
+      <fieldset class="block" id="confirm-block" data-step="5">
+        <legend><span class="step-num">5</span>内容を確かめる</legend>
+        <dl id="confirm-list" class="confirm-list"></dl>
+        <p id="confirm-washi" class="mat-alert" hidden></p>
+        <button type="button" id="save-image-btn" class="save-image-btn">プレビューを画像で保存</button>
+        <!-- 部屋に飾ったイメージ(写真合成)。AR と違って PC でも使える。 -->
+        <button type="button" id="room-btn" class="room-btn">部屋に飾ってみる</button>
+        <!-- AR 体験(スマホ・タブレットのときだけ JS が表示。PC では非表示) -->
+        <button type="button" id="ar-btn" class="ar-btn" hidden>壁に掛けてみる(AR体験)</button>
+        <!-- 5 の最後の一歩。押すと LINE で相談(内容のコピーと画像の保存は「LINE で相談する」と同じ) -->
+        <a href="https://line.me/R/ti/p/@447updgf" target="_blank" rel="noopener" id="consult-line" class="consult-btn" role="button">このデザインで<br />相談してみる</a>
+        <p class="consult-note">押すと LINE が開き、この内容と画像をそのまま送れます。</p>
+      </fieldset>
+
+      <div class="step-nav">
+        <button type="button" id="step-prev" class="secondary">戻る</button>
+        <button type="button" id="step-next">次へ<span class="step-next-name"></span></button>
+      </div>
 
     </section>
 
@@ -114,7 +168,8 @@
       <div id="preview-warning" class="warning preview-warning" role="alert" hidden>
         サイズを正しく入力してください。
       </div>
-      <p class="preview-size-note">掛軸を<strong class="act-tap">タップ</strong><strong class="act-click">クリック</strong>して裂地をお選びください</p>
+      <!-- 指のアイコン+薄い地の札で、操作の案内だと一目で分かるように(2026-10-02 本人「もう少し読みやすく」)。アイコンは Material Icons "touch_app"(Apache License 2.0) -->
+      <p class="preview-size-note"><svg class="note-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11.24V7.5a2.5 2.5 0 0 1 5 0v3.74c1.21-.81 2-2.18 2-3.74a4.5 4.5 0 0 0-9 0c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg><span><span class="nw">掛軸を<strong class="act-tap">タップ</strong><strong class="act-click">クリック</strong>して</span><span class="nw">裂地をお選びください</span></span></p>
       <div class="preview-frame">
         <div class="preview-stage">
           <div class="dim dim-w" id="dim-w"></div>
@@ -125,7 +180,9 @@
           </div>
         </div>
       </div>
-      <!-- これまでのデザイン(2つ目ができたら表示。押すとそのデザインに切り替わる) -->
+      <!-- 和紙を使っている部位があるときだけ表示(裂地と取り違えないように) -->
+      <p id="material-note" class="material-note" hidden></p>
+      <!-- これまでのデザイン(デザインができたら表示。押すとそのデザインに切り替わる) -->
       <div id="design-history" class="design-history" hidden>
         <span class="design-history-label">これまでのデザイン</span>
         <div id="design-history-list" class="design-history-list"></div>
@@ -162,14 +219,7 @@
 
         <p class="price-note">表示の価格はお見積もりの目安です。確定の金額ではありません。</p>
 
-        <!-- 写真が入っているときだけ JS が表示する -->
-        <button type="button" id="design-btn" class="design-btn" hidden>写真に合わせてデザインする</button>
-        <button type="button" id="suggest-btn" class="suggest-btn" hidden>裂地の取り合わせを3案見る</button>
-        <button type="button" id="save-image-btn" class="save-image-btn">プレビューを画像で保存</button>
-        <!-- 部屋に飾ったイメージ(写真合成)。AR と違って PC でも使える。 -->
-        <button type="button" id="room-btn" class="room-btn">部屋に飾ってみる</button>
-        <!-- AR 体験(スマホ・タブレットのときだけ JS が表示。PC では非表示) -->
-        <button type="button" id="ar-btn" class="ar-btn" hidden>壁に掛けてみる(AR体験)</button>
+        <!-- お見積もりの欄は合計と相談だけ(作り方は 3、画像保存・部屋・AR は 5 の段階へ)。AR の表示部品は見えない位置に置くのでここに残す -->
         <model-viewer id="ar-viewer" class="ar-viewer" ar ar-modes="webxr scene-viewer quick-look" ar-placement="wall" ar-scale="auto" loading="eager" reveal="auto" alt="掛軸の完成イメージ"></model-viewer>
 
         <div class="cta-row">
@@ -241,6 +291,11 @@
     <h2 id="trim-dialog-title" class="dialog-title">写真の位置を調整</h2>
     <p class="dialog-note">枠の外をドラッグ: 範囲を選び直す / 枠の中をドラッグ: 移動 / 四隅: 大きさ変更</p>
     <div class="trim-options">
+      <!-- 本紙の向き(写真の位置合わせ中に縦横を切り替える。2026-10-02 本人) -->
+      <div id="trim-orient" class="trim-orient" role="group" aria-label="本紙の向き">
+        <button type="button" data-o="portrait">縦向き</button>
+        <button type="button" data-o="landscape">横向き</button>
+      </div>
       <label class="show-all-label">
         <input type="checkbox" id="trim-lock-aspect" />
         本紙の縦横比に合わせて固定する
@@ -347,6 +402,7 @@
     <button type="button" id="design-choice-close" class="dialog-x" aria-label="閉じる">×</button>
     <h2 id="design-choice-title" class="dialog-title">2つの案ができました</h2>
     <p class="design-choice-concept" id="design-choice-concept"></p>
+    <p class="mat-alert">どちらも、和紙に絵柄を印刷して仕立てます(布の裂地ではありません)。</p>
     <ul id="design-choice-list" class="design-choice-list" aria-label="デザインの案"></ul>
     <p class="dialog-note">選ばなかった案も、あとから「これまでのデザイン」で切り替えられます。</p>
   </dialog>

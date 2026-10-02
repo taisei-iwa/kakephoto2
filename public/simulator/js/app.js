@@ -157,6 +157,7 @@
       if (f) f();
     });
     document.getElementById("trim-lock-aspect").addEventListener("change", onTrimLockToggle);
+    document.querySelectorAll("#trim-orient button").forEach((b) => b.addEventListener("click", () => onTrimOrient(b.dataset.o)));
     setupTrimCanvasDrag();
 
     // 共有(LINE で相談・フォームへ引き継ぎ・画像保存)
@@ -164,6 +165,8 @@
     const ctaForm = document.getElementById("cta-form");
     const saveImageBtn = document.getElementById("save-image-btn");
     if (ctaLine) ctaLine.addEventListener("click", onLineClick);
+    const consultLine = document.getElementById("consult-line"); // 5 の「このデザインで相談してみる」
+    if (consultLine) consultLine.addEventListener("click", onLineClick);
     if (ctaForm) ctaForm.addEventListener("click", onFormClick);
     if (saveImageBtn) saveImageBtn.addEventListener("click", onSaveImageClick);
 
@@ -184,6 +187,136 @@
     initRoom(); // 部屋に飾ったイメージ(写真合成。PC でも使える)
     initSuggest(); // 写真から裂地の取り合わせを3案出す
     initDesign(); // 写真に合わせて天地をデザインする(同意のうえで写真を読み取りに送る)
+    initSteps(); // 一本道の段階と作り方の 3 択
+  }
+
+  // ---- 一本道の段階(2026-10-02 Tesla 型)と作り方の 3 択 ----
+  // 段階: 1 写真 / 2 大きさと仕立て / 3 作り方 / 4 軸先・箱 / 5 確認。今の段階の欄だけ見せる。
+  // 段階の表示を押せば行き来できる。合計と相談(お見積もりの欄)は常に見せる。
+  // 仕立ての形を作り方より前にするのは、デザインが天地の寸法を使うため。
+  const STEP_NAMES = ["", "写真", "大きさ", "作り方", "仕上げ", "確認"];
+  let currentStep = 1;
+
+  // その段階で足りないもの(足りていれば "")。満たさないと次へ進めない(2026-10-02 本人)
+  function stepMissing(n) {
+    if (n === 1 && !state.honshiImage) return "写真を選んでください。";
+    if (n === 2 && !state.sizeMode) return "本紙の大きさ(A4 / A3 / 自由サイズ)を選んでください。";
+    if (n === 2 && el.sizeWarning && !el.sizeWarning.hidden) return "本紙の大きさを正しく入力してください。";
+    if (n === 3 && !state.method) return "作り方を一つお選びください。";
+    return "";
+  }
+  // n の段階へ行けるか(手前の段階がすべて満たされているか)
+  function firstMissingBefore(n) {
+    for (let k = 1; k < n; k++) if (stepMissing(k)) return k;
+    return 0;
+  }
+  function updateStepNav() {
+    const next = document.getElementById("step-next");
+    if (next) next.setAttribute("aria-disabled", String(!!stepMissing(currentStep)));
+    document.querySelectorAll("#stepper button").forEach((b) => {
+      b.classList.toggle("locked", !!firstMissingBefore(Number(b.dataset.go)));
+    });
+  }
+
+  function showStep(n) {
+    currentStep = Math.max(1, Math.min(5, n));
+    document.querySelectorAll(".panel-controls [data-step]").forEach((f) => {
+      f.hidden = Number(f.dataset.step) !== currentStep;
+    });
+    document.querySelectorAll("#stepper button").forEach((b) => {
+      const k = Number(b.dataset.go);
+      if (k === currentStep) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current");
+      b.classList.toggle("done", k < currentStep);
+    });
+    const prev = document.getElementById("step-prev");
+    const next = document.getElementById("step-next");
+    prev.hidden = currentStep === 1;
+    next.hidden = currentStep === 5;
+    next.querySelector(".step-next-name").textContent = currentStep < 5 ? ":" + STEP_NAMES[currentStep + 1] : "";
+    const panel = document.querySelector(".panel-controls");
+    if (panel) panel.scrollTop = 0;
+    if (typeof gtag === "function") gtag("event", "step_view", { step: currentStep });
+    render();
+  }
+
+  function setMethod(m) {
+    state.method = m;
+    document.querySelectorAll(".method-card").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.method === m)));
+    updateStepNav();
+  }
+
+  function initSteps() {
+    // 段階の表示から先へ跳ぶときも、手前の段階が満たされていなければ、その段階へ案内する
+    document.querySelectorAll("#stepper button").forEach((b) => b.addEventListener("click", () => {
+      const to = Number(b.dataset.go);
+      const miss = to > currentStep ? firstMissingBefore(to) : 0;
+      if (miss) { showStep(miss); showToast(stepMissing(miss)); return; }
+      showStep(to);
+    }));
+    document.getElementById("step-prev").addEventListener("click", () => showStep(currentStep - 1));
+    document.getElementById("step-next").addEventListener("click", () => {
+      const miss = stepMissing(currentStep);
+      if (miss) { showToast(miss); return; }
+      showStep(currentStep + 1);
+    });
+    const self = document.getElementById("self-btn");
+    if (self) self.addEventListener("click", () => {
+      setMethod("self");
+      if (typeof gtag === "function") gtag("event", "method_pick", { method: "self" });
+      showTapHint(true);
+      showToast("掛軸を" + (matchMedia("(hover: none)").matches ? "タップ" : "クリック") + "して、裂地をお選びください。");
+    });
+    ["design-btn", "suggest-btn"].forEach((id) => {
+      const b = document.getElementById(id);
+      if (b) b.addEventListener("click", () => { if (typeof gtag === "function") gtag("event", "method_pick", { method: b.dataset.method }); });
+    });
+    showStep(1);
+  }
+
+  // 和紙(デザイン)が割り当てられている部位の名前(この形式にある部位だけ)
+  function washiPartLabels(layout) {
+    const groups = effectiveGroups();
+    const out = [];
+    Object.keys(groups).forEach((k) => {
+      const g = groups[k];
+      if (g.linkedInto) return;
+      const on = g.keys.some((key) => layout.parts[key] && (state.fabrics.find((f) => f.id === state.assignments[key]) || {}).washi);
+      if (on) { if (k === "tenchi") out.unshift(g.label); else out.push(g.label); } // 天地を先に
+    });
+    return out;
+  }
+
+  // プレビューの下: 和紙の部位があるときだけ「和紙に印刷: 天地・中廻し」
+  function updateMaterialNote() {
+    const note = document.getElementById("material-note");
+    if (!note) return;
+    const washi = washiPartLabels(computeLayout(activePreset(), state.honshiW, state.honshiH, partOptions()));
+    note.hidden = washi.length === 0;
+    note.textContent = washi.length ? "和紙に印刷: " + washi.join("・") : "";
+  }
+
+  // 5 確認: 選んだ内容と、部位ごとの素材
+  function renderConfirm() {
+    const dl = document.getElementById("confirm-list");
+    if (!dl) return;
+    const layout = computeLayout(activePreset(), state.honshiW, state.honshiH, partOptions());
+    const rows = [["大きさ", sizeSummaryText()], ["仕立て", formatSummaryText()]];
+    fabricSummaryLines(layout).forEach((l) => {
+      const i = l.indexOf(": ");
+      rows.push([l.slice(0, i), l.slice(i + 2)]);
+    });
+    rows.push(["軸先", JIKU_LABEL[state.jikuColor] || state.jikuColor]);
+    rows.push(["箱", state.boxKey === "kiri" ? "桐箱" : "紙箱"]);
+    dl.innerHTML = "";
+    rows.forEach(([k, v]) => {
+      const dt = document.createElement("dt"); dt.textContent = k;
+      const dd = document.createElement("dd"); dd.textContent = v;
+      dl.appendChild(dt); dl.appendChild(dd);
+    });
+    const washi = washiPartLabels(layout);
+    const alert = document.getElementById("confirm-washi");
+    alert.hidden = washi.length === 0;
+    alert.textContent = washi.length ? washi.join("・") + "は、布の裂地ではなく、和紙に印刷して仕立てます。" : "";
   }
 
   // ---- AR 体験(スマホ・タブレットで表示。iPhone は Quick Look、Android は WebXR / Scene Viewer)----
@@ -241,10 +374,12 @@
     );
   }
 
+  // 作り方のカードは隠さず、写真が無いときは薄くして、押したら写真を促す
   function updateSuggestVisibility() {
     const btn = document.getElementById("suggest-btn");
     if (!btn) return;
-    btn.hidden = !state.honshiImage || typeof KakeSuggest === "undefined";
+    btn.hidden = typeof KakeSuggest === "undefined";
+    btn.classList.toggle("needs-photo", !state.honshiImage);
   }
 
   function initSuggest() {
@@ -287,6 +422,7 @@
         pick.textContent = "この案にする";
         pick.addEventListener("click", () => {
           applyPlan(plan);
+          setMethod("suggest");
           if (typeof gtag === "function") gtag("event", "suggest_pick", { plan: plan.id, size: state.sizeMode, format: state.formatId });
           dlg.close();
           render();
@@ -300,10 +436,9 @@
     }
 
     btn.addEventListener("click", () => {
-      if (!state.honshiImage) return;
+      if (!state.honshiImage) { showToast("先に写真を入れてください(1 写真)。"); return; }
       btn.disabled = true;
-      const label = btn.textContent;
-      btn.textContent = "考えています…";
+      btn.classList.add("busy"); // カードの中身(素材の札など)は書き換えない
       if (typeof gtag === "function") gtag("event", "suggest_open", { size: state.sizeMode, format: state.formatId });
       loadPhoto()
         .then((img) => {
@@ -316,7 +451,7 @@
           return renderPlans(plans).then(() => { if (!dlg.open) dlg.showModal(); });
         })
         .catch(() => showToast("ご提案の作成に失敗しました。写真を入れ直してお試しください。"))
-        .then(() => { btn.disabled = false; btn.textContent = label; });
+        .then(() => { btn.disabled = false; btn.classList.remove("busy"); });
     });
   }
 
@@ -348,7 +483,8 @@
   function updateDesignVisibility() {
     const btn = document.getElementById("design-btn");
     if (!btn) return;
-    btn.hidden = !state.honshiImage || typeof KakeDesign === "undefined";
+    btn.hidden = typeof KakeDesign === "undefined";
+    btn.classList.toggle("needs-photo", !state.honshiImage);
   }
 
   // 天・地の仕上がり寸法(mm)。絵の縦横比と、印刷のときの寸法の記録に使う
@@ -363,13 +499,13 @@
   function addDesignFabrics(res, tenUrl, chiUrl) {
     const tenchi = {
       id: "design_" + res.id, designId: res.id, generated: true, variant: res.variant,
-      name: "写真に合わせたデザイン(" + res.id + ")", uses: ["tenchi"], grade: "standard",
+      name: "和紙に印刷・写真に合わせた絵柄(" + res.id + ")", uses: ["tenchi"], grade: "standard", washi: true,
       dataUrl: tenUrl, tileW: 40, tileH: 40,
       cover: { ten: tenUrl, chi: chiUrl, fallbackHex: res.nakaHex },
     };
     const paper = {
       id: "paper_" + res.id, designId: res.id, generated: true,
-      name: "絵柄に合わせた紙(" + res.id + ")", uses: ["nakamawashi"], grade: "standard",
+      name: "和紙に印刷・絵柄に合わせた無地(" + res.id + ")", uses: ["nakamawashi"], grade: "standard", washi: true,
       dataUrl: KakeDesign.paperSwatch(res.nakaHex), tileW: 40, tileH: 40,
     };
     tenchi.paperId = paper.id;
@@ -550,7 +686,7 @@
     dProgress.addEventListener("cancel", (e) => e.preventDefault());
 
     btn.addEventListener("click", () => {
-      if (!state.honshiImage) return;
+      if (!state.honshiImage) { showToast("先に写真を入れてください(1 写真)。"); return; }
       if (consented()) { openWish(); return; }
       agree.checked = false;
       okBtn.disabled = true;
@@ -562,6 +698,7 @@
     const dChoice = document.getElementById("design-choice-dialog");
     function finishWith(tenchi, list) {
       applyDesign(tenchi, true);
+      setMethod("design");
       render();
       updatePrice();
       if (list.length > 1) KakeDesign.pick(tenchi.designId);
@@ -1122,6 +1259,10 @@
 
     // 未選択: サイズ価格 0(お見積もりは ¥0 から)。プレビューは既定比率のまま描く。
     if (!mode) {
+      // 向きだけは反映する(写真の位置合わせで縦横を切り替えたときに、プレビューも合わせる)
+      const portrait = state.orientation === "portrait";
+      state.honshiW = portrait ? 210 : 297;
+      state.honshiH = portrait ? 297 : 210;
       state.sizePrice = 0;
       state.sizeTierLabel = "";
       render();
@@ -1178,6 +1319,8 @@
 
   function onBoxChange() {
     state.boxKey = currentBoxKey();
+    const photo = document.getElementById("box-photo");
+    if (photo) photo.hidden = state.boxKey !== "kiri"; // 桐箱を選んだら下に写真
     updatePrice();
   }
 
@@ -1435,8 +1578,8 @@
     try { localStorage.setItem(TAP_HINT_KEY, "1"); } catch (e) { /* 保存できない環境では毎回出るだけ */ }
     hideTapHint();
   }
-  function showTapHint() {
-    if (tapHintDone() || !state.honshiImage) return;
+  function showTapHint(force) {
+    if (!force && (tapHintDone() || !state.honshiImage)) return;
     hideTapHint();
     // 天がいちばん広く、札を出しても入れたばかりの写真にかぶらない
     const target = el.preview.querySelector('.part[data-part="ten"]') || el.preview.querySelector('.part[data-part="nakaUe"]');
@@ -1673,6 +1816,9 @@
     updateSuggestVisibility(); // 写真が入っているときだけ 3案ボタンを出す
     updateDesignVisibility(); // 写真が入っているときだけ「写真に合わせてデザインする」を出す
     renderDesignHistory(); // これまでのデザイン(縮小計算の前に置き、スマホでも枠の高さに入れる)
+    updateMaterialNote(); // 和紙の部位の表示(同じく縮小計算の前に)
+    if (currentStep === 5) renderConfirm();
+    updateStepNav(); // 写真・大きさ・作り方が満たされたら「次へ」を有効に
     el.previewWarning.hidden = true;
 
     const opts = partOptions();
@@ -1883,6 +2029,7 @@
       title: "写真の位置を調整",
       needCropped: false,
       allowChangePhoto: true,
+      allowOrient: true,
       onClose: showTapHint,
       onConfirm: function (cropRect) { state.honshiImage.cropRect = cropRect; render(); },
     });
@@ -1921,12 +2068,54 @@
     }
 
     document.getElementById("trim-change-photo-btn").hidden = !opts.allowChangePhoto;
+    const orient = document.getElementById("trim-orient");
+    if (orient) { orient.hidden = !opts.allowOrient; updateTrimOrientButtons(); }
     trimOnClose = opts.onClose || null;
 
     initTrimCanvas();
     // すでに開いている(写真を変更した)ときは開き直さない。showModal は二重に呼ぶと例外になる
     const trimDialog = document.getElementById("trim-dialog");
     if (!trimDialog.open) trimDialog.showModal();
+  }
+
+  // 写真の位置合わせ中に本紙の縦横を切り替える。定型は「向き」を、自由サイズは幅と高さを入れ替える。
+  // 切り替えたら、切り抜き枠も新しい縦横比に合わせ直す
+  function updateTrimOrientButtons() {
+    const land = state.honshiW > state.honshiH;
+    document.querySelectorAll("#trim-orient button").forEach((b) => {
+      b.setAttribute("aria-pressed", String((b.dataset.o === "landscape") === land));
+    });
+  }
+  function onTrimOrient(o) {
+    const land = state.honshiW > state.honshiH;
+    if ((o === "landscape") === land) return;
+    if (state.sizeMode === "free") {
+      const w = el.freeW.value;
+      el.freeW.value = el.freeH.value;
+      el.freeH.value = w;
+    } else {
+      const r = Array.from(el.orientationRadios).find((x) => x.value === o);
+      if (r) r.checked = true;
+    }
+    onSizeChange();
+    if (!trimCtx) return;
+    trimCtx.aspectW = state.honshiW;
+    trimCtx.aspectH = state.honshiH;
+    const lockCheck = document.getElementById("trim-lock-aspect");
+    const canvas = document.getElementById("trim-canvas");
+    const sel = canvas._selection;
+    if (sel && lockCheck.checked && !lockCheck.disabled) {
+      // 新しい縦横比で入るいちばん大きな枠を、今の枠の中心に置く
+      const ar = trimCtx.aspectW / trimCtx.aspectH;
+      let w = canvas.width, h = w / ar;
+      if (h > canvas.height) { h = canvas.height; w = h * ar; }
+      const cx = sel.x + sel.w / 2, cy = sel.y + sel.h / 2;
+      sel.w = w; sel.h = h;
+      sel.x = Math.max(0, Math.min(canvas.width - w, cx - w / 2));
+      sel.y = Math.max(0, Math.min(canvas.height - h, cy - h / 2));
+      drawTrimOverlay(canvas, canvas.getContext("2d"), sel);
+    }
+    updateTrimOrientButtons();
   }
 
   function onTrimLockToggle(e) {
@@ -2183,7 +2372,9 @@
     lines.push("■ 仕立て: " + formatSummaryText());
     const design = currentDesignFabric();
     if (design) lines.push("■ デザイン番号: " + design.designId + "(天地を写真に合わせてデザイン)");
-    lines.push("■ 裂地:");
+    const washi = washiPartLabels(layout);
+    if (washi.length) lines.push("■ 素材: " + washi.join("・") + "は和紙に印刷(布の裂地ではありません)");
+    lines.push(washi.length ? "■ 各部の裂地・和紙:" : "■ 裂地:");
     fabricSummaryLines(layout).forEach((l) => lines.push("　・" + l));
     lines.push("■ 軸先の色: " + (JIKU_LABEL[state.jikuColor] || state.jikuColor));
     lines.push("■ 箱: " + (state.boxKey === "kiri" ? "桐箱(+¥11,000)" : "紙箱(無料)"));
