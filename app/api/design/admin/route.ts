@@ -1,5 +1,5 @@
 /**
- * GET /api/design/admin?id=KP-XXXXXX&file=meta.json|ten.jpg|chi.jpg|ten.json|ten_raw.jpg|…
+ * GET /api/design/admin?id=KP-XXXXXX&file=meta.json|ten.jpg|chi.jpg|both.jpg|ten.json|both_raw.jpg|…
  * 職人が印刷用に清書するとき、注文のデザイン番号から案と画像を取り出す(紙表具デザイン/gen_final.py が使う)。
  * POST /api/design/admin { id, action: "ordered" } — 注文に使った印を付ける(付いたものは 1 年の自動削除の対象外)。
  * どちらもヘッダー x-admin-token が環境変数 DESIGN_ADMIN_TOKEN と一致したときだけ。
@@ -21,7 +21,7 @@ export async function GET(req: Request) {
   const u = new URL(req.url);
   const id = u.searchParams.get("id") || "";
   const file = u.searchParams.get("file") || "meta.json";
-  if (!/^KP-[0-9A-Z]{6}$/.test(id) || !/^(meta\.json|(ten|chi)\.json|(ten|chi)(_raw)?\.(jpg|png))$/.test(file)) {
+  if (!/^KP-[0-9A-Z]{6}$/.test(id) || !/^(meta\.json|(ten|chi)\.json|(ten|chi|both)(_raw)?\.(jpg|png))$/.test(file)) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
   const data = await getFile(`${id}/${file}`);

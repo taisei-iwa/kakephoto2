@@ -526,10 +526,10 @@
           res = r;
           stepRead.className = "done";
           stepDraw.className = "active";
-          return Promise.all([KakeDesign.renderPart(r.id, "ten"), KakeDesign.renderPart(r.id, "chi")]);
+          return KakeDesign.renderBoth(r.id);
         })
         .then((imgs) => {
-          addDesignFabrics(res, imgs[0], imgs[1]);
+          addDesignFabrics(res, imgs.ten, imgs.chi);
           render();
           updatePrice();
           dProgress.close();

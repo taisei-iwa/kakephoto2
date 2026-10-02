@@ -97,7 +97,7 @@ Look at the photo and return JSON only.
 
 Rules for the design:
 1. The photo is the star. NEVER draw the photo's main subject again in ten or chi (a fireworks photo gets no fireworks; a flower photo gets no copy of that flower; never draw people or pets). Use what the subject implies instead: the setting, the season, the air, a symbolic traditional motif.
-2. Tell one quiet story from ten (top: sky, distance, above) to chi (bottom: ground, water, near, below) that links the two (for example: a moon in ten and its reflection on water in chi; petals carried by the wind in ten landing beside a pair of clam shells on the shore in chi).
+2. Tell one quiet story from ten (top: sky, distance, above) to chi (bottom: ground, water, near, below) that links the two (for example: a moon in ten and its reflection on water in chi; petals carried by the wind in ten landing beside a pair of clam shells on the shore in chi). Ten and chi are cut from ONE sheet of paper: one painting, one style, one ink, one base paper color.
 3. Elegant and restrained, like a fine traditional Japanese painting or katazome print. Lots of empty space. Few motifs. Avoid cheap clip-art, avoid cliches unless they truly fit the photo.
 4. Colors come from the photo and are named as traditional Japanese colors (for example kon, ai, torinoko, taikou, wasurenagusa, suou, yamabuki, wakatake, nezumi).
 5. Ten: keep the key motif near the horizontal center, or leave it almost empty; avoid important motifs at about one quarter and three quarters of the width (narrow vertical ribbons hang there). Chi: keep motifs within the vertical middle band.
@@ -109,8 +109,9 @@ JSON fields:
 - "subject": the photo's main subject in English (what must NOT be drawn)
 - "colors": 3 to 5 items, each {"name_ja": traditional color name in Japanese, "hex": "#rrggbb"}
 - "concept_ja": the design in Japanese, exactly in the form "天：…／地：…", each side at most 18 characters, plain description of what is drawn (no sales talk, no claims about craftsmen)
-- "ten_prompt": English instruction for the ten image (scene, motifs, positions, colors). Do not mention the photo's subject except as something to avoid.
-- "chi_prompt": English instruction for the chi image, continuing the story from ten.
+- "ten_prompt": English instruction for the motifs of ten and their positions and colors. Describe motifs only, never the background color (the background is always the base paper color). Do not mention the photo's subject except as something to avoid.
+- "chi_prompt": English instruction for the motifs of chi, continuing the story from ten. Motifs only, never the background color.
+- "base_hex": "#rrggbb" the single base paper color shared by ten and chi (they are cut from one sheet), taken from the photo's mood, calm enough to sit around the photo
 - "naka_hex": "#rrggbb" a calm solid paper color for the middle band (nakamawashi) around the photo that harmonizes with both ten and chi and does not compete with the photo.
 - "include_subject": true only when the customer's note explicitly asks to draw the photo's main subject; otherwise false.`;
 
@@ -127,33 +128,62 @@ export const ANALYZE_SCHEMA = {
     concept_ja: { type: "STRING" },
     ten_prompt: { type: "STRING" },
     chi_prompt: { type: "STRING" },
+    base_hex: { type: "STRING" },
     naka_hex: { type: "STRING" },
     include_subject: { type: "BOOLEAN" },
   },
-  required: ["ok", "scene_ja", "subject", "colors", "concept_ja", "ten_prompt", "chi_prompt", "naka_hex", "include_subject"],
+  required: ["ok", "scene_ja", "subject", "colors", "concept_ja", "ten_prompt", "chi_prompt", "base_hex", "naka_hex", "include_subject"],
 };
 
-export function partPrompt(
-  part: "ten" | "chi",
-  brief: { ten_prompt: string; chi_prompt: string; subject: string; colors: { name_ja: string; hex: string }[]; include_subject?: boolean },
-  aspect: string,
-  wishes: Wishes = {}
-) {
+type Brief = {
+  ten_prompt: string;
+  chi_prompt: string;
+  subject: string;
+  colors: { name_ja: string; hex: string }[];
+  include_subject?: boolean;
+  base_hex?: string;
+};
+
+// 天地に共通する言葉(雰囲気・描かないもの・色・紙の色)
+function common(brief: Brief, wishes: Wishes) {
   const x = wishWords(wishes);
   const feel = `${x.mood || "quiet and elegant"}, ${x.density || "generous empty space"}${x.tone ? ", " + x.tone : ""}. `;
   // お客様が写真の主役を入れてほしいと明記したときだけ、主役を禁止の一覧から外す
   const avoid = brief.include_subject ? "people" : `${brief.subject}, people`;
+  const colors = brief.colors.map((c) => `${c.name_ja} ${c.hex}`).join(", ");
+  const paper = brief.base_hex ? `Base paper color ${brief.base_hex}, the same everywhere in the background. ` : "";
+  return `Feeling: ${feel}Absolutely do not draw: ${avoid}, text, names. Colors: ${colors}. ${paper}`;
+}
+
+/**
+ * 天と地をつなげた 1 枚の絵の指示(2026-10-02 本人「天地で統一感がない」→ 1 枚に描いて上下に切り分ける)。
+ * tenFrac: 全体の高さのうち天が占める割合。そこで切るので、切れ目の前後には大事な柄を置かせない。
+ */
+export function combinedPrompt(brief: Brief, tenFrac: number, aspect: string, wishes: Wishes = {}) {
+  // 「ここで切る」「上下のパネル」と書くと、境目の線を引いて上下を塗り分けてしまう(2026-10-02 実測)。
+  // 切る話はせず、背景 1 色の継ぎ目のない 1 枚として描かせ、柄を置く範囲だけを指定する(あいだは背景だけ)
+  const t = Math.round(tenFrac * 100);
+  const upperEnd = t - 7, lowerStart = t + 7;
+  return (
+    `One single seamless vertical painting for a Japanese hanging scroll mounting that fills the whole ${aspect} canvas from edge to edge. ` +
+    `The background is ONE uniform base paper color from the top edge to the bottom edge: no horizon line, no horizontal band, ` +
+    `no change of background color, no division, no panels, no frames. ` +
+    `Upper scene, placed only between the top edge and ${upperEnd}% of the height: ${brief.ten_prompt} ` +
+    `Lower scene, placed only between ${lowerStart}% of the height and the bottom edge: ${brief.chi_prompt} ` +
+    `Between ${upperEnd}% and ${lowerStart}% of the height there is only the plain background. ` +
+    `Upper and lower scenes share exactly the same style, ink and line quality, as one work. ` +
+    common(brief, wishes) +
+    STYLE
+  );
+}
+
+/** 部位ごとの指示(4K の清書で、見本の画像と一緒に渡す) */
+export function partPrompt(part: "ten" | "chi", brief: Brief, aspect: string, wishes: Wishes = {}) {
   // 部位の実際の縦横比をそのまま伝える(「横長」と書くと、正方形の画像の中に横長の台紙を描いてしまう)
   const canvas = `The design fills the whole ${aspect} canvas from edge to edge. `;
   const head =
     part === "ten"
       ? "Top panel (ten) of a Japanese hanging scroll mounting. " + canvas
       : "Bottom panel (chi) of the same hanging scroll mounting, continuing the story from the top panel. " + canvas;
-  const colors = brief.colors.map((c) => `${c.name_ja} ${c.hex}`).join(", ");
-  return (
-    head +
-    (part === "ten" ? brief.ten_prompt : brief.chi_prompt) +
-    ` Feeling: ${feel}Absolutely do not draw: ${avoid}, text, names. Colors: ${colors}. ` +
-    STYLE
-  );
+  return head + (part === "ten" ? brief.ten_prompt : brief.chi_prompt) + " " + common(brief, wishes) + STYLE;
 }

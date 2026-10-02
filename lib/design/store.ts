@@ -2,7 +2,8 @@
  * デザインの保存先。本番は Netlify Blobs(ストア名 "designs")、手元の `next dev` では .design-store/ フォルダ。
  * 保存するのは、読み取り結果・指示文・部位の寸法と、作った天地の画像だけ。お客様の写真は保存しない。
  *   <ID>/meta.json(読み取り結果・案・寸法)  <ID>/ten.jpg(シミュレーターで見せた版)  <ID>/ten_raw.*(画像 AI の出力そのまま)
- *   <ID>/ten.json(使った指示文・モデル・切り抜き位置)  地も同じ
+ *   <ID>/ten.json(清書用の指示文・モデル・切り抜き位置)  地も同じ
+ *   <ID>/both.jpg・both_raw.*(天地をつなげて描いた 1 枚。切り分ける前)
  */
 import { promises as fs } from "fs";
 import path from "path";
@@ -69,6 +70,7 @@ export type DesignMeta = {
     ten_prompt: string;
     chi_prompt: string;
     naka_hex: string;
+    base_hex?: string;
     include_subject?: boolean;
   };
   // お客様の要望(要望の画面。おまかせなら空)

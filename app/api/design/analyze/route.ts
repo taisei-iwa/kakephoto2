@@ -33,6 +33,7 @@ export async function POST(req: Request) {
     const brief = await analyzeImage(ANALYZE_MODEL, ANALYZE_PROMPT + wishSection(wishes), ANALYZE_SCHEMA, m[1]);
     if (!brief.ok) return NextResponse.json({ error: "unsuitable" }, { status: 422 });
     if (!HEX.test(brief.naka_hex)) brief.naka_hex = "#d9d2c3";
+    if (!HEX.test(brief.base_hex || "")) delete brief.base_hex;
     brief.colors = (brief.colors || []).filter((c: { hex: string }) => HEX.test(c.hex)).slice(0, 5);
 
     const id = newDesignId();

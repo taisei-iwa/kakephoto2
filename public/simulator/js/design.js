@@ -37,9 +37,9 @@
     return post("/api/design/analyze", { consent: true, photo: photo, ten: tenMm, chi: chiMm, wishes: wishes || {} });
   }
 
-  // 天か地の絵 → dataURL
-  function renderPart(id, part) {
-    return post("/api/design/render", { id: id, part: part }).then((j) => j.image);
+  // 天と地(1 枚に描いて上下に切り分けたもの)→ { ten, chi }(どちらも dataURL)
+  function renderBoth(id) {
+    return post("/api/design/render", { id: id });
   }
 
   // 中廻し用の「紙」の見本(無地にごく薄いむら)。裂地と同じくタイル状に敷く
@@ -70,5 +70,5 @@
     return "デザインの作成に失敗しました。お手数ですが、もう一度お試しください。";
   }
 
-  root.KakeDesign = { photoJpeg, analyze, renderPart, paperSwatch, errorMessage };
+  root.KakeDesign = { photoJpeg, analyze, renderBoth, paperSwatch, errorMessage };
 })(window);
