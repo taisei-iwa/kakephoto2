@@ -406,15 +406,54 @@
     }
   }
 
-  // これまでのデザイン: 2つ目ができたらプレビューの下に小さく並べ、押すとそのデザインに切り替える
+  // デザインする直前の裂地の選び方(部位 -> 裂地)。「デザイン前」の見本から、いつでも元に戻せるように
+  // (2026-10-02 お客様の声: 選んでいた裂地が消えてしまうのが心配)
+  let beforeDesign = null;
+  function rememberBeforeDesign() {
+    // いまの天地がデザインなら、お客様の選び方ではないので覚え直さない(前に覚えたものを残す)
+    if ((state.assignments.ten || "").indexOf("design_") === 0) return;
+    beforeDesign = Object.assign({}, state.assignments);
+  }
+
+  // これまでのデザイン: デザインができたらプレビューの下に小さく並べ、押すとそのデザインに切り替える。
+  // 先頭は「デザイン前」(押すとお客様が選んでいた裂地に戻る)
   function renderDesignHistory() {
     const box = document.getElementById("design-history");
     const list = document.getElementById("design-history-list");
     if (!box || !list) return;
     const designs = state.fabrics.filter((f) => f.cover).slice().reverse(); // 古い順
-    box.hidden = designs.length < 2;
+    box.hidden = !beforeDesign && designs.length < 2;
     if (box.hidden) return;
     list.innerHTML = "";
+    if (beforeDesign) {
+      const fabUrl = (key) => { const f = state.fabrics.find((x) => x.id === beforeDesign[key]); return f ? f.dataUrl : "#e9e2d4"; };
+      const same = Object.keys(Object.assign({}, beforeDesign, state.assignments)).every((k) => (beforeDesign[k] || "") === (state.assignments[k] || ""));
+      const wrap = document.createElement("span");
+      wrap.className = "design-before";
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "design-thumb";
+      b.title = "デザイン前(選んでいた裂地に戻す)";
+      b.setAttribute("aria-label", b.title);
+      b.setAttribute("aria-pressed", String(same));
+      [["t", fabUrl("ten")], ["n", fabUrl("nakaUe")], ["c", fabUrl("chi")]].forEach(([cls, bg]) => {
+        const sp = document.createElement("span");
+        sp.className = cls;
+        if (bg.indexOf("#") === 0) sp.style.backgroundColor = bg;
+        else sp.style.backgroundImage = "url(" + bg + ")";
+        b.appendChild(sp);
+      });
+      b.addEventListener("click", () => {
+        state.assignments = Object.assign({}, beforeDesign);
+        render();
+        updatePrice();
+      });
+      const cap = document.createElement("small");
+      cap.textContent = "デザイン前";
+      wrap.appendChild(b);
+      wrap.appendChild(cap);
+      list.appendChild(wrap);
+    }
     designs.forEach((fab, i) => {
       const b = document.createElement("button");
       b.type = "button";
@@ -433,6 +472,7 @@
       part("n", fab.cover.fallbackHex || "#e9e2d4");
       part("c", fab.cover.chi);
       b.addEventListener("click", () => {
+        rememberBeforeDesign(); // 自分で選び直した裂地から切り替えるときも、その選び方を残す
         applyDesign(fab, false);
         render();
         updatePrice();
@@ -526,9 +566,10 @@
       updatePrice();
       if (list.length > 1) KakeDesign.pick(tenchi.designId);
       ga("design_pick", { variant: tenchi.variant || "", count: list.length });
-      showToast("デザインしました(番号 " + tenchi.designId + ")。中廻しや天地は選び直せます。");
+      showToast("デザインしました(" + tenchi.designId + ")。「デザイン前」で元に戻せます。");
     }
     function chooseDesign(fabs, concept) {
+      rememberBeforeDesign(); // 2 案を選ばずに閉じても、デザイン前に戻れるように
       // プレビューは順に描く(同時に描くと割り当ての差し替えがぶつかる)
       return fabs.reduce((chain, f) => chain.then((arr) => renderDesignThumb(f).then((cv) => arr.concat([{ f, cv }]))), Promise.resolve([]))
         .then((items) => {
