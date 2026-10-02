@@ -1,5 +1,7 @@
 // デザインの評価(職人用)。/api/design/admin を合言葉つきで呼び、一覧・画像の取り出し・評価の保存をする。
-// 評価(良い/イマイチ・理由・ひとこと)はサーバーの lessons.json にも入り、次の案づくりの見本になる。
+// 同じ回に作った 2 案(なじませる / 引き立てる)は 1 枚のカードに左右に並べ、それぞれに良い/イマイチを付ける。
+// 理由のタグとひとことは 2 案共通(評価を付けた案ぶん保存する)。
+// 評価はサーバーの lessons.json にも入り、次の案づくりの見本になる。
 
 (function () {
   "use strict";
@@ -20,6 +22,9 @@
   let token = "";
   try { token = localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { /* 記憶できない端末では毎回入れる */ }
   let filter = "unreviewed", next = null, tags = [], shown = 0;
+  // 読み込みが重なったとき(「開く」と Enter の二重押しなど)は、最後に頼んだ分だけを表示する
+  //(2026-10-02 本人指摘: 同じ番号・同じ時刻のデザインが 2 枚ずつ並んだ)
+  let seq = 0;
 
   const $ = (id) => document.getElementById(id);
   const api = (q, opt) => fetch("/api/design/admin" + q, Object.assign({ headers: { "x-admin-token": token, "Content-Type": "application/json" } }, opt || {}));
@@ -31,11 +36,12 @@
   $("rv-login-btn").addEventListener("click", () => {
     token = $("rv-token").value.trim();
     load(true).then((ok) => {
+      if (ok === null) return; // 後から頼んだ読み込みに置き換わった
       $("rv-login-error").hidden = ok;
       if (ok) { $("rv-login").hidden = true; try { localStorage.setItem(TOKEN_KEY, token); } catch (e) { /* 記憶しない */ } }
     });
   });
-  $("rv-token").addEventListener("keydown", (e) => { if (e.key === "Enter") $("rv-login-btn").click(); });
+  $("rv-token").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("rv-login-btn").click(); } });
 
   document.querySelectorAll(".rv-filter button").forEach((b) => b.addEventListener("click", () => {
     filter = b.dataset.filter;
@@ -44,23 +50,28 @@
   }));
   $("rv-more").addEventListener("click", () => load(false));
 
-  // 一覧を読む。reset なら最初から。合言葉が違えば false
+  // 一覧を読む。reset なら最初から。合言葉が違えば false、後の読み込みに置き換わったら null
   function load(reset) {
-    if (reset) { next = null; shown = 0; $("rv-list").innerHTML = ""; }
-    const q = "?list=1&limit=12&filter=" + filter + (next ? "&before=" + encodeURIComponent(next) : "");
+    const my = ++seq;
+    const q = "?list=1&limit=8&filter=" + filter + (!reset && next ? "&before=" + encodeURIComponent(next) : "");
+    $("rv-more").disabled = true;
     return api(q).then((r) => {
+      if (my !== seq) return null;
       if (r.status === 403) { login(); return false; }
       return r.json().then((j) => {
+        if (my !== seq) return null;
+        if (reset) { shown = 0; $("rv-list").innerHTML = ""; } // 消すのは結果が届いてから(重なっても二重にならない)
         tags = j.tags || tags;
         next = j.next;
-        j.items.forEach((it) => $("rv-list").appendChild(card(it)));
-        shown += j.items.length;
+        (j.groups || []).forEach((g) => $("rv-list").appendChild(card(g)));
+        shown += (j.groups || []).length;
         $("rv-more").hidden = !next;
+        $("rv-more").disabled = false;
         $("rv-empty").hidden = shown > 0;
-        $("rv-summary").textContent = (filter === "unreviewed" ? "未評価 " : "") + shown + " 件を表示" + (next ? "(続きあり)" : "");
+        $("rv-summary").textContent = (filter === "unreviewed" ? "未評価 " : "") + shown + " 回分を表示" + (next ? "(続きあり)" : "");
         return true;
       });
-    }).catch(() => false);
+    }).catch(() => (my === seq ? false : null));
   }
 
   // 合言葉が要る画像は、取り出してから貼る
@@ -72,75 +83,85 @@
     return el;
   }
 
-  function card(it) {
+  const text = (cls, s) => { const p = document.createElement("p"); p.className = cls; p.textContent = s; return p; };
+
+  // 1 回分(2 案)のカード
+  function card(members) {
+    const a = members[0];
     const li = document.createElement("li");
-    li.className = "rv-card" + (it.review ? " rated-" + it.review.rating : "");
+    li.className = "rv-card";
 
-    const pics = document.createElement("div");
-    pics.className = "rv-images";
-    if (it.hasPreview) pics.appendChild(img(it.id, "preview.jpg", "写真を入れた掛軸の見本"));
-    if (it.rendered) {
-      const tc = document.createElement("div");
-      tc.className = "rv-tenchi";
-      tc.appendChild(img(it.id, "ten.jpg", "天"));
-      tc.appendChild(img(it.id, "chi.jpg", "地"));
-      pics.appendChild(tc);
-    }
-    li.appendChild(pics);
-
-    const concept = document.createElement("p");
-    concept.className = "rv-concept";
-    concept.textContent = it.concept || "";
-    li.appendChild(concept);
-
-    const w = it.wishes || {};
+    // 共通の情報
+    li.appendChild(text("rv-concept", a.concept || ""));
+    const w = a.wishes || {};
     const wishText = [WISH.mood[w.mood], WISH.tone[w.tone], WISH.density[w.density], w.note ? "「" + w.note + "」" : ""].filter(Boolean).join("・") || "おまかせ";
-    const m = it.metrics || {};
     const meta = document.createElement("p");
     meta.className = "rv-meta";
-    meta.innerHTML = "";
-    const lines = [
-      ["案", (VARIANT[it.variant] || "") + (it.pair ? (it.picked ? "(お客様が選んだ)" : "(選ばれなかった)") : "") + (it.ordered ? "・注文済み" : "")],
-      ["写真", (it.scene || "") + (it.season ? "(" + (SEASON[it.season] || it.season) + ")" : "")],
-      ["見立て", it.mitate || "―"],
+    [
+      ["写真", (a.scene || "") + (a.season ? "(" + (SEASON[a.season] || a.season) + ")" : "")],
+      ["見立て", a.mitate || "―"],
       ["要望", wishText],
-      ["測った値", m.coverage != null ? "柄の面積 " + Math.round(m.coverage * 100) + "%・鮮やかさ " + m.colorfulness + "(写真 " + ((it.photo || {}).colorfulness ?? "?") + ")・紙の色のずれ " + m.bgDelta : "未描画"],
-      ["基準外", ((it.failed || []).map((f) => FAIL[f] || f).join("・") || "なし") + (it.tries > 1 ? "(描き直し " + (it.tries - 1) + " 回)" : "")],
-      ["番号", it.id + "・" + new Date(it.createdAt).toLocaleString("ja-JP")],
-    ];
-    lines.forEach(([k, v]) => { const b = document.createElement("b"); b.textContent = k + " "; meta.appendChild(b); meta.appendChild(document.createTextNode(v)); meta.appendChild(document.createElement("br")); });
+      ["日時", new Date(a.createdAt).toLocaleString("ja-JP")],
+    ].forEach(([k, v]) => { const b = document.createElement("b"); b.textContent = k + " "; meta.appendChild(b); meta.appendChild(document.createTextNode(v)); meta.appendChild(document.createElement("br")); });
     li.appendChild(meta);
 
-    if (it.palette) {
-      const sw = document.createElement("div");
-      sw.className = "rv-swatches";
-      [["紙", it.palette.base], ["中廻し", it.palette.naka], ["小さな色", it.palette.accent]].forEach(([k, hex]) => {
-        if (!hex) return;
-        const s = document.createElement("span"); s.style.background = hex; s.title = k + " " + hex;
-        sw.appendChild(s); sw.appendChild(document.createTextNode(k));
-      });
-      li.appendChild(sw);
-    }
-
-    // 評価
-    let rating = it.review ? it.review.rating : null;
-    const picked = new Set(it.review ? it.review.tags : []);
-    const rate = document.createElement("div");
-    rate.className = "rv-rate";
+    // 2 案を左右に
+    const cols = document.createElement("div");
+    cols.className = "rv-cols" + (members.length === 1 ? " one" : "");
+    const ratings = {}; // id -> "good" | "bad" | null
     const save = document.createElement("button");
-    [["good", "良い"], ["bad", "イマイチ"]].forEach(([r, label]) => {
-      const b = document.createElement("button");
-      b.type = "button"; b.dataset.r = r; b.textContent = label;
-      b.setAttribute("aria-pressed", String(rating === r));
-      b.addEventListener("click", () => {
-        rating = r;
-        rate.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.r === r)));
-        save.disabled = false;
+    members.forEach((it) => {
+      ratings[it.id] = it.review ? it.review.rating : null;
+      const col = document.createElement("div");
+      col.className = "rv-col" + (it.review ? " rated-" + it.review.rating : "");
+      const head = document.createElement("p");
+      head.className = "rv-col-head";
+      head.textContent = VARIANT[it.variant] || "案";
+      if (it.picked) { const s = document.createElement("span"); s.className = "rv-picked"; s.textContent = "お客様が選んだ"; head.appendChild(s); }
+      if (it.ordered) { const s = document.createElement("span"); s.className = "rv-picked"; s.textContent = "注文済み"; head.appendChild(s); }
+      col.appendChild(head);
+      const pic = document.createElement("div");
+      pic.className = "rv-pic";
+      if (it.hasPreview) pic.appendChild(img(it.id, "preview.jpg", "写真を入れた掛軸の見本"));
+      else if (it.rendered) { pic.appendChild(img(it.id, "ten.jpg", "天")); pic.appendChild(img(it.id, "chi.jpg", "地")); }
+      col.appendChild(pic);
+      const m = it.metrics || {};
+      const fails = (it.failed || []).map((f) => FAIL[f] || f).join("・");
+      col.appendChild(text("rv-small", m.coverage != null
+        ? "柄 " + Math.round(m.coverage * 100) + "%・鮮やかさ " + m.colorfulness + "(写真 " + ((it.photo || {}).colorfulness ?? "?") + ")" + (fails ? "・基準外 " + fails : "") + (it.tries > 1 ? "・描き直し " + (it.tries - 1) : "")
+        : "未描画"));
+      if (it.palette) {
+        const sw = document.createElement("div");
+        sw.className = "rv-swatches";
+        [["紙", it.palette.base], ["中廻し", it.palette.naka], ["小さな色", it.palette.accent]].forEach(([k, hex]) => {
+          if (!hex) return;
+          const s = document.createElement("span"); s.style.background = hex; s.title = k + " " + hex;
+          sw.appendChild(s);
+        });
+        col.appendChild(sw);
+      }
+      col.appendChild(text("rv-small rv-id", it.id));
+      const rate = document.createElement("div");
+      rate.className = "rv-rate";
+      [["good", "良い"], ["bad", "イマイチ"]].forEach(([r, label]) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.dataset.r = r; b.textContent = label;
+        b.setAttribute("aria-pressed", String(ratings[it.id] === r));
+        b.addEventListener("click", () => {
+          ratings[it.id] = ratings[it.id] === r ? null : r; // もう一度押すと外れる
+          rate.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.r === ratings[it.id])));
+          save.disabled = !Object.values(ratings).some(Boolean);
+        });
+        rate.appendChild(b);
       });
-      rate.appendChild(b);
+      col.appendChild(rate);
+      cols.appendChild(col);
     });
-    li.appendChild(rate);
+    li.appendChild(cols);
 
+    // 理由とひとこと(2 案共通)
+    const prev = members.find((it) => it.review) || null;
+    const picked = new Set(prev ? prev.review.tags : []);
     const tg = document.createElement("div");
     tg.className = "rv-tags";
     tags.forEach((t) => {
@@ -150,7 +171,7 @@
       b.addEventListener("click", () => {
         if (picked.has(t)) picked.delete(t); else picked.add(t);
         b.setAttribute("aria-pressed", String(picked.has(t)));
-        if (rating) save.disabled = false;
+        save.disabled = !Object.values(ratings).some(Boolean);
       });
       tg.appendChild(b);
     });
@@ -159,26 +180,27 @@
     const cm = document.createElement("textarea");
     cm.className = "rv-comment";
     cm.maxLength = 300;
-    cm.placeholder = "ひとこと(どこが良い/気になるか)";
-    cm.value = it.review ? it.review.comment || "" : "";
-    cm.addEventListener("input", () => { if (rating) save.disabled = false; });
+    cm.placeholder = "ひとこと(例: 左の方が余白がきれい / 月が大きすぎる)";
+    cm.value = prev ? prev.review.comment || "" : "";
+    cm.addEventListener("input", () => { save.disabled = !Object.values(ratings).some(Boolean); });
     li.appendChild(cm);
 
     save.type = "button";
     save.className = "rv-save";
-    save.textContent = it.review ? "評価を更新する" : "評価を保存する";
+    save.textContent = prev ? "評価を更新する" : "評価を保存する";
     save.disabled = true;
-    const done = document.createElement("p");
-    done.className = "rv-saved";
-    done.textContent = it.review ? "評価済み(" + new Date(it.review.at).toLocaleString("ja-JP") + ")" : "";
+    const done = text("rv-saved", prev ? "評価済み(" + new Date(prev.review.at).toLocaleString("ja-JP") + ")" : "");
     save.addEventListener("click", () => {
-      if (!rating) return;
+      const ids = Object.keys(ratings).filter((id) => ratings[id]);
+      if (!ids.length) return;
       save.disabled = true;
-      api("", { method: "POST", body: JSON.stringify({ id: it.id, action: "review", rating, tags: Array.from(picked), comment: cm.value }) })
-        .then((r) => r.json())
-        .then((j) => {
-          if (!j.ok) throw new Error("save");
-          li.className = "rv-card rated-" + rating;
+      Promise.all(ids.map((id) => api("", { method: "POST", body: JSON.stringify({ id, action: "review", rating: ratings[id], tags: Array.from(picked), comment: cm.value }) }).then((r) => r.json())))
+        .then((res) => {
+          if (!res.every((j) => j.ok)) throw new Error("save");
+          cols.querySelectorAll(".rv-col").forEach((col, i) => {
+            const r = ratings[members[i].id];
+            col.className = "rv-col" + (r ? " rated-" + r : "");
+          });
           done.textContent = "保存しました。次のデザインづくりに反映されます。";
           save.textContent = "評価を更新する";
         })

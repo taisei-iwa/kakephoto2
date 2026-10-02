@@ -3,8 +3,8 @@
  *
  * GET  ?id=KP-XXXXXX&file=meta.json|ten.jpg|chi.jpg|both.jpg|preview.jpg|review.json|ten.json|…
  *      印刷用の清書(紙表具デザイン/gen_final.py)や評価画面が、デザインの中身を取り出す。
- * GET  ?list=1&before=<目印>&limit=24&filter=all|unreviewed
- *      評価画面の一覧(新しい順)。各デザインの要点・測った値・評価を返す。
+ * GET  ?list=1&before=<目印>&limit=12&filter=all|unreviewed
+ *      評価画面の一覧(新しい順)。同じ回に作った 2 案を 1 組にまとめ、各案の要点・測った値・評価を返す。
  * POST { id, action: "ordered" }  注文に使った印(1 年の自動削除の対象外)。
  * POST { id, action: "review", rating: "good"|"bad", tags: [..], comment }
  *      職人の評価を記録し、lessons.json(次の案づくりの見本)にも反映する。2026-10-02 本人「世界中の記録を僕が良い悪いを記録して学ばせ続ける」。
@@ -44,46 +44,66 @@ export async function GET(req: Request) {
   return new NextResponse(new Uint8Array(data), { headers: { "Content-Type": type, "Cache-Control": "no-store" } });
 }
 
+async function item(id: string) {
+  const meta = await getJSON<DesignMeta>(`${id}/meta.json`);
+  if (!meta) return null;
+  const review = await getJSON<Review>(`${id}/review.json`);
+  const rec = await getJSON<{ metrics?: unknown; failed?: string[]; tries?: number }>(`${id}/ten.json`);
+  return {
+    id,
+    createdAt: meta.createdAt,
+    variant: meta.variant,
+    pair: meta.pair,
+    picked: !!meta.picked,
+    ordered: !!meta.ordered,
+    concept: meta.brief.concept_ja,
+    scene: meta.brief.scene_ja,
+    mitate: meta.brief.mitate_ja,
+    season: meta.brief.season,
+    wishes: meta.wishes,
+    palette: meta.palette,
+    photo: meta.photo,
+    rendered: !!rec,
+    metrics: rec?.metrics,
+    failed: rec?.failed,
+    tries: rec?.tries,
+    hasPreview: !!(await getFile(`${id}/preview.jpg`)),
+    review,
+  };
+}
+
+// 同じ回に作った 2 案は 1 組にまとめて返す(並び: なじませる → 引き立てる)。
+// 2 案の目印(idx/<日時>_<ID>)は日時が同じで隣り合うので、ページの区切りは組の小さい方の目印にして、組が割れないようにする
 async function list(u: URL) {
-  const limit = Math.min(48, Math.max(1, Number(u.searchParams.get("limit")) || 24));
+  const limit = Math.min(24, Math.max(1, Number(u.searchParams.get("limit")) || 12));
   const before = u.searchParams.get("before") || "";
   const unreviewedOnly = u.searchParams.get("filter") === "unreviewed";
   const keys = (await listKeys("idx/")).reverse().filter((k) => !before || k < before);
-  const items = [];
+  const groups = [];
+  const seen = new Set<string>();
   let last = "";
   for (const k of keys) {
-    if (items.length >= limit) break;
-    last = k;
+    if (groups.length >= limit) break;
     const id = k.slice(k.lastIndexOf("_") + 1);
-    const meta = await getJSON<DesignMeta>(`${id}/meta.json`);
-    if (!meta) continue;
-    const review = await getJSON<Review>(`${id}/review.json`);
-    if (unreviewedOnly && review) continue;
-    const rec = await getJSON<{ metrics?: unknown; failed?: string[]; tries?: number }>(`${id}/ten.json`);
-    items.push({
-      id,
-      createdAt: meta.createdAt,
-      variant: meta.variant,
-      pair: meta.pair,
-      picked: !!meta.picked,
-      ordered: !!meta.ordered,
-      concept: meta.brief.concept_ja,
-      scene: meta.brief.scene_ja,
-      mitate: meta.brief.mitate_ja,
-      season: meta.brief.season,
-      wishes: meta.wishes,
-      palette: meta.palette,
-      photo: meta.photo,
-      rendered: !!rec,
-      metrics: rec?.metrics,
-      failed: rec?.failed,
-      tries: rec?.tries,
-      hasPreview: !!(await getFile(`${id}/preview.jpg`)),
-      review,
-    });
+    if (seen.has(id)) continue;
+    const first = await item(id);
+    seen.add(id);
+    last = k;
+    if (!first) continue;
+    const members = [first];
+    if (first.pair) {
+      seen.add(first.pair);
+      const pairKey = k.slice(0, k.lastIndexOf("_") + 1) + first.pair;
+      if (pairKey < last) last = pairKey;
+      const second = await item(first.pair);
+      if (second) members.push(second);
+    }
+    if (unreviewedOnly && members.every((m) => m.review)) continue;
+    members.sort((a, b) => (a.variant === "blend" ? 0 : 1) - (b.variant === "blend" ? 0 : 1));
+    groups.push(members);
   }
-  const more = keys.length > 0 && last !== keys[keys.length - 1];
-  return NextResponse.json({ items, next: more ? last : null, tags: TAGS });
+  const more = keys.some((k) => k < last);
+  return NextResponse.json({ groups, next: more ? last : null, tags: TAGS });
 }
 
 export async function POST(req: Request) {

@@ -21,22 +21,27 @@ button { font: inherit; cursor: pointer; border: 1px solid var(--line); backgrou
 main { padding: 0.8rem 1rem 2rem; }
 .rv-summary { font-size: 0.8rem; color: var(--ink-soft); margin: 0 0 0.8rem; }
 .rv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; grid-template-columns: 1fr; }
-@media (min-width: 760px) { .rv-list { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); } }
+@media (min-width: 900px) { .rv-list { grid-template-columns: repeat(auto-fill, minmax(560px, 1fr)); } }
 .rv-card { border: 1px solid var(--line); background: var(--surface-2); padding: 0.8rem; display: flex; flex-direction: column; gap: 0.55rem; }
-.rv-card.rated-good { border-color: var(--good); }
-.rv-card.rated-bad { border-color: var(--bad); }
-.rv-images { display: flex; gap: 0.5rem; align-items: flex-start; justify-content: center; background: #ece7df; padding: 0.5rem; min-height: 200px; }
-.rv-images img { display: block; max-width: 100%; max-height: 62vh; object-fit: contain; }
-.rv-images > img { max-width: 52%; }
-.rv-images .rv-tenchi { display: flex; flex-direction: column; gap: 4px; width: 44%; }
-.rv-images .rv-tenchi img { width: 100%; }
+/* 同じ回の 2 案を左右に(スマホでも左右のまま見比べる) */
+.rv-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.rv-cols.one { grid-template-columns: 1fr; }
+.rv-col { border: 2px solid transparent; background: var(--paper); padding: 0.45rem; display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.rv-col.rated-good { border-color: var(--good); }
+.rv-col.rated-bad { border-color: var(--bad); }
+.rv-col-head { margin: 0; font-size: 0.78rem; color: var(--brand); display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.rv-picked { font-size: 0.66rem; color: #fff; background: var(--good); padding: 0.05rem 0.35rem; }
+.rv-pic { background: #ece7df; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0.3rem; min-height: 160px; }
+.rv-pic img { display: block; max-width: 100%; max-height: 58vh; object-fit: contain; }
+.rv-small { margin: 0; font-size: 0.68rem; line-height: 1.5; color: var(--ink-soft); }
+.rv-id { color: var(--ink-faint); }
 .rv-concept { margin: 0; font-size: 0.95rem; line-height: 1.6; }
 .rv-meta { margin: 0; font-size: 0.75rem; line-height: 1.7; color: var(--ink-soft); }
 .rv-meta b { color: var(--ink); font-weight: 600; }
-.rv-swatches { display: flex; gap: 0.3rem; align-items: center; font-size: 0.72rem; color: var(--ink-faint); }
+.rv-swatches { display: flex; gap: 0.25rem; align-items: center; }
 .rv-swatches span { display: inline-block; width: 1.1rem; height: 1.1rem; border: 1px solid rgba(0,0,0,0.12); }
-.rv-rate { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-.rv-rate button { padding: 0.7rem; font-size: 0.95rem; letter-spacing: 0.1em; }
+.rv-rate { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem; }
+.rv-rate button { padding: 0.55rem 0.2rem; font-size: 0.86rem; letter-spacing: 0.04em; }
 .rv-rate button[data-r="good"][aria-pressed="true"] { background: var(--good); border-color: var(--good); color: #fff; }
 .rv-rate button[data-r="bad"][aria-pressed="true"] { background: var(--bad); border-color: var(--bad); color: #fff; }
 .rv-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
