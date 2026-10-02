@@ -2818,7 +2818,24 @@
 
   // LINE: 本文をコピー＋画像を保存し、LINE は既定の動作(新規タブ)で開く。
   // preventDefault しないのは、プログラム的な window.open がポップアップブロックされるのを避けるため。
-  function onLineClick() {
+  // 相談ボタンを押した記録(GA4)。デザインした人ほど相談に進むかを測る(2026-10-03 研究「欲しくなる掛軸」E)
+  function consultEvent(via) {
+    if (typeof gtag !== "function") return;
+    const d = currentDesignFabric();
+    gtag("event", "consult_click", {
+      via: via, // line / form / consult_line(5 の「このデザインで相談してみる」)
+      has_design: d ? 1 : 0,
+      variant: d ? d.variant || "" : "",
+      method: state.method || "",
+      step: currentStep,
+      size: state.sizeMode,
+      format: state.formatId,
+      transport_type: "beacon", // フォームはすぐページを移るので、移っても届く送り方で
+    });
+  }
+
+  function onLineClick(e) {
+    consultEvent(e && e.currentTarget && e.currentTarget.id === "consult-line" ? "consult_line" : "line");
     const summary = buildOrderSummary();
     let copied = false;
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -2835,6 +2852,7 @@
   // フォーム: 選択内容をクエリに載せて /contact へ。フォームの本文に初期表示される。
   function onFormClick(e) {
     e.preventDefault();
+    consultEvent("form");
     const href = e.currentTarget.getAttribute("href") || "/contact";
     const sep = href.indexOf("?") >= 0 ? "&" : "?";
     window.location.href = href + sep + "summary=" + encodeURIComponent(buildOrderSummary());

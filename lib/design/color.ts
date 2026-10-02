@@ -148,7 +148,18 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
  * 天地の紙の色・中廻しの色・アクセントを決める。
  * tone: 要望の色味(pale=淡く / deep=深く / photo・未指定=写真に合わせる)
  */
-export function chooseColors(p: PhotoColors, variant: Variant, tone?: string) {
+// 雰囲気(要望の画面)ごとの地色の寄せ方。2026-10-03 研究(資料/2026-10-03_欲しくなる掛軸の研究_… の F)。
+// 色彩 KB(kb-color)の目安からの推測で、本人の評価で直す前提:
+//   落ち着いた = 明るい側を少し落とし(ltg 寄り)彩度を控える / 華やか = 明るく、彩度を一段上げる(p)
+//   かわいらしい = 暗い地を使わず明るい側(暖色の p)/ 凛とした = 明暗をはっきり、彩度はごく低く(墨・白寄り)
+const MOOD: Record<string, { light: number; deepL?: number; cMul: number; cMax?: number; noDeep?: boolean }> = {
+  calm: { light: 78, cMul: 0.85 },
+  gorgeous: { light: 86, cMul: 1.2, cMax: 18 },
+  lovely: { light: 88, cMul: 1.0, noDeep: true },
+  dignified: { light: 90, deepL: 20, cMul: 0.5, cMax: 8 },
+};
+
+export function chooseColors(p: PhotoColors, variant: Variant, tone?: string, mood?: string) {
   // 色相: 写真の主色にそろえる(主色が無彩色に近ければ、和紙らしい暖かい無彩色寄り)
   const tinted = p.dominant.C >= 8;
   const h = tinted ? p.dominant.h : 75;
@@ -161,14 +172,29 @@ export function chooseColors(p: PhotoColors, variant: Variant, tone?: string) {
   const blendL = p.edgeL < 40 ? clamp(p.edgeL + 8, 12, 40) : p.edgeL > 65 ? clamp(p.edgeL - 4, 70, 90) : edgeSide === "light" ? 80 : 30;
   let L = variant === "blend" ? blendL : edgeSide === "deep" ? light : deep + 8;
   if (variant === "lift") C = clamp(C * 0.7, 3, 11);
+  // 雰囲気を地色にも効かせる(これまでは指示文にだけ入っていた)
+  const m = mood ? MOOD[mood] : undefined;
+  if (m) {
+    if (L >= 50) L = variant === "blend" ? (L + m.light) / 2 : m.light; // 明るい側: なじませる案は写真のまわりの明るさとの中間
+    else if (m.noDeep) L = m.light - 4; // かわいらしい: 暗い地は使わない
+    else if (m.deepL != null) L = m.deepL; // 凛とした: 暗い側はより深く
+    C = clamp(C * m.cMul, 2, m.cMax ?? 16);
+  }
   if (tone === "pale") { L = clamp(L + 8, 12, 93); C *= 0.8; }
   if (tone === "deep") { L = clamp(L - 12, 10, 90); C = clamp(C * 1.25, 2, 18); }
+  // 暗い黄〜オリーブ茶(h 85〜115°、暗い側)は避ける。好まれにくい色域(生態学的誘意性理論。Palmer & Schloss 2010)。
+  // 色相は写真に合わせたまま、彩度を下げて墨寄りの鼠色に逃がす。日本では鶯茶・利休茶の文化もあるので、本人の評価で確かめる
+  const olive = L < 50 && h >= 85 && h <= 115;
+  if (olive) C = Math.min(C, 6);
   const base = lch(L, C, h);
   // 中廻し: 同じ色相で一段だけ差をつける(ΔE00 が 6〜15 の「類似」に入るまで明るさを動かす)
   const dir = L < 50 ? 1 : -1;
   let naka = base, step = 4;
   for (let i = 0; i < 12; i++) {
-    naka = lch(clamp(L + dir * step, 6, 95), clamp(C * 1.3, 2, Math.max(4, p.meanC * 0.6)), h);
+    const nL = clamp(L + dir * step, 6, 95);
+    // 中廻しも暗い側でオリーブ茶にならないように(地色と同じ規則)
+    const nC = nL < 50 && h >= 85 && h <= 115 ? Math.min(6, C * 1.3) : clamp(C * 1.3, 2, Math.max(4, p.meanC * 0.6));
+    naka = lch(nL, nC, h);
     const d = deltaE00(base, naka);
     if (d >= 6 && d <= 15) break;
     step += d < 6 ? 2 : -1;

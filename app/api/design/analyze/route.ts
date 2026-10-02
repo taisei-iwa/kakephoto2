@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     const ids = variants.map(() => newDesignId());
     const designs = [];
     for (let i = 0; i < variants.length; i++) {
-      const c = chooseColors(photo, variants[i], wishes.tone);
+      const c = chooseColors(photo, variants[i], wishes.tone, wishes.mood); // 雰囲気も色に効かせる(2026-10-03)
       const meta: DesignMeta = {
         id: ids[i],
         createdAt,
