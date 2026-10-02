@@ -320,8 +320,21 @@
     });
   }
 
+  // ---- スマホの価格の欄: 続きがあるあいだは下端をぼかす(スクロールの合図) ----
+  function updatePriceScrollHint() {
+    const c = document.querySelector(".price-card");
+    if (!c) return;
+    c.classList.toggle("more", c.scrollHeight - c.scrollTop - c.clientHeight > 4);
+    if (!c._hintBound) {
+      c._hintBound = true;
+      c.addEventListener("scroll", updatePriceScrollHint, { passive: true });
+      window.addEventListener("resize", updatePriceScrollHint);
+    }
+  }
+
   // ---- 写真に合わせてデザインする ----
-  // 通信と画像の下ごしらえは js/design.js。ここは「同意 → 作成中 → できあがり」の画面と、できた天地の割り当て。
+  // 通信と画像の下ごしらえは js/design.js。ここは「同意 → 作成中」の画面と、できた天地の割り当て。
+  // できたらすぐプレビューに反映し、番号と選び直せることはお知らせで伝える(2026-10-02 本人「すぐにプレビューを表示するので良い」)。
   // デザインの天地は「1 枚の絵を敷く特別な裂地」(cover)として裂地の一覧に加える。だから裂地の選択画面から
   // 裂地に変えることも、デザインに戻すこともでき、注文の要約にも名前(デザイン番号入り)が載る。
   // 中廻しは絵柄に合わせた紙(無地)を同じく裂地として加えて割り当てる。選び直しは従来の画面で。
@@ -358,22 +371,70 @@
       name: "絵柄に合わせた紙(" + res.id + ")", uses: ["nakamawashi"], grade: "standard",
       dataUrl: KakeDesign.paperSwatch(res.nakaHex), tileW: 40, tileH: 40,
     };
+    tenchi.paperId = paper.id;
     state.fabrics.unshift(tenchi, paper);
+    applyDesign(tenchi, true);
+  }
+
+  // デザインを天地に割り当てる。中廻し+柱は、新しいデザインのとき、またはいまデザインの紙が入っているときだけ
+  // そのデザインの紙にする(お客様が裂地を選んでいたら、その裂地を残す)
+  function applyDesign(tenchi, isNew) {
     const groups = effectiveGroups();
-    const set = (gk, fab) => {
+    const set = (gk, id) => {
       const g = groups[gk];
-      if (g && !g.linkedInto) g.keys.forEach((k) => { state.assignments[k] = fab.id; });
+      if (g && !g.linkedInto) g.keys.forEach((k) => { state.assignments[k] = id; });
     };
-    set("tenchi", tenchi);
-    set("nakamawashi", paper);
-    set("hashira", paper);
+    const curNaka = state.assignments.nakaUe || "";
+    set("tenchi", tenchi.id);
+    if (isNew || curNaka.indexOf("paper_") === 0) {
+      set("nakamawashi", tenchi.paperId);
+      set("hashira", tenchi.paperId);
+    }
+  }
+
+  // これまでのデザイン: 2つ目ができたらプレビューの下に小さく並べ、押すとそのデザインに切り替える
+  function renderDesignHistory() {
+    const box = document.getElementById("design-history");
+    const list = document.getElementById("design-history-list");
+    if (!box || !list) return;
+    const designs = state.fabrics.filter((f) => f.cover).slice().reverse(); // 古い順
+    box.hidden = designs.length < 2;
+    if (box.hidden) return;
+    list.innerHTML = "";
+    designs.forEach((fab, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "design-thumb";
+      b.title = (i + 1) + "つ目のデザイン(" + fab.designId + ")";
+      b.setAttribute("aria-label", b.title);
+      b.setAttribute("aria-pressed", String(state.assignments.ten === fab.id));
+      const part = (cls, bg) => {
+        const sp = document.createElement("span");
+        sp.className = cls;
+        if (bg.indexOf("#") === 0) sp.style.backgroundColor = bg;
+        else sp.style.backgroundImage = "url(" + bg + ")";
+        b.appendChild(sp);
+      };
+      part("t", fab.cover.ten);
+      part("n", fab.cover.fallbackHex || "#e9e2d4");
+      part("c", fab.cover.chi);
+      b.addEventListener("click", () => {
+        applyDesign(fab, false);
+        render();
+        updatePrice();
+      });
+      list.appendChild(b);
+    });
   }
 
   function initDesign() {
     const btn = document.getElementById("design-btn");
     const dConsent = document.getElementById("design-consent-dialog");
     const dProgress = document.getElementById("design-progress-dialog");
-    const dResult = document.getElementById("design-result-dialog");
+    const dWish = document.getElementById("design-wish-dialog");
+    const noteEl = document.getElementById("design-wish-note");
+    // 要望(もう一度デザインするときも前回の選択を残す)
+    let wishes = {};
     if (!btn || !dConsent || typeof KakeDesign === "undefined") return;
     const agree = document.getElementById("design-agree");
     const okBtn = document.getElementById("design-consent-ok");
@@ -390,18 +451,53 @@
       try { sessionStorage.setItem(DESIGN_CONSENT_KEY, "1"); } catch (e) { /* 保存できなくても今回は進める */ }
       ga("design_consent");
       dConsent.close();
+      openWish();
+    });
+
+    // 要望の画面: 各項目は 1 つだけ選べ、もう一度押すと外れる
+    dWish.querySelectorAll(".wish-group").forEach((g) => {
+      g.querySelectorAll("button").forEach((b) => {
+        b.addEventListener("click", () => {
+          const on = b.getAttribute("aria-pressed") === "true";
+          g.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false"));
+          b.setAttribute("aria-pressed", String(!on));
+        });
+      });
+    });
+    function openWish() {
+      dWish.querySelectorAll(".wish-group").forEach((g) => {
+        g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(wishes[g.dataset.wish] === b.dataset.value)));
+      });
+      noteEl.value = wishes.note || "";
+      dWish.showModal();
+    }
+    // ×: デザインを始めずに閉じる(次に開いたときは、前回デザインしたときの選択が出る)
+    document.getElementById("design-wish-close").addEventListener("click", () => dWish.close());
+    document.getElementById("design-wish-auto").addEventListener("click", () => {
+      if (!dWish.open) return;
+      wishes = {};
+      dWish.close();
+      start();
+    });
+    document.getElementById("design-wish-ok").addEventListener("click", () => {
+      if (!dWish.open) return;
+      const w = {};
+      dWish.querySelectorAll(".wish-group").forEach((g) => {
+        const on = g.querySelector('button[aria-pressed="true"]');
+        if (on) w[g.dataset.wish] = on.dataset.value;
+      });
+      const note = noteEl.value.trim().slice(0, 100);
+      if (note) w.note = note;
+      wishes = w;
+      dWish.close();
       start();
     });
     // 作成中は閉じさせない(Esc でも)
     dProgress.addEventListener("cancel", (e) => e.preventDefault());
 
-    document.getElementById("design-naka-btn").addEventListener("click", () => { dResult.close(); openPartFabricPicker("nakamawashi"); });
-    document.getElementById("design-again-btn").addEventListener("click", () => { dResult.close(); start(); });
-    document.getElementById("design-close-btn").addEventListener("click", () => dResult.close());
-
     btn.addEventListener("click", () => {
       if (!state.honshiImage) return;
-      if (consented()) { start(); return; }
+      if (consented()) { openWish(); return; }
       agree.checked = false;
       okBtn.disabled = true;
       dConsent.showModal();
@@ -422,10 +518,10 @@
         elapsedEl.textContent = Math.round((Date.now() - t0) / 1000) + "秒経過。このままお待ちください。";
       }, 1000);
       dProgress.showModal();
-      ga("design_start");
+      ga("design_start", { mood: wishes.mood || "auto", tone: wishes.tone || "auto", density: wishes.density || "auto", note: wishes.note ? 1 : 0 });
       let res = null;
       KakeDesign.photoJpeg(state.honshiImage.dataUrl, state.honshiImage.cropRect, 768)
-        .then((photo) => KakeDesign.analyze(photo, parts.ten, parts.chi))
+        .then((photo) => KakeDesign.analyze(photo, parts.ten, parts.chi, wishes))
         .then((r) => {
           res = r;
           stepRead.className = "done";
@@ -437,9 +533,7 @@
           render();
           updatePrice();
           dProgress.close();
-          document.getElementById("design-concept").textContent = res.concept || "";
-          document.getElementById("design-id").textContent = res.id;
-          dResult.showModal();
+          showToast("デザインしました(番号 " + res.id + ")。中廻しや天地は選び直せます。");
           ga("design_done", { seconds: Math.round((Date.now() - t0) / 1000) });
         })
         .catch((e) => {
@@ -1476,6 +1570,7 @@
   function render(forcedScale) {
     updateSuggestVisibility(); // 写真が入っているときだけ 3案ボタンを出す
     updateDesignVisibility(); // 写真が入っているときだけ「写真に合わせてデザインする」を出す
+    renderDesignHistory(); // これまでのデザイン(縮小計算の前に置き、スマホでも枠の高さに入れる)
     el.previewWarning.hidden = true;
 
     const opts = partOptions();
@@ -1582,13 +1677,16 @@
     el.preview.appendChild(endL);
     el.preview.appendChild(endR);
 
+    updatePriceScrollHint();
+
     // 裂地が1つでも割り当てられていれば「すべてリセット」を有効化(PC/スマホ両方)
     const noFabric = Object.keys(state.assignments).length === 0;
     document.querySelectorAll(".fabric-reset-btn").forEach((b) => { b.disabled = noFabric; });
 
     // スマホ等で 1 画面に収めるため、描画後にプレビュー枠を実測し、
-    // 掛軸全体(寸法ラベル込み)が枠からはみ出すなら縮小して描き直す。
-    // forcedScale 指定時(2 段目)は再計算しない(無限ループ防止)。拡大はしない。
+    // 掛軸全体(寸法ラベル込み)が枠にちょうど収まる大きさで描き直す(はみ出せば縮め、余れば広げる)。
+    // 2026-10-02 本人「プレビューをもっと大きく」で、拡大もするように変えた(以前は縮小のみ)。
+    // forcedScale 指定時(2 段目)は再計算しない(無限ループ防止)。
     if (forcedScale === undefined && el.previewFrame &&
         window.matchMedia("(max-width: 960px)").matches) {
       const stage = el.preview.closest(".preview-stage");
@@ -1605,8 +1703,8 @@
         const shrink = Math.min(
           (fw - overheadW - jikuPadX * 2) / pw,
           (fh - overheadH - jikuPadY * 2) / ph
-        ) * 0.90;
-        if (shrink > 0 && shrink < 0.999) {
+        ) * 0.94;
+        if (shrink > 0 && Math.abs(shrink - 1) > 0.02) {
           render(scale * shrink);
           return;
         }

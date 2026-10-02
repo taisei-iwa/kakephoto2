@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   if (await getFile(`${meta.id}/${part}.jpg`)) return NextResponse.json({ error: "already_rendered" }, { status: 409 });
 
   const { wMm, hMm, aspect } = meta.parts[part];
-  const prompt = partPrompt(part, meta.brief, aspect);
+  const prompt = partPrompt(part, meta.brief, aspect, meta.wishes || {});
   try {
     // 台紙付きで描かれて、余白を切ると絵が小さくなりすぎたときは 1 回だけ作り直す
     let raw: Buffer | null = null, fit: Awaited<ReturnType<typeof trimAndFit>> | null = null, tries = 0;

@@ -32,9 +32,9 @@
       }));
   }
 
-  // 写真の読み取りと案づくり → { id, concept, nakaHex, colors }
-  function analyze(photo, tenMm, chiMm) {
-    return post("/api/design/analyze", { consent: true, photo: photo, ten: tenMm, chi: chiMm });
+  // 写真の読み取りと案づくり → { id, concept, nakaHex, colors }。wishes は要望の画面の選択({ mood, tone, density, note })
+  function analyze(photo, tenMm, chiMm, wishes) {
+    return post("/api/design/analyze", { consent: true, photo: photo, ten: tenMm, chi: chiMm, wishes: wishes || {} });
   }
 
   // 天か地の絵 → dataURL

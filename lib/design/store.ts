@@ -69,7 +69,10 @@ export type DesignMeta = {
     ten_prompt: string;
     chi_prompt: string;
     naka_hex: string;
+    include_subject?: boolean;
   };
+  // お客様の要望(要望の画面。おまかせなら空)
+  wishes?: { mood?: string; tone?: string; density?: string; note?: string };
   parts: { ten: { wMm: number; hMm: number; aspect: string }; chi: { wMm: number; hMm: number; aspect: string } };
   // 職人が清書したら付ける(注文に使ったもの)。付いていないものは作成から 1 年で消す(netlify/functions/design-cleanup.mts)
   ordered?: boolean;

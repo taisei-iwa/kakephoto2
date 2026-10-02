@@ -125,6 +125,11 @@
           </div>
         </div>
       </div>
+      <!-- これまでのデザイン(2つ目ができたら表示。押すとそのデザインに切り替わる) -->
+      <div id="design-history" class="design-history" hidden>
+        <span class="design-history-label">これまでのデザイン</span>
+        <div id="design-history-list" class="design-history-list"></div>
+      </div>
       <!-- スマホではリセットをプレビューの下に置く(PC は仕立て内の方を表示) -->
       <button type="button" class="fabric-reset-btn fabric-reset-sp secondary" disabled>裂地をすべてリセット</button>
     </section>
@@ -282,7 +287,7 @@
     </div>
   </dialog>
 
-  <!-- 写真に合わせてデザインする: 同意 → 作成中 → できあがり -->
+  <!-- 写真に合わせてデザインする: 同意 → 作成中(できたらすぐプレビューに反映) -->
   <dialog id="design-consent-dialog" class="picker-dialog design-dialog" aria-modal="true" aria-labelledby="design-consent-title">
     <h2 id="design-consent-title" class="dialog-title">写真に合わせてデザインする</h2>
     <p class="design-lead">お写真の情景や色に合わせて、掛軸の天(上)と地(下)の絵柄を描きおこします。描いた絵柄は和紙に印刷して仕立てます。</p>
@@ -299,6 +304,44 @@
     </div>
   </dialog>
 
+  <dialog id="design-wish-dialog" class="picker-dialog design-dialog" aria-modal="true" aria-labelledby="design-wish-title">
+    <button type="button" id="design-wish-close" class="dialog-x" aria-label="閉じる">×</button>
+    <h2 id="design-wish-title" class="dialog-title">どんな雰囲気にしますか</h2>
+    <p class="dialog-note">選ばなければ、おまかせで描きます。</p>
+    <div class="wish-group" data-wish="mood">
+      <span class="wish-label">雰囲気</span>
+      <div class="wish-chips">
+        <button type="button" data-value="calm">落ち着いた</button>
+        <button type="button" data-value="gorgeous">華やか</button>
+        <button type="button" data-value="lovely">かわいらしい</button>
+        <button type="button" data-value="dignified">凛とした</button>
+      </div>
+    </div>
+    <div class="wish-group" data-wish="tone">
+      <span class="wish-label">色味</span>
+      <div class="wish-chips">
+        <button type="button" data-value="photo">写真の色に合わせる</button>
+        <button type="button" data-value="pale">淡く</button>
+        <button type="button" data-value="deep">深く</button>
+      </div>
+    </div>
+    <div class="wish-group" data-wish="density">
+      <span class="wish-label">柄の量</span>
+      <div class="wish-chips">
+        <button type="button" data-value="airy">余白を多く</button>
+        <button type="button" data-value="balanced">ほどよく</button>
+        <button type="button" data-value="rich">にぎやかに</button>
+      </div>
+    </div>
+    <label class="wish-note-label" for="design-wish-note">入れたいもの(自由記入・100字まで)</label>
+    <textarea id="design-wish-note" class="wish-note" maxlength="100" rows="2" placeholder="例:桜を入れてほしい / 娘の名前の由来のひまわり / 海の思い出"></textarea>
+    <p class="dialog-note">文字や人物は描けません。</p>
+    <div class="dialog-btns">
+      <button type="button" id="design-wish-auto" class="secondary">おまかせで始める</button>
+      <button type="button" id="design-wish-ok">この内容で始める</button>
+    </div>
+  </dialog>
+
   <dialog id="design-progress-dialog" class="picker-dialog design-dialog" aria-modal="true" aria-labelledby="design-progress-title">
     <h2 id="design-progress-title" class="dialog-title">デザインしています</h2>
     <ol class="design-steps">
@@ -309,17 +352,6 @@
     <p class="dialog-note" id="design-elapsed">30秒ほどかかります。このままお待ちください。</p>
   </dialog>
 
-  <dialog id="design-result-dialog" class="picker-dialog design-dialog" aria-modal="true" aria-labelledby="design-result-title">
-    <h2 id="design-result-title" class="dialog-title">天と地をデザインしました</h2>
-    <p class="design-concept" id="design-concept"></p>
-    <p class="design-id">デザイン番号 <strong id="design-id"></strong></p>
-    <p class="dialog-note">ご相談・ご注文のときは、この番号をお伝えください(LINE・フォームの本文には自動で入ります)。中廻しは絵柄に合わせた紙にしてあります。裂地に選び直すこともできます。天地を裂地に戻すときは、天地をクリックして選んでください。</p>
-    <div class="dialog-btns design-result-btns">
-      <button type="button" id="design-naka-btn" class="secondary">中廻しを選び直す</button>
-      <button type="button" id="design-again-btn" class="secondary">もう一度デザインする</button>
-      <button type="button" id="design-close-btn">このまま見る</button>
-    </div>
-  </dialog>
 
   <script src="js/catalog.js"></script>
   <script src="js/pricing.js"></script>
