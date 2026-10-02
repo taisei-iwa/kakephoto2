@@ -13,6 +13,7 @@ import { ANALYZE_MODEL, ANALYZE_PROMPT, ANALYZE_SCHEMA, Lesson, cleanWishes, les
 import { chooseColors, measurePhoto, Variant } from "@/lib/design/color";
 import { analyzeImage, GeminiError } from "@/lib/design/gemini";
 import { DesignMeta, getJSON, newDesignId, putFile } from "@/lib/design/store";
+import { notifyDesignStarted } from "@/lib/design/notify";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -75,6 +76,8 @@ export async function POST(req: Request) {
       await putFile(`idx/${createdAt.replace(/[:.]/g, "-")}_${ids[i]}`, ids[i]); // 評価画面の作成順の一覧のため
       designs.push({ id: ids[i], variant: variants[i], nakaHex: c.naka, baseHex: c.base });
     }
+    // 職人へのお知らせ(1 回の利用で 1 通。送り終えてから返す: 返した後は関数が止まることがある)
+    await notifyDesignStarted({ ids, createdAt, scene: brief.scene_ja, concept: brief.concept_ja, wishes });
     return NextResponse.json({ concept: brief.concept_ja, designs });
   } catch (e) {
     const status = e instanceof GeminiError ? e.status : 500;
