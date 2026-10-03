@@ -268,6 +268,11 @@
     </div>
     <h3>追加済みの裂地(このブラウザに保存)</h3>
     <ul id="admin-fabric-list" class="admin-list"></ul>
+
+    <!-- 裂地の地図(2026-10-03 段階 1): 暖かさ・重さ・澄み具合の軸に裂地を並べ、足りない印象を数える。js/fabricmap.js -->
+    <h3>裂地の地図</h3>
+    <button type="button" id="fabric-map-refresh" class="secondary fmap-refresh">地図を更新</button>
+    <div id="fabric-map" class="fmap"></div>
   </section>
 
   <!-- F5: 部位クリック → 用途別の裂地ピッカー -->
@@ -434,6 +439,7 @@
   <script src="js/ar.js"></script>
   <script src="js/suggest.js"></script>
   <script src="js/design.js"></script>
+  <script src="js/fabricmap.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -1349,3 +1349,21 @@ ruby rt { font-size: 0.5em; letter-spacing: 0; font-weight: 400; }
 }
 @keyframes jiku-spot { from { box-shadow: 0 0 0 0 rgba(180, 83, 26, 0.55); } to { box-shadow: 0 0 0 7px rgba(180, 83, 26, 0); } }
 @media (prefers-reduced-motion: reduce) { .jiku-end.spot { animation: none; } }
+
+/* ---- 裂地の地図(職人用、#admin のときだけ。2026-10-03)---- */
+.fmap-refresh { flex: none; width: auto; padding: 0.4rem 1rem; font-size: 0.8rem; color: #ddd; border-color: #5a5a64; }
+.fmap { margin-top: 0.8rem; color: #e6e6ea; }
+.fmap-note { font-size: 0.76rem; line-height: 1.7; color: #b9b9c2; margin: 0 0 0.8rem; }
+.fmap-plots { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+.fmap-plots figure { margin: 0; }
+.fmap-plots figcaption { font-size: 0.74rem; color: #b9b9c2; margin-top: 0.3rem; text-align: center; }
+.fmap-svg { display: block; width: 100%; height: auto; border-radius: 4px; }
+.fmap h4 { margin: 1.2rem 0 0.5rem; font-size: 0.82rem; color: #ddd; }
+.fmap table { border-collapse: collapse; font-size: 0.76rem; width: 100%; max-width: 760px; }
+.fmap th, .fmap td { border-bottom: 1px solid #4a4a52; padding: 0.3rem 0.5rem; text-align: left; }
+.fmap-gap td:not(:first-child), .fmap-gap th:not(:first-child) { text-align: center; width: 6em; }
+.fmap-zero { background: #6b2a2a; color: #fff; }
+.fmap-few { background: #6b5a24; color: #fff; }
+.fmap-sw { display: inline-block; height: 14px; margin-right: 2px; vertical-align: middle; border: 1px solid rgba(255,255,255,0.25); }
+.fmap-list td:nth-child(n+6) { font-variant-numeric: tabular-nums; }
+.fmap-list td:nth-child(2) { white-space: nowrap; }

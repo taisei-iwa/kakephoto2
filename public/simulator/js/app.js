@@ -1164,7 +1164,13 @@
     const on = isAdmin();
     panel.hidden = !on;
     document.body.classList.toggle("admin-mode", on); // スマホの 100dvh 固定を解除
-    if (on) renderAdminList();
+    if (on) { renderAdminList(); renderFabricMap(); }
+  }
+
+  // 裂地の地図(職人用。js/fabricmap.js)。開いたときと「地図を更新」で描く
+  function renderFabricMap() {
+    if (typeof KakeFabricMap === "undefined") return;
+    KakeFabricMap.render(document.getElementById("fabric-map"), state.fabrics);
   }
 
   function initAdmin() {
@@ -1178,6 +1184,8 @@
     if (cancelBtn) cancelBtn.addEventListener("click", resetAdminForm);
     const recropBtn = document.getElementById("admin-fabric-recrop");
     if (recropBtn) recropBtn.addEventListener("click", onAdminRecrop);
+    const mapBtn = document.getElementById("fabric-map-refresh");
+    if (mapBtn) mapBtn.addEventListener("click", renderFabricMap);
   }
 
   function adminWarn(msg) {
