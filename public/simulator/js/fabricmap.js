@@ -8,6 +8,12 @@
 //   - 柄のある裂地は、色の面積で重みをつけた平均で印象を出す(2色の印象は各色の平均で予測できる = Ou ほか Part II、
 //     面積の偏りは重みをつけると当たる = Schloss らのグループ 2026)。
 // 小林の本(NCD)のデータは使っていない。軸の上の言葉の範囲は、本人が本を見ながら校正する(段階 2)。
+// 2026-10-04 本の冒頭(p.2〜22)を確認して 2 点を直した:
+//   - 清濁: 本では暗いトーン(Dp・Dk・Dgr)は工学的には清色でも「心理的濁色」。Ou の活動感は暗いほど高く出て
+//     濃紺・焦茶が「澄んだ」に入っていたので、暗い有彩色を濁色側へ寄せる(clarity)。黒・白は本でも清色なのでそのまま。
+//   - 領域の名前を、本の配色イメージの大分類(はなやか/おだやか/さわやか)の考え方に合わせた(位置はこちらの計算)。
+// 未解決: 本では S トーン(鮮やかさを少し灰で落とした色)は濁色だが、Ou の式は鮮やかさしか見ないため「澄んだ」に出る
+//   (本の見本色 R/S・G/S で確認)。灰の混ざり具合を測るにはマンセルのトーン判定が要る。
 // 地図の向きは本と見比べやすいよう、左=暖かい・右=涼しい、上=軽い(ソフト)・下=重い(ハード)。
 (function () {
   "use strict";
@@ -44,6 +50,28 @@
   }
   // 中立(中くらいの灰色 L*50)の位置。地図の十字線と、領域の境目の基準にする
   const MID = emotion(50, 0, 0);
+
+  // ---- 清濁(澄み具合)。Ou の活動感に、小林の「心理的濁色」を足す ----
+  // 色相ごとの鮮やかな色の明るさ(L*)。マンセルで彩度が最も高くなる明度のおおよそ(赤は暗め、黄は明るい)。
+  // [CIELAB の色相角, L*]。この明るさより 3 以上暗い有彩色は、暗くなるほど濁色側へ寄せる(15 暗いところで完全に濁色)。
+  const VIVID_L = [[30, 41], [60, 61], [90, 81], [115, 71], [160, 51], [195, 51], [230, 41], [270, 36], [310, 36], [350, 41]];
+  function vividL(h) {
+    const pts = VIVID_L.concat([[VIVID_L[0][0] + 360, VIVID_L[0][1]]]);
+    if (h < pts[0][0]) h += 360;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [h0, l0] = pts[i], [h1, l1] = pts[i + 1];
+      if (h >= h0 && h <= h1) return l0 + (l1 - l0) * (h - h0) / (h1 - h0);
+    }
+    return 45;
+  }
+  const DARK_CLARITY = -1.1; // 「くすんだ」の領域(-0.9 より下)に入る値
+  function clarity(L, a, b, act) {
+    const C = Math.hypot(a, b), h = (Math.atan2(b, a) * 180 / Math.PI + 360) % 360;
+    const dark = Math.min(1, Math.max(0, (vividL(h) - L - 3) / 12));
+    const chromatic = Math.min(1, Math.max(0, (C - 4) / 8)); // 無彩色(黒・灰)には効かせない
+    const t = dark * chromatic;
+    return act * (1 - t) + DARK_CLARITY * t;
+  }
 
   // ---- 裂地の色を取り出す(k-means で 3 色。柄の地の色と柄の色を分ける)----
   function sampleLabs(img) {
@@ -85,10 +113,11 @@
     const px = sampleLabs(img);
     if (!px) return null;
     const clusters = kmeans(px, 3);
-    let heat = 0, weight = 0, activity = 0, wsum = 0;
+    let heat = 0, weight = 0, activity = 0, clar = 0, wsum = 0;
     clusters.forEach((c) => {
       const e = emotion(c.lab[0], c.lab[1], c.lab[2]);
       heat += e.heat * c.w; weight += e.weight * c.w; activity += e.activity * c.w; wsum += c.w;
+      clar += clarity(c.lab[0], c.lab[1], c.lab[2], e.activity) * c.w;
     });
     let meanL = 0;
     px.forEach((p) => { meanL += p[0]; });
@@ -96,7 +125,7 @@
     let v = 0;
     px.forEach((p) => { v += (p[0] - meanL) ** 2; });
     return {
-      heat: heat / wsum, weight: weight / wsum, activity: activity / wsum,
+      heat: heat / wsum, weight: weight / wsum, activity: activity / wsum, clarity: clar / wsum,
       pattern: Math.sqrt(v / px.length), // 明るさのばらつき = 柄の強さ
       colors: clusters.map((c) => ({ hex: labToHex(c.lab[0], c.lab[1], c.lab[2]), w: c.w })),
     };
@@ -119,30 +148,32 @@
   // 灰色を基準にするとほとんどの裂地が「澄んだ」側に入ってしまう(2026-10-03 試算で確認)。
   // 結果: 澄んだ = 活動感 0 より上(赤・橙の鮮やかな裂地)、くすんだ = -0.9 より下
   const ACT_MID = -0.45;
-  function actSide(m) { const d = m.activity - ACT_MID; return d > ACT_EDGE ? 0 : d < -ACT_EDGE ? 2 : 1; } // 0=澄んだ 1=中 2=くすんだ
+  function actSide(m) { const d = m.clarity - ACT_MID; return d > ACT_EDGE ? 0 : d < -ACT_EDGE ? 2 : 1; } // 0=澄んだ 1=中 2=くすんだ
+  // 名前は本の配色イメージの大分類に合わせた(左の列=はなやか、中=おだやか、右=さわやか。上=ソフト、下=ハード)。
+  // 仮の当てはめ。本人が本の地図と見比べて直す
   const REGION = [
-    ["明るく暖かい(やわらか・かわいらしい)", "明るく穏やか(淡い・ナチュラル)", "明るく涼しい(さわやか)"],
-    ["暖かい(華やか・親しみ)", "中くらい(落ち着いた)", "涼しい(清楚・すっきり)"],
-    ["深く暖かい(重厚・クラシック)", "深く渋い(シック)", "深く涼しい(凛とした・格式)"],
+    ["軽く暖かい(プリティ・カジュアル: かわいらしい・楽しい)", "軽く穏やか(ロマンチック・ナチュラル: やさしい・淡い)", "軽く涼しい(クリア: 清潔・さわやか)"],
+    ["暖かい(カジュアル: にぎやか・親しみ)", "中くらい(エレガント・シック: 上品・落ち着いた)", "涼しい(クール・カジュアル: すっきり・若々しい)"],
+    ["深く暖かい(ゴージャス・ダイナミック: 豪華・力強い)", "深く穏やか(クラシック・ダンディ: 伝統的・渋い)", "深く涼しい(モダン・フォーマル: 凛とした・格式)"],
   ];
-  const ACT_NAME = ["澄んだ(クリア)", "中くらい", "くすんだ(グレイッシュ)"];
+  const ACT_NAME = ["澄んだ(清色)", "中くらい", "くすんだ(濁色)"];
   const USE = { tenchi: "天地", nakamawashi: "中廻し・柱", ichimonji: "一文字" };
 
   // ---- 描く ----
   function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
-  // x は暖かさ(左=暖)、y は weight(上=軽)または activity(上=澄んだ)
+  // x は暖かさ(左=暖)、y は weight(上=軽)または clarity(上=澄んだ)
   function plot(list, yKey, yLabelTop, yLabelBottom, yMid, yRange, xRange) {
     const W = 520, H = 420, pad = 40;
     const sx = (heat) => pad + (1 - (heat - xRange[0]) / (xRange[1] - xRange[0])) * (W - 2 * pad);
     const sy = (v) => {
       const t = (v - yRange[0]) / (yRange[1] - yRange[0]);
-      return yKey === "activity" ? pad + (1 - t) * (H - 2 * pad) : pad + t * (H - 2 * pad);
+      return yKey === "clarity" ? pad + (1 - t) * (H - 2 * pad) : pad + t * (H - 2 * pad);
     };
     let s = '<svg viewBox="0 0 ' + W + " " + H + '" class="fmap-svg" role="img" aria-label="裂地の地図">';
     s += '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#f6f3ee"/>';
     // 中立の十字線と、領域の境目(点線)
     const x0 = sx(MID.heat), y0 = sy(yMid);
-    const yEdge = yKey === "activity" ? ACT_EDGE : WEIGHT_EDGE;
+    const yEdge = yKey === "clarity" ? ACT_EDGE : WEIGHT_EDGE;
     s += '<line x1="' + x0 + '" y1="' + pad / 2 + '" x2="' + x0 + '" y2="' + (H - pad / 2) + '" stroke="#bbb"/>';
     s += '<line x1="' + pad / 2 + '" y1="' + y0 + '" x2="' + (W - pad / 2) + '" y2="' + y0 + '" stroke="#bbb"/>';
     [MID.heat - HEAT_EDGE, MID.heat + HEAT_EDGE].forEach((v) => { s += '<line x1="' + sx(v) + '" y1="' + pad / 2 + '" x2="' + sx(v) + '" y2="' + (H - pad / 2) + '" stroke="#ddd" stroke-dasharray="3 4"/>'; });
@@ -169,9 +200,9 @@
     measureAll(list).then((ms) => {
       // 軸の幅: 裂地の範囲より少し広く(外れ値は端に寄せて描く)
       const xRange = [-1.6, 1.4], wRange = [-1.2, 2.2], aRange = [-2.4, 1.0];
-      let h = '<p class="fmap-note">裂地の色を測り、色の印象の式(Ou ほか 2004)で3つの軸に並べています。左=暖かい・右=涼しい。小林『カラーイメージスケール』と同じ向きなので、本と見比べられます。言葉は仮の名前です(本を見ながら直します)。柄の裂地は、色の面積で重みをつけた平均です。</p>';
+      let h = '<p class="fmap-note">裂地の色を測り、色の印象の式(Ou ほか 2004)で3つの軸に並べています。左=暖かい・右=涼しい。小林『カラーイメージスケール』と同じ向きなので、本と見比べられます。言葉は本の大分類(はなやか・おだやか・さわやか)に合わせた仮の名前です。澄み具合は、本と同じく暗いトーンを濁色として扱います(黒・白は清色)。柄の裂地は、色の面積で重みをつけた平均です。</p>';
       h += '<div class="fmap-plots"><figure>' + plot(ms, "weight", "軽い(ソフト)", "重い(ハード)", MID.weight, wRange, xRange) + "<figcaption>暖かさ × 重さ(本の主な地図と同じ組み合わせ)</figcaption></figure>";
-      h += "<figure>" + plot(ms, "activity", "澄んだ(クリア)", "くすんだ(グレイッシュ)", ACT_MID, aRange, xRange) + "<figcaption>暖かさ × 澄み具合</figcaption></figure></div>";
+      h += "<figure>" + plot(ms, "clarity", "澄んだ(清色)", "くすんだ(濁色)", ACT_MID, aRange, xRange) + "<figcaption>暖かさ × 澄み具合(暗い色は濁色側へ寄せています)</figcaption></figure></div>";
       // 足りない印象(用途ごとに数える)
       h += "<h4>足りない印象(用途ごとの裂地の数)</h4><table class=\"fmap-gap\"><thead><tr><th>印象(仮の名前)</th>";
       Object.keys(USE).forEach((u) => { h += "<th>" + USE[u] + "</th>"; });
