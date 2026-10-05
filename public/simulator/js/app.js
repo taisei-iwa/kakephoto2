@@ -758,8 +758,9 @@
 
   const VARIANT_LABEL = { blend: "写真になじませる", lift: "写真を引き立てる" };
 
-  // デザインを天地に割り当てる。中廻し+柱は、新しいデザインのとき、またはいまデザインの紙が入っているときだけ
-  // そのデザインの紙にする(お客様が裂地を選んでいたら、その裂地を残す)
+  // デザインを天地に割り当てる。中廻し+柱は、新しいデザインのとき、いまデザインの紙が入っているとき、
+  // まだ何も選んでいない(無地・お任せ)ときにそのデザインの紙にする(お客様が裂地を選んでいたら、その裂地を残す)。
+  // 未選択も含めるのは、履歴の見本(中廻しは紙の色)と切り替え後の見た目を揃えるため(2026-10-06)
   function applyDesign(tenchi, isNew) {
     const groups = effectiveGroups();
     const set = (gk, id) => {
@@ -768,7 +769,7 @@
     };
     const curNaka = state.assignments.nakaUe || "";
     set("tenchi", tenchi.id);
-    if (isNew || curNaka.indexOf("paper_") === 0) {
+    if (isNew || !curNaka || curNaka.indexOf("paper_") === 0) {
       set("nakamawashi", tenchi.paperId);
       set("hashira", tenchi.paperId);
     }
@@ -1171,8 +1172,9 @@
     });
     document.getElementById("room-close-btn").addEventListener("click", () => dlg.close());
     document.getElementById("room-save-btn").addEventListener("click", () => {
-      const ok = downloadCanvas(canvas, "kakephoto-room-" + scene.id + ".png");
-      showToast(ok ? "画像を保存しました。" : "画像の保存に失敗しました。お手数ですが画面の写真をお撮りください。");
+      downloadCanvas(canvas, "kakephoto-room-" + scene.id + ".png").then((ok) => {
+        showToast(ok ? "画像を保存しました。" : "画像の保存に失敗しました。お手数ですが画面の写真をお撮りください。");
+      });
     });
 
     btn.addEventListener("click", () => {
@@ -2843,14 +2845,23 @@
     ctx.closePath();
   }
 
+  // 画像を端末に保存する。結果は Promise<boolean>。
+  // data: URL だと大きな画像で Safari が「Unknown.png」になり保存に失敗する(2026-10-05 本人の Mac で確認)ので、
+  // Blob の URL で渡す。URL は保存が始まってからしばらくして片付ける(すぐ消すと Safari が読み切れない)
   function downloadCanvas(canvas, filename) {
-    let url;
-    try { url = canvas.toDataURL("image/png"); } catch (e) { return false; }
-    const a = document.createElement("a");
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click();
-    setTimeout(() => a.remove(), 0);
-    return true;
+    return new Promise((resolve) => {
+      try {
+        canvas.toBlob((blob) => {
+          if (!blob) { resolve(false); return; }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = filename;
+          document.body.appendChild(a); a.click();
+          setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 60000);
+          resolve(true);
+        }, "image/png");
+      } catch (e) { resolve(false); } // 外部画像で汚れた canvas など
+    });
   }
 
   function savePreviewImage() {

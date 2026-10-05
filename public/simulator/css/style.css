@@ -537,7 +537,6 @@ button:focus-visible, select:focus-visible, input:focus-visible, a.cta:focus-vis
 .consult-dialog .dialog-title { padding-right: 2.4rem; }
 .consult-choices { display: flex; flex-direction: column; margin-top: 0.4rem; }
 .consult-choice-note { margin: 0.35rem 0 1rem; font-size: 0.76rem; line-height: 1.6; color: var(--ink-soft); text-align: center; }
-.consult-back { margin-top: 0.2rem; text-align: center; }
 
 /* AR 体験ボタン(スマホ・タブレットで表示) */
 .ar-btn {
@@ -1251,6 +1250,7 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
 /* 5 の最後の一歩。「次へ」と同じ柿色で、ここが次の行動だと分かるように */
 .consult-btn { display: block; margin: 1.2rem 0 0.3rem; padding: 0.75rem 0.6rem; text-align: center; text-decoration: none; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.06em; line-height: 1.4; color: #fff; background: #b4531a; border: 1px solid #b4531a; border-radius: 2px; }
 .consult-btn:hover { background: #963f10; border-color: #963f10; }
+.consult-btn .sp-br { display: none; } /* PC は 1 行。狭い画面だけ「このデザインで」で折り返す */
 .consult-note { margin: 0; font-size: 0.74rem; line-height: 1.6; color: var(--ink-soft); }
 .trim-orient { display: flex; gap: 0.4rem; margin-bottom: 0.5rem; }
 .trim-orient button { flex: 0 0 auto; padding: 0.35rem 1rem; font-size: 0.8rem; border-color: var(--line); color: var(--ink-soft); }
@@ -1290,6 +1290,7 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
   .step-nav button { padding: 0.45rem 0.2rem; font-size: 0.72rem; letter-spacing: 0.02em; }
   .step-next-name { display: none; }
   .consult-btn { margin-top: 0.6rem; padding: 0.5rem 0.3rem; font-size: 0.7rem; letter-spacing: 0; }
+  .consult-btn .sp-br { display: inline; }
   .consult-note { font-size: 0.6rem; line-height: 1.5; }
   .method-list { gap: 0.35rem; }
   .method-card { grid-template-columns: 1fr; padding: 0.4rem 0.45rem; gap: 0.15rem; }

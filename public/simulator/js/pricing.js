@@ -5,19 +5,23 @@
 // 自由サイズ(幅・高さ mm)→ 収まる最小の定型枠に切り上げてサイズ価格を返す。
 // 戻り値: { ok: true, tierId, label, price } か { ok: false, reason }
 //   reason: "empty"(空・0以下) / "over"(A3 超過)
-// 判定: 入力の幅・高さの両方が枠の w・h 以内なら「収まる」。
-//   ※スプリント1の仮実装は「入力した向きのまま」で判定する(回転・縦横入れ替えはしない。本人確認項目 7-5)。
+// 判定: 向きは問わない。入力の長い辺が枠の長い辺以内、短い辺が枠の短い辺以内なら「収まる」
+//   (定型の A4/A3 が縦横どちらでも同じ値段なのと揃える)。
+//   2026-10-06 修正: 以前は入力した向きのまま横長の枠と比べていたため、縦長(例 210×297)が一つ上の枠の値段になり、
+//   A3 の縦(297×420)は「大きすぎる」と断っていた。
 function priceForFreeSize(w, h) {
   if (!isFinite(w) || !isFinite(h) || w <= 0 || h <= 0) {
     return { ok: false, reason: "empty" };
   }
+  const long = Math.max(w, h), short = Math.min(w, h);
+  const fits = (tier) => long <= Math.max(tier.w, tier.h) && short <= Math.min(tier.w, tier.h);
   // A3 上限チェック(最大枠を超えたら拒否)。境界(ちょうど A3)は許可。
-  if (w > MAX_TIER.w || h > MAX_TIER.h) {
+  if (!fits(MAX_TIER)) {
     return { ok: false, reason: "over" };
   }
   // 小さい枠から順に「収まる」最初の枠を採用(= 切り上げ)。
   for (const tier of SIZE_TIERS) {
-    if (w <= tier.w && h <= tier.h) {
+    if (fits(tier)) {
       return { ok: true, tierId: tier.id, label: tier.label, price: tier.price };
     }
   }
