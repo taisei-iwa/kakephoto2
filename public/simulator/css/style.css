@@ -529,6 +529,15 @@ button:focus-visible, select:focus-visible, input:focus-visible, a.cta:focus-vis
   border-color: var(--brand-dark);
 }
 .cta-note { margin: 1rem 0 0; font-size: 0.71rem; color: var(--ink-faint); }
+/* お見積もり欄の「相談する」(押すと LINE かフォームかを選ぶ) */
+.cta-consult { width: 100%; background: var(--brand); color: var(--on-brand); border: 1px solid var(--brand); font-weight: 600; }
+.cta-consult:hover { background: var(--brand-dark); border-color: var(--brand-dark); }
+/* 相談の方法を選ぶ画面 */
+.consult-dialog { max-width: 420px; }
+.consult-dialog .dialog-title { padding-right: 2.4rem; }
+.consult-choices { display: flex; flex-direction: column; margin-top: 0.4rem; }
+.consult-choice-note { margin: 0.35rem 0 1rem; font-size: 0.76rem; line-height: 1.6; color: var(--ink-soft); text-align: center; }
+.consult-back { margin-top: 0.2rem; text-align: center; }
 
 /* AR 体験ボタン(スマホ・タブレットで表示) */
 .ar-btn {

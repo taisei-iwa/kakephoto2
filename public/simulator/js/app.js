@@ -169,14 +169,18 @@
     document.querySelectorAll("#trim-orient button").forEach((b) => b.addEventListener("click", () => onTrimOrient(b.dataset.o)));
     setupTrimCanvasDrag();
 
-    // 共有(LINE で相談・フォームへ引き継ぎ・画像保存)
+    // 相談(LINE かフォームかを選ぶ画面から。LINE は内容のコピーと画像保存、フォームは内容を引き継ぐ)と画像保存
     const ctaLine = document.getElementById("cta-line");
     const ctaForm = document.getElementById("cta-form");
     const saveImageBtn = document.getElementById("save-image-btn");
     if (ctaLine) ctaLine.addEventListener("click", onLineClick);
-    const consultLine = document.getElementById("consult-line"); // 5 の「このデザインで相談してみる」
-    if (consultLine) consultLine.addEventListener("click", onLineClick);
     if (ctaForm) ctaForm.addEventListener("click", onFormClick);
+    const consultOpen = document.getElementById("consult-open"); // 5 の「このデザインで相談してみる」
+    if (consultOpen) consultOpen.addEventListener("click", () => openConsult("step5"));
+    const ctaConsult = document.getElementById("cta-consult"); // お見積もり欄の「相談する」
+    if (ctaConsult) ctaConsult.addEventListener("click", () => openConsult("bar"));
+    const consultClose = document.getElementById("consult-close");
+    if (consultClose) consultClose.addEventListener("click", () => document.getElementById("consult-dialog").close());
     if (saveImageBtn) saveImageBtn.addEventListener("click", onSaveImageClick);
 
     window.addEventListener("resize", () => render());
@@ -2885,7 +2889,7 @@
     if (typeof gtag !== "function") return;
     const d = currentDesignFabric();
     gtag("event", "consult_click", {
-      via: via, // line / form / consult_line(5 の「このデザインで相談してみる」)
+      via: via, // どこから開いて何を選んだか: step5_line / step5_form / bar_line / bar_form
       has_design: d ? 1 : 0,
       variant: d ? d.variant || "" : "",
       method: state.method || "",
@@ -2896,8 +2900,21 @@
     });
   }
 
-  function onLineClick(e) {
-    consultEvent(e && e.currentTarget && e.currentTarget.id === "consult-line" ? "consult_line" : "line");
+  // 相談の方法を選ぶ画面を開く。from = "step5"(5 のボタン)/ "bar"(お見積もり欄の「相談する」)
+  let consultFrom = "bar";
+  function openConsult(from) {
+    consultFrom = from;
+    if (typeof gtag === "function") gtag("event", "consult_open", { via: from, step: currentStep, method: state.method || "" });
+    document.getElementById("consult-dialog").showModal();
+  }
+  function closeConsult() {
+    const d = document.getElementById("consult-dialog");
+    if (d && d.open) d.close();
+  }
+
+  function onLineClick() {
+    consultEvent(consultFrom + "_line");
+    setTimeout(closeConsult, 0); // LINE は別の画面で開く。戻ったときに選択画面が残らないよう閉じる
     const summary = buildOrderSummary();
     let copied = false;
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -2914,10 +2931,14 @@
   // フォーム: 選択内容をクエリに載せて /contact へ。フォームの本文に初期表示される。
   function onFormClick(e) {
     e.preventDefault();
-    consultEvent("form");
+    consultEvent(consultFrom + "_form");
     const href = e.currentTarget.getAttribute("href") || "/contact";
     const sep = href.indexOf("?") >= 0 ? "&" : "?";
-    window.location.href = href + sep + "summary=" + encodeURIComponent(buildOrderSummary());
+    const url = href + sep + "summary=" + encodeURIComponent(buildOrderSummary());
+    // 作りかけは端末に保存していないので、フォームは新しいタブで開いてシミュレーターの画面を残す。
+    // 新しいタブが開けない環境(アプリの中の画面など)では、これまでどおり同じ画面で移る
+    const w = window.open(url, "_blank");
+    if (w) closeConsult(); else window.location.href = url;
   }
 
   // ---- ユーティリティ ----
