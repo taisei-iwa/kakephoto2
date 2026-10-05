@@ -14,6 +14,7 @@
   // ---- 状態 ----
   const state = {
     formatId: FORMAT_PRESETS[0].id,
+    formatChosen: false, // 仕立てを本人が選んだか(必須。選ぶまでプレビューは formatId の既定で見せる)
     // サイズ
     sizeMode: "",              // "" (未選択) | "a4" | "a3" | "free"
     orientation: "portrait",   // "portrait" | "landscape"(定型のみ意味を持つ)
@@ -95,6 +96,14 @@
       opt.textContent = p.label;
       el.formatSelect.appendChild(opt);
     });
+    // 仕立ては必須(2026-10-05 本人)。最初は「選んでください」にしておき、選ぶまで次へ進めない。
+    // プレビューは選ぶまで既定の形式(state.formatId の初期値)で見せる
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "選んでください";
+    placeholder.disabled = true;
+    el.formatSelect.insertBefore(placeholder, el.formatSelect.firstChild);
+    el.formatSelect.value = "";
 
     // サイズ種別
     Array.from(el.sizeModeRadios).forEach((r) => r.addEventListener("change", onSizeModeChange));
@@ -378,6 +387,7 @@
     if (n === 1 && !state.honshiImage) return "写真を選んでください。";
     if (n === 2 && !state.sizeMode) return "本紙の大きさ(A4 / A3 / 自由サイズ)を選んでください。";
     if (n === 2 && el.sizeWarning && !el.sizeWarning.hidden) return "本紙の大きさを正しく入力してください。";
+    if (n === 2 && !state.formatChosen) return "仕立て(表装の形式)を選んでください。";
     if (n === 3 && !state.method) return "作り方を一つお選びください。";
     return "";
   }
@@ -503,13 +513,55 @@
     return /iPhone|iPad|iPod|Android/i.test(ua) || iPadOS;
   }
 
+  // アプリの中の画面(WebView)では AR Quick Look / Scene Viewer が起動しない(2026-10-05 本人が LINE で確認)。
+  // Threads の "Barcelona" は Threads アプリの UA に入る名前(実機では未確認)
+  const IN_APP = [
+    { id: "line", name: "LINE", re: /\bLine\/\d/i },
+    { id: "instagram", name: "Instagram", re: /Instagram/i },
+    { id: "threads", name: "Threads", re: /Barcelona/i },
+    { id: "facebook", name: "Facebook", re: /FBAN|FBAV|FB_IAB/i },
+  ];
+  function inAppBrowser() {
+    const ua = navigator.userAgent || "";
+    return IN_APP.find((a) => a.re.test(ua)) || null;
+  }
+  function openInAppDialog(app) {
+    const dlg = document.getElementById("inapp-dialog");
+    const openBtn = document.getElementById("inapp-open");
+    const again = "開き直した先では、写真と<ruby>裂地<rt>きれじ</rt></ruby>をもう一度お選びください。"; // 固定文
+    // LINE だけは外のブラウザで開く仕組み(?openExternalBrowser=1)がある。効かないときのために手順も添える
+    document.getElementById("inapp-text").innerHTML = app.id === "line"
+      ? "LINE の中の画面では、AR(壁に掛けてみる)を起動できません。下のボタンで Safari または Chrome に開き直すと使えます。開かないときは、画面のメニューから「Safari で開く」または「ブラウザで開く」を選んでください。" + again
+      : app.name + " の中の画面では、AR(壁に掛けてみる)を起動できません。画面の右上の「…」から「外部ブラウザで開く」(または「ブラウザで開く」)を選ぶと使えます。" + again;
+    openBtn.hidden = app.id !== "line";
+    if (typeof gtag === "function") gtag("event", "ar_inapp", { app: app.id });
+    dlg.showModal();
+  }
+  function initInAppDialog() {
+    const dlg = document.getElementById("inapp-dialog");
+    if (!dlg) return;
+    document.getElementById("inapp-close").addEventListener("click", () => dlg.close());
+    document.getElementById("inapp-room").addEventListener("click", () => {
+      dlg.close();
+      document.getElementById("room-btn").click();
+    });
+    document.getElementById("inapp-open").addEventListener("click", () => {
+      const u = new URL(location.href);
+      u.searchParams.set("openExternalBrowser", "1");
+      location.href = u.toString();
+    });
+  }
+
   function initAR() {
     const btn = document.getElementById("ar-btn");
     const viewer = document.getElementById("ar-viewer");
     if (!btn || !viewer) return;
     btn.hidden = !isARCapableDevice();
     const label = btn.textContent;
+    initInAppDialog();
     btn.addEventListener("click", () => {
+      const app = inAppBrowser();
+      if (app) { openInAppDialog(app); return; }
       if (!window.KakeAR) { showToast("AR の部品が読み込めていません。通信状態をご確認ください。"); return; }
       if (typeof gtag === "function") gtag("event", "ar_open", { size: state.sizeMode, format: state.formatId });
       btn.disabled = true;
@@ -1567,6 +1619,8 @@
   // initial=true は初期化時(チェックボックスへ state を一度反映する)。
   function onFormatChange() {
     state.formatId = el.formatSelect.value || state.formatId;
+    if (el.formatSelect.value) state.formatChosen = true;
+    updateStepNav();
     // 「明朝仕立て」チェックは丸表装のときだけ表示。他形式では UI を隠すが state.mincho 値は保持する。
     el.minchoLabel.hidden = state.formatId !== "maru";
     if (!el.minchoLabel.hidden) el.optMincho.checked = state.opt.mincho;

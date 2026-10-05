@@ -396,6 +396,11 @@ button:focus-visible, select:focus-visible, input:focus-visible, a.cta:focus-vis
 .hl-frame { position: absolute; box-shadow: inset 0 0 0 1px var(--brand); pointer-events: none; z-index: 7; }
 .part-honshi { background-color: var(--honshi-bg); cursor: default; }
 
+/* 必須の印(1 写真・2 大きさ・3 作り方) */
+.req { color: #c62828; margin-left: 0.25em; font-weight: 700; }
+.req-note { margin: -0.2rem 0 0.6rem; font-size: 0.74rem; color: var(--ink-soft, #6b6258); }
+.req-note .req { margin: 0 0.15em 0 0; }
+
 .part-fuutai { z-index: 12; outline: 0.5px solid rgba(80,15,30,0.18); }
 
 /* 軸棒・八双・軸先 */
@@ -676,6 +681,9 @@ button:focus-visible, select:focus-visible, input:focus-visible, a.cta:focus-vis
   margin-top: 1.2rem;
 }
 .dialog-btns button { flex: 1; }
+/* アプリの中の画面で AR を押したときの案内。ボタンは縦に並べる */
+.inapp-btns { flex-direction: column; }
+#inapp-open { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
 
 /* ---- トリミング ---- */
 .trim-options { margin-bottom: 0.8rem; }
@@ -804,6 +812,7 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
   .block legend { font-size: 0.73rem; margin-bottom: 0.22rem; letter-spacing: 0.04em; }
   /* 「本紙(写真)の大きさを選ぶ」は狭い列だと折り返すので、ここだけ小さくして1行に収める */
   .block legend.legend-long { font-size: 0.64rem; letter-spacing: 0; white-space: nowrap; }
+  .block legend.legend-long .lg-opt { display: none; } /* 狭い列では「(写真)」を省いて必須の ※ を収める */
   .block .lead { display: none; }
   /* 説明ラベル(「写真ファイル」「表装の形式」)だけ隠す。セグメントや
      チェックボックスの <label> は隠さない。.block label より詳細度を上げる。 */
@@ -1137,7 +1146,7 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
    写真の位置合わせを閉じた直後に、天の上で指がトントンと2回叩く。これを3回くり返して消える。 */
 .tap-hint {
   position: absolute;
-  z-index: 5;
+  z-index: 30; /* 風帯(12)・軸(10〜20)より手前。風帯を付けても「ここをタップ」が隠れない */
   pointer-events: none; /* 下の部位はそのまま押せる */
   transform: translate(-50%, -22%); /* 指先が天の中央に来るように */
   display: flex;
@@ -1314,6 +1323,14 @@ ruby rt { font-size: 0.5em; letter-spacing: 0; font-weight: 400; }
 .guide-link { display: block; width: 100%; margin-top: 0.8rem; padding: 0.5rem; font-size: 0.78rem; border-color: var(--line); color: var(--brand); background: var(--surface-2); }
 .guide-q { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 1.25rem; height: 1.25rem; margin-left: 0.3rem; padding: 0; border-radius: 50%; font-size: 0.7rem; line-height: 1; border-color: var(--brand-soft); color: var(--brand); vertical-align: middle; }
 .guide-dialog { max-width: 760px; width: min(760px, 94vw); max-height: 92vh; overflow-y: auto; }
+/* 解説は縦に長いので、閉じる × をスクロールしても右上に出し続ける(2026-10-05 本人) */
+.guide-dialog .dialog-x {
+  position: sticky; top: 0; z-index: 5;
+  display: block; margin: -1rem -1rem -2.2rem auto;
+  background: var(--surface); border-radius: 50%;
+  box-shadow: 0 1px 6px rgba(40,10,18,0.22); color: var(--ink);
+}
+.guide-dialog .dialog-title { padding-right: 2.4rem; }
 .guide-body section { padding: 0.6rem 0 1.2rem; border-top: 1px solid var(--line); scroll-margin-top: 0.5rem; }
 .guide-body section:first-child { border-top: 0; }
 .guide-body h3 { margin: 0.3rem 0 0.7rem; font-size: 0.95rem; color: var(--brand); letter-spacing: 0.08em; }

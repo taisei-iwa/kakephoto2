@@ -8,6 +8,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="css/style.css" />
+  <!-- LINE の中の画面で開かれたら、Safari / Chrome で開き直す(LINE の中では AR が動かないため。2026-10-05 本人)。
+       ?openExternalBrowser=1 は LINE の仕組み。写真を選ぶ前に移るので作りかけは消えない。
+       付けても LINE の中に留まったときは二度目を試さない(繰り返さない)。そのときは AR ボタンで案内を出す(app.js)。 -->
+  <script>
+    (function () {
+      try {
+        if (!/\bLine\/\d/i.test(navigator.userAgent)) return;
+        var u = new URL(location.href);
+        if (u.searchParams.has("openExternalBrowser")) return;
+        u.searchParams.set("openExternalBrowser", "1");
+        location.replace(u.toString());
+      } catch (e) { /* 古い端末ではそのまま LINE の中で使う */ }
+    })();
+  </script>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-KRCSGD4ZWP"></script>
   <script>
@@ -37,10 +51,12 @@
         <li><button type="button" data-go="4"><span class="stepper-n">4</span><span class="stepper-label">仕上げ</span></button></li>
         <li><button type="button" data-go="5"><span class="stepper-n">5</span><span class="stepper-label">確認</span></button></li>
       </ol>
+      <!-- 必須の項目に赤い ※(入れずに次へ進もうとして迷わないように。2026-10-05 本人) -->
+      <p class="req-note"><span class="req">※</span>は必須の項目です</p>
 
       <!-- F1: 写真(本紙)の取り込み -->
       <fieldset class="block" data-step="1">
-        <legend><span class="step-num">1</span>写真を選ぶ</legend>
+        <legend><span class="step-num">1</span>写真を選ぶ<span class="req" title="必須">※</span></legend>
         <p class="lead">本紙となる、お手元の一枚をお選びください。</p>
         <label for="honshi-image-file" class="file-label">写真ファイル</label>
         <input type="file" id="honshi-image-file" accept="image/*" />
@@ -53,7 +69,7 @@
 
       <!-- F2: 本紙サイズ選択 -->
       <fieldset class="block" id="size-block" data-step="2">
-        <legend class="legend-long"><span class="step-num">2</span>本紙(写真)の大きさを選ぶ</legend>
+        <legend class="legend-long"><span class="step-num">2</span>本紙<span class="lg-opt">(写真)</span>の大きさを選ぶ<span class="req" title="必須">※</span></legend>
         <div class="seg" role="radiogroup" aria-label="サイズの種類">
           <label class="seg-item"><input type="radio" name="size-mode" value="a4" /> <span>A4 定型</span></label>
           <label class="seg-item"><input type="radio" name="size-mode" value="a3" /> <span>A3 定型</span></label>
@@ -83,7 +99,7 @@
 
       <!-- F4: 表装形式(全形式を顧客にも見せる) -->
       <fieldset class="block" data-step="2">
-        <legend>仕立てを選ぶ</legend>
+        <legend>仕立てを選ぶ<span class="req" title="必須">※</span></legend>
         <label for="format-select">表装の形式</label>
         <select id="format-select" aria-label="表装形式の選択"></select>
         <div class="row pair-row">
@@ -92,14 +108,14 @@
           <label id="mincho-label" hidden><input type="checkbox" id="opt-mincho" /> 明朝仕立て<button type="button" class="guide-q" data-guide="guide-mincho" aria-label="明朝仕立てとは(図で見る)">?</button></label>
         </div>
         <p id="format-note" class="note" hidden></p>
-        <!-- 形式・一文字・風帯の違いを図で見る(一般の方には違いが分からないため。2026-10-03 本人) -->
-        <button type="button" class="guide-link" data-guide="guide-formats">形式・一文字・風帯の違いを図で見る</button>
+        <!-- 形式・一文字・風帯の違いの解説(一般の方には違いが分からないため。2026-10-03 本人。文言は 2026-10-05 本人) -->
+        <button type="button" class="guide-link" data-guide="guide-formats">形式・一文字・風帯の違い<br />解説</button>
       </fieldset>
 
       <!-- 作り方(3 択)。素材(和紙 / 裂地)はお客様に判断させず、選んだ作り方の結果として決まる。
            素材の札は伝わりにくいので付けない(2026-10-02 本人)。和紙であることはプレビューの下・2 案の画面・5 の確認で伝える -->
       <fieldset class="block" id="method-block" data-step="3">
-        <legend><span class="step-num">3</span>作り方を選ぶ</legend>
+        <legend><span class="step-num">3</span>作り方を選ぶ<span class="req" title="必須">※</span></legend>
         <p class="lead">写真のまわり(表具)を、どう作るかお選びください。</p>
         <div class="method-list">
           <button type="button" id="design-btn" class="method-card" data-method="design">
@@ -320,6 +336,18 @@
   </dialog>
 
   <!-- 図解: 各部の名前・形式の違い・一文字・風帯(中身は app.js が掛軸の寸法計算から描く) -->
+  <!-- アプリの中の画面(LINE・Instagram など)で AR を押したときの案内 -->
+  <dialog id="inapp-dialog" class="picker-dialog inapp-dialog" aria-modal="true" aria-labelledby="inapp-title">
+    <h2 id="inapp-title" class="dialog-title">この画面では AR が使えません</h2>
+    <p id="inapp-text" class="dialog-note"></p>
+    <p class="dialog-note">このままの画面でも、「部屋に飾ってみる」でお部屋の写真に合わせて見られます。</p>
+    <div class="dialog-btns inapp-btns">
+      <button type="button" id="inapp-open">Safari / Chrome で開き直す</button>
+      <button type="button" id="inapp-room" class="secondary">部屋に飾ってみる</button>
+      <button type="button" id="inapp-close" class="secondary">閉じる</button>
+    </div>
+  </dialog>
+
   <dialog id="guide-dialog" class="picker-dialog guide-dialog" aria-modal="true" aria-labelledby="guide-title">
     <button type="button" id="guide-close" class="dialog-x" aria-label="閉じる">×</button>
     <h2 id="guide-title" class="dialog-title">掛軸の形と各部の名前</h2>
