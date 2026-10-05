@@ -388,10 +388,10 @@
 
   // その段階で足りないもの(足りていれば "")。満たさないと次へ進めない(2026-10-02 本人)
   function stepMissing(n) {
-    if (n === 1 && !state.honshiImage) return "写真を選んでください。";
-    if (n === 2 && !state.sizeMode) return "本紙の大きさ(A4 / A3 / 自由サイズ)を選んでください。";
+    if (n === 1 && !state.honshiImage) return "写真をお選びください。";
+    if (n === 2 && !state.sizeMode) return "本紙の大きさ(A4 / A3 / 自由サイズ)をお選びください。";
     if (n === 2 && el.sizeWarning && !el.sizeWarning.hidden) return "本紙の大きさを正しく入力してください。";
-    if (n === 2 && !state.formatChosen) return "仕立て(表装の形式)を選んでください。";
+    if (n === 2 && !state.formatChosen) return "仕立て(表装の形式)をお選びください。";
     if (n === 3 && !state.method) return "作り方を一つお選びください。";
     return "";
   }
@@ -1947,6 +1947,7 @@
         el.removeHonshiBtn.hidden = false;
         el.trimHonshiBtn.style.display = "";
         el.honshiImageFile.value = "";
+        setHonshiFileName(file.name || "選んだ写真");
         render();
         // 取り込んだらそのまま位置合わせへ(トリミング画面の「写真を変更」から来た場合は開いたまま差し替わる)
         openTrimDialog();
@@ -1965,7 +1966,20 @@
     reader.readAsDataURL(file);
   }
 
+  // 写真の欄の表示(標準のファイル欄は隠しているので、選んだファイル名とボタンの文言をここで出す)
+  function setHonshiFileName(name) {
+    const nameEl = document.getElementById("honshi-image-name");
+    const btn = document.getElementById("honshi-pick-btn");
+    if (nameEl) {
+      nameEl.textContent = name || "まだ選んでいません";
+      nameEl.title = name || "";
+      nameEl.classList.toggle("has-file", !!name);
+    }
+    if (btn) btn.textContent = name ? "別の写真にする" : "写真を選ぶ";
+  }
+
   function onRemoveHonshiImage() {
+    setHonshiFileName("");
     state.honshiImage = null;
     el.removeHonshiBtn.hidden = true;
     el.trimHonshiBtn.style.display = "none";

@@ -59,7 +59,13 @@
         <legend><span class="step-num">1</span>写真を選ぶ<span class="req" title="必須">※</span></legend>
         <p class="lead">本紙となる、お手元の一枚をお選びください。</p>
         <label for="honshi-image-file" class="file-label">写真ファイル</label>
-        <input type="file" id="honshi-image-file" accept="image/*" />
+        <!-- 標準のファイル欄は隠し、ボタンと選んだファイル名を自前で出す(同じ写真を選び直せるよう欄を空に戻すため、
+             標準の欄だと読み込んだ後も「未選択」と出てしまう。2026-10-06 本人) -->
+        <input type="file" id="honshi-image-file" class="file-input-hidden" accept="image/*" />
+        <div class="file-pick">
+          <label for="honshi-image-file" id="honshi-pick-btn" class="file-btn">写真を選ぶ</label>
+          <span id="honshi-image-name" class="file-name">まだ選んでいません</span>
+        </div>
         <div id="honshi-image-warning" class="warning" role="alert" hidden></div>
         <div class="row btns" style="margin-top:0.6rem;">
           <button type="button" id="trim-honshi-btn" class="secondary" style="display:none">位置を調整</button>
@@ -128,10 +134,10 @@
           </button>
           <button type="button" id="self-btn" class="method-card" data-method="self">
             <span class="method-title"><ruby>裂地<rt>きれじ</rt></ruby>を自分で選ぶ</span>
-            <span class="method-desc">掛軸の各部をタップして、裂地を一つずつ選びます。</span>
+            <span class="method-desc">掛軸の各部を<span class="act-tap">タップ</span><span class="act-click">クリック</span>して、裂地を一つずつ選びます。</span>
           </button>
         </div>
-        <p class="note method-note">お手持ちの柄のデータで和紙を作りたい方は、LINE でご相談ください。</p>
+        <p class="note method-note">お手持ちの柄のデータで和紙を作りたい方は、LINE またはフォームでご相談ください。</p>
         <button type="button" class="fabric-reset-btn fabric-reset-pc secondary" disabled><ruby>裂地<rt>きれじ</rt></ruby>をすべてリセット</button>
       </fieldset>
 
@@ -141,7 +147,7 @@
         <div class="seg jiku-seg" role="radiogroup" aria-label="軸先の色">
           <label class="seg-item"><input type="radio" name="jiku-color" value="black" /> <span>黒</span></label>
           <label class="seg-item"><input type="radio" name="jiku-color" value="brown" checked /> <span>茶</span></label>
-          <label class="seg-item"><input type="radio" name="jiku-color" value="ivory" /> <span>Ivory</span></label>
+          <label class="seg-item"><input type="radio" name="jiku-color" value="ivory" /> <span>アイボリー</span></label>
         </div>
       </fieldset>
 
@@ -244,7 +250,7 @@
         <div class="cta-row">
           <button type="button" id="cta-consult" class="cta cta-consult">相談する</button>
         </div>
-        <p class="cta-note">仕上がりとお見積もりにご納得いただけましたら、お気軽にご相談ください。</p>
+        <p class="cta-note">途中のご質問も、仕上がりのご相談も、お気軽にどうぞ。</p>
       </div>
     </section>
   </main>
@@ -291,7 +297,7 @@
     <div class="picker-head">
       <h2 id="part-fabric-title" class="dialog-title"></h2>
       <!-- 選んでいる途中の内容が消えないよう、フォームは別タブで開く -->
-      <p class="picker-more">ほかにも<ruby>裂地<rt>きれじ</rt></ruby>をご用意しています。ご希望があれば<a href="/contact" target="_blank" rel="noopener">お問い合わせフォーム</a>よりお知らせください。</p>
+      <p class="picker-more">ほかにも<ruby>裂地<rt>きれじ</rt></ruby>をご用意しています。ご希望があれば<a href="https://line.me/R/ti/p/@447updgf" target="_blank" rel="noopener">LINE</a>または<a href="/contact" target="_blank" rel="noopener">お問い合わせフォーム</a>よりお知らせください。</p>
     </div>
     <label class="show-all-label">
       <input type="checkbox" id="part-fabric-showall" />
@@ -429,7 +435,7 @@
       </div>
     </div>
     <div class="wish-group" data-wish="tone">
-      <span class="wish-label">色味</span>
+      <span class="wish-label">色み</span>
       <div class="wish-chips">
         <button type="button" data-value="photo">写真の色に合わせる</button>
         <button type="button" data-value="pale">淡く</button>
