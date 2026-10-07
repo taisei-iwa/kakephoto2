@@ -33,7 +33,7 @@ export async function analyzeImage(model: string, prompt: string, schema: unknow
     model,
     {
       contents: [{ parts: [{ inlineData: { mimeType: "image/jpeg", data: jpegB64 } }, { text: prompt }] }],
-      generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.7 },
+      generationConfig: { responseMimeType: "application/json", responseSchema: schema },
     },
     40_000
   );
