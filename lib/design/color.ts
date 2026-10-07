@@ -5,7 +5,9 @@
  * - 色相は写真の主色にそろえる(色相が近いほど調和する)。中差(約 70〜110 度)を避ける
  * - 差は「はっきり同じ」か「はっきり違う」に寄せる(ΔE00 の 3〜6・15〜25 は避ける。仮の目安)
  * - 呼応: 写真の中の「小さな色」(面積は小さいが鮮やかな色)を拾い、絵の小さなアクセントにする
- * 2 案: blend = 写真になじませる(紙の明るさを写真のまわりに寄せる)、lift = 写真を引き立てる(明るさを反対側に振る)
+ * 2 案: blend = 写真になじませる(紙の明るさを写真のまわりに寄せる)、echo = 写真の差し色を拾う(紙の色相を写真の小さな色にし、
+ * 明るさは blend と同じ側)。2026-10-08 本人の観察「近い色の案ばかり選ばれる」で、明るさを反対側に振る lift から echo に替えた。
+ * lift は過去に作った案の表示のために残す
  */
 import sharp from "sharp";
 
@@ -18,7 +20,7 @@ export type PhotoColors = {
   meanC: number;
   colorfulness: number; // Hasler & Süsstrunk の鮮やかさ
 };
-export type Variant = "blend" | "lift";
+export type Variant = "blend" | "lift" | "echo";
 
 // ---- 色の変換(sRGB D65 ⇔ CIELAB)----
 const lin = (c: number) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
@@ -160,22 +162,28 @@ const MOOD: Record<string, { light: number; deepL?: number; cMul: number; cMax?:
 };
 
 export function chooseColors(p: PhotoColors, variant: Variant, tone?: string, mood?: string) {
-  // 色相: 写真の主色にそろえる(主色が無彩色に近ければ、和紙らしい暖かい無彩色寄り)
-  const tinted = p.dominant.C >= 8;
-  const h = tinted ? p.dominant.h : 75;
+  // 色相: 写真の主色にそろえる(主色が無彩色に近ければ、和紙らしい暖かい無彩色寄り)。
+  // echo は写真の小さな色(呼応のアクセント)の色相にする。小さな色が見つからない写真では、主色のまま明るさだけ一段ずらす
+  const echoSrc = variant === "echo" ? p.accent : null;
+  const tinted = echoSrc ? true : p.dominant.C >= 8;
+  const h = echoSrc ? echoSrc.h : tinted ? p.dominant.h : 75;
   // 彩度: 写真の主色より控える(天地は最も低彩度)。ただし灰色に落とさない(鳥の子・藍染めくらいの色みは残す)
-  let C = tinted ? clamp(p.dominant.C * 0.45, 6, 16) : 5;
+  let C = echoSrc ? clamp(echoSrc.C * 0.45, 6, 16) : tinted ? clamp(p.dominant.C * 0.45, 6, 16) : 5;
+  // 差し色が主色と中差(約 70〜110 度)にあるときは、紙の彩度を控えて写真の主色とぶつからないようにする(仮の目安)
+  if (echoSrc && p.dominant.C >= 8) { const d = hueDiff(echoSrc.h, p.dominant.h); if (d >= 70 && d <= 110) C *= 0.7; }
   // 明るさ: 中くらい(40〜65)は濁って見えるので避け、明るい側か深い側に振る。
-  // blend は写真の外周の明るさに寄せる、lift は反対側へ
+  // blend と echo は写真の外周の明るさに寄せる、lift は反対側へ
   const light = 84, deep = 24;
   const edgeSide = p.edgeL < 40 ? "deep" : p.edgeL > 65 ? "light" : p.edgeL >= 52 ? "light" : "deep";
   const blendL = p.edgeL < 40 ? clamp(p.edgeL + 8, 12, 40) : p.edgeL > 65 ? clamp(p.edgeL - 4, 70, 90) : edgeSide === "light" ? 80 : 30;
-  let L = variant === "blend" ? blendL : edgeSide === "deep" ? light : deep + 8;
+  let L = variant === "lift" ? (edgeSide === "deep" ? light : deep + 8) : blendL;
+  // 差し色のない echo: 同じ側のまま、明るい側はより淡く・深い側はより深くして blend と見分けがつくようにする
+  if (variant === "echo" && !echoSrc) L = blendL >= 50 ? clamp(blendL + 9, 70, 93) : clamp(blendL - 10, 10, 40);
   if (variant === "lift") C = clamp(C * 0.7, 3, 11);
   // 雰囲気を地色にも効かせる(これまでは指示文にだけ入っていた)
   const m = mood ? MOOD[mood] : undefined;
   if (m) {
-    if (L >= 50) L = variant === "blend" ? (L + m.light) / 2 : m.light; // 明るい側: なじませる案は写真のまわりの明るさとの中間
+    if (L >= 50) L = variant === "lift" ? m.light : (L + m.light) / 2; // 明るい側: なじませる案・差し色の案は写真のまわりの明るさとの中間
     else if (m.noDeep) L = m.light - 4; // かわいらしい: 暗い地は使わない
     else if (m.deepL != null) L = m.deepL; // 凛とした: 暗い側はより深く
     C = clamp(C * m.cMul, 2, m.cMax ?? 16);
@@ -200,8 +208,10 @@ export function chooseColors(p: PhotoColors, variant: Variant, tone?: string, mo
     step += d < 6 ? 2 : -1;
     if (step <= 1) break;
   }
-  // アクセント: 写真の小さな色(なければ金だけ)。天地の上で沈まないよう、紙との明るさの差を確かめて少し動かす
-  let accent: Lab | null = p.accent ? { L: p.accent.L, a: p.accent.a, b: p.accent.b } : null;
+  // アクセント: 写真の小さな色(なければ金だけ)。天地の上で沈まないよう、紙との明るさの差を確かめて少し動かす。
+  // echo は紙がすでに小さな色の色相なので、絵の小さな要素には写真の主色を置いて写真に呼応させる
+  const acSrc = echoSrc ? (p.dominant.C >= 8 ? p.dominant : null) : p.accent;
+  let accent: Lab | null = acSrc ? { L: acSrc.L, a: acSrc.a, b: acSrc.b } : null;
   if (accent && Math.abs(accent.L - L) < 20) accent = { ...accent, L: clamp(L < 50 ? L + 28 : L - 28, 10, 92) };
   return { base: toHex(base), naka: toHex(naka), accent: accent ? toHex(accent) : null, baseLab: base, nakaLab: naka };
 }

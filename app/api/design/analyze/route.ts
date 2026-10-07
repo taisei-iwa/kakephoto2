@@ -4,7 +4,7 @@
  *           wishes?: { mood, tone, density, note }(要望の画面。決まった値と 100 字までの自由記入だけを受け付ける) }
  * 返す:     { concept, designs: [{ id, variant, nakaHex, baseHex }, …] }
  * 2026-10-02 美しさの研究(資料/2026-10-02_掛軸の美しさ研究_…)を取り込み:
- * - 色は画像 AI に任せず写真を測って決める(color.ts)。2 案 = blend(写真になじませる)/ lift(写真を引き立てる)
+ * - 色は画像 AI に任せず写真を測って決める(color.ts)。2 案 = blend(写真になじませる)/ echo(写真の差し色を拾う。2026-10-08 に lift から替えた)
  * - 職人の評価(lessons.json)を、次の案づくりの見本として指示に入れる
  * 写真は読み取りと色の計測に使うだけで保存しない(評価用の小さな見本は、画面から別に送られる)。
  */
@@ -55,8 +55,8 @@ export async function POST(req: Request) {
       meanC: Math.round(photo.meanC * 10) / 10,
       colorfulness: Math.round(photo.colorfulness * 10) / 10,
     };
-    // 2 案(なじませる / 引き立てる)。物語とモチーフは共通で、紙・中廻し・小さな色を変える
-    const variants: Variant[] = ["blend", "lift"];
+    // 2 案(なじませる / 差し色を拾う)。物語とモチーフは共通で、紙・中廻し・小さな色を変える
+    const variants: Variant[] = ["blend", "echo"];
     const ids = variants.map(() => newDesignId());
     const designs = [];
     for (let i = 0; i < variants.length; i++) {

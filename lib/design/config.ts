@@ -149,7 +149,7 @@ export type Lesson = { rating: "good" | "bad"; tags?: string[]; comment?: string
 export function lessonsSection(lessons: Lesson[]) {
   const pick = (r: "good" | "bad") => lessons.filter((l) => l.rating === r).slice(-8);
   const line = (l: Lesson) =>
-    `- ${l.scene ? `photo: ${l.scene} / ` : ""}design: ${l.concept || "?"}${l.variant ? ` (${l.variant === "lift" ? "contrasting paper" : "blending paper"})` : ""}` +
+    `- ${l.scene ? `photo: ${l.scene} / ` : ""}design: ${l.concept || "?"}${l.variant ? ` (${l.variant === "lift" ? "contrasting paper" : l.variant === "echo" ? "paper tinted with the photo's small accent color" : "blending paper"})` : ""}` +
     `${l.tags && l.tags.length ? ` / points: ${l.tags.join("、")}` : ""}${l.comment ? ` / comment: ${l.comment}` : ""}`;
   const good = pick("good"), bad = pick("bad");
   if (!good.length && !bad.length) return "";

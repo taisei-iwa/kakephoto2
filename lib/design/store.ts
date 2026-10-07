@@ -92,8 +92,8 @@ export type DesignMeta = {
     mitate_ja?: string;
     include_subject?: boolean;
   };
-  // 2 案のどちらか(blend = 写真になじませる / lift = 写真を引き立てる)と、同時に作ったもう一方の番号
-  variant?: "blend" | "lift";
+  // 2 案のどちらか(blend = 写真になじませる / echo = 写真の差し色を拾う。lift = 写真を引き立てる は 2026-10-08 までの案)と、同時に作ったもう一方の番号
+  variant?: "blend" | "lift" | "echo";
   pair?: string;
   // 計算で決めた色(lib/design/color.ts)と、写真を測った数値(写真そのものではない)
   palette?: { base: string; naka: string; accent: string | null };

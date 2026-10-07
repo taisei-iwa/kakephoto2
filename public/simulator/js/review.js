@@ -7,7 +7,7 @@
   "use strict";
 
   const TOKEN_KEY = "kp_admin_token";
-  const VARIANT = { blend: "写真になじませる案", lift: "写真を引き立てる案" };
+  const VARIANT = { blend: "写真になじませる案", echo: "写真の差し色を拾う案", lift: "写真を引き立てる案" };
   const SEASON = { spring: "春", summer: "夏", autumn: "秋", winter: "冬", none: "季節なし" };
   const WISH = {
     mood: { calm: "落ち着いた", gorgeous: "華やか", lovely: "かわいらしい", dignified: "凛とした" },
