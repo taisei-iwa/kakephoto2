@@ -13,7 +13,7 @@ import { IMAGE_MODEL, combinedPrompt, nearestAspect, partPrompt, retryNote } fro
 import { generateImage, GeminiError } from "@/lib/design/gemini";
 import { DesignMeta, getFile, getJSON, putFile } from "@/lib/design/store";
 import { correctToBase, judge, measureDesign } from "@/lib/design/metrics";
-import { quietCut, trimAndFit } from "@/lib/design/trim";
+import { quietCut, trimAndFit, trimEdgeLines } from "@/lib/design/trim";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -64,8 +64,12 @@ export async function POST(req: Request) {
     const cut = await quietCut(combined, ten.hMm / totalH);
     const tenRaw = await sharp(combined).extract({ left: 0, top: 0, width: W, height: cut }).toBuffer();
     const chiRaw = await sharp(combined).extract({ left: 0, top: cut, width: W, height: H - cut }).toBuffer();
-    const tenFit = await trimAndFit(tenRaw, ten.wMm / ten.hMm, { trim: false });
-    const chiFit = await trimAndFit(chiRaw, chi.wMm / chi.hMm, { trim: false });
+    // 端に描かれた細い筋を、天・地それぞれで切る(補正後の地の色を基準に)
+    const bgNow = best.m.metrics.bgDelta > 6 && best.m.metrics.bgDelta <= 30 ? (await measureDesign(combined, pal.base)).bgLab : best.m.bgLab;
+    const tenEdge = await trimEdgeLines(tenRaw, bgNow);
+    const chiEdge = await trimEdgeLines(chiRaw, bgNow);
+    const tenFit = await trimAndFit(tenEdge.jpeg, ten.wMm / ten.hMm, { trim: false });
+    const chiFit = await trimAndFit(chiEdge.jpeg, chi.wMm / chi.hMm, { trim: false });
     const tenJpg = tenFit.jpeg, chiJpg = chiFit.jpeg;
 
     const isPng = raw[0] === 0x89;
@@ -85,6 +89,7 @@ export async function POST(req: Request) {
           tries,
           box: fit.box,
           cut,
+          edgeCut: part === "ten" ? tenEdge.cut : chiEdge.cut, // 端の筋を切った幅 [上, 右, 下, 左] px
           cutTarget: Math.round((H * ten.hMm) / totalH),
           metrics: best.m.metrics,
           failed: best.why,

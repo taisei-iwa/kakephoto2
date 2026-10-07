@@ -8,9 +8,11 @@
 import sharp from "sharp";
 import { colorfulness, deltaE00, hexToLab, Lab, labToRgb, rgbToLab } from "@/lib/design/color";
 
-export const LIMITS = { coverageMin: 0.04, coverageMax: 0.45, bgDeltaMax: 30, colorfulSlack: 1.1, colorfulFloor: 22 };
+export const LIMITS = { coverageMin: 0.04, coverageMax: 0.45, bgDeltaMax: 30, colorfulSlack: 1.1, colorfulFloor: 22, offFlatMax: 0.06 };
 
-export type DesignMetrics = { coverage: number; colorfulness: number; bgDelta: number; bg: string };
+// offFlat: 背景の一部が別の色で平らに塗られた割合(升目のうち、中がほぼ一様で地の色と ΔE00 で 6 より違うもの。暗い色どうしは数値の差が小さく出るので 6)。
+// 2026-10-08 本人「地の真ん中だけ紺色。そういう色の変え方は好きじゃない」。目安 6% は仮置き
+export type DesignMetrics = { coverage: number; colorfulness: number; bgDelta: number; bg: string; offFlat: number };
 
 /** 地の色(いちばん多い色)と、柄の割合・鮮やかさ・紙の色とのずれを測る */
 export async function measureDesign(jpeg: Buffer, baseHex: string) {
@@ -30,6 +32,18 @@ export async function measureDesign(jpeg: Buffer, baseHex: string) {
   for (const arr of box.values()) if (arr.length > top.length) top = arr;
   const bg: Lab = { L: avg(top, "L"), a: avg(top, "a"), b: avg(top, "b") };
   const far = labs.filter((p) => Math.hypot(p.L - bg.L, p.a - bg.a, p.b - bg.b) >= 14).length;
+  // 8 × 12 の升目ごとに平均とばらつきを見る。平らで地の色と違う升目 = 別の色で塗られた背景
+  const GX = 8, GY = 12;
+  let offCells = 0;
+  for (let gy = 0; gy < GY; gy++) for (let gx = 0; gx < GX; gx++) {
+    const x0 = Math.floor((gx * sw) / GX), x1 = Math.floor(((gx + 1) * sw) / GX), y0 = Math.floor((gy * sh) / GY), y1 = Math.floor(((gy + 1) * sh) / GY);
+    const cell: Lab[] = [];
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) cell.push(labs[y * sw + x]);
+    if (!cell.length) continue;
+    const m: Lab = { L: avg(cell, "L"), a: avg(cell, "a"), b: avg(cell, "b") };
+    const spread = cell.reduce((s, p) => s + Math.hypot(p.L - m.L, p.a - m.a, p.b - m.b), 0) / cell.length;
+    if (spread < 6 && deltaE00(m, bg) > 6) offCells++;
+  }
   const [r, g, b] = labToRgb(bg);
   return {
     bgLab: bg,
@@ -38,6 +52,7 @@ export async function measureDesign(jpeg: Buffer, baseHex: string) {
       colorfulness: round(colorfulness(data), 1),
       bgDelta: round(deltaE00(bg, hexToLab(baseHex)), 1),
       bg: "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join(""),
+      offFlat: round(offCells / (GX * GY), 3),
     } as DesignMetrics,
   };
 }
@@ -49,6 +64,7 @@ export function judge(m: DesignMetrics, photoColorfulness: number) {
   if (m.coverage > LIMITS.coverageMax) why.push("motifs_too_many");
   if (m.colorfulness > Math.max(photoColorfulness * LIMITS.colorfulSlack, LIMITS.colorfulFloor)) why.push("louder_than_photo");
   if (m.bgDelta > LIMITS.bgDeltaMax) why.push("paper_color_off");
+  if (m.offFlat > LIMITS.offFlatMax) why.push("background_not_uniform");
   return why;
 }
 

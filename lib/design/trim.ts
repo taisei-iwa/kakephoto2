@@ -5,6 +5,7 @@
  * - 縦横比に詰めるときは、柄(平均色との差)がいちばん多く入る位置を残す
  */
 import sharp from "sharp";
+import { Lab, rgbToLab } from "@/lib/design/color";
 
 const MINC = 232, SPREAD = 14, FULL = 0.97, INSET = 0.012;
 
@@ -95,4 +96,30 @@ export async function quietCut(input: Buffer, target: number, from = 0.5, to = 0
     if (score < bestScore) { bestScore = score; best = y; }
   }
   return Math.round((best / sh) * H);
+}
+
+/**
+ * 絵の四辺に画像 AI が描いた細い筋(白い線・縁取り)を切り落とす。2026-10-08 本人「天地の端に白い筋が出ている」。
+ * 各辺から内側へ最大 3% まで見て、列(行)の 6 割以上が地の色から離れている間は筋とみなして切る。
+ * 柄が端にかかっているだけの列は 6 割に届かないので残る。切った分の縦横比は、このあとの trimAndFit で詰め直す
+ */
+export async function trimEdgeLines(input: Buffer, bg: Lab) {
+  const { data, info } = await sharp(input).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  const W = info.width, H = info.height;
+  const off = (x: number, y: number) => {
+    const i = (y * W + x) * 3, p = rgbToLab(data[i], data[i + 1], data[i + 2]);
+    return Math.hypot(p.L - bg.L, p.a - bg.a, p.b - bg.b) > 12;
+  };
+  const colOff = (x: number) => { let n = 0, t = 0; for (let y = 0; y < H; y += 3) { t++; if (off(x, y)) n++; } return n / t >= 0.6; };
+  const rowOff = (y: number) => { let n = 0, t = 0; for (let x = 0; x < W; x += 3) { t++; if (off(x, y)) n++; } return n / t >= 0.6; };
+  const mx = Math.max(1, Math.round(W * 0.03)), my = Math.max(1, Math.round(H * 0.03));
+  let l = 0; while (l < mx && colOff(l)) l++;
+  let r = 0; while (r < mx && colOff(W - 1 - r)) r++;
+  let t = 0; while (t < my && rowOff(t)) t++;
+  let b = 0; while (b < my && rowOff(H - 1 - b)) b++;
+  if (!(l || r || t || b)) return { jpeg: input, cut: [0, 0, 0, 0] };
+  // 筋のにじみも落とすため、見つけた幅に 1px 足して切る
+  const L = l ? l + 1 : 0, R = r ? r + 1 : 0, T = t ? t + 1 : 0, B = b ? b + 1 : 0;
+  const jpeg = await sharp(input).removeAlpha().extract({ left: L, top: T, width: W - L - R, height: H - T - B }).jpeg({ quality: 92 }).toBuffer();
+  return { jpeg, cut: [T, R, B, L] };
 }

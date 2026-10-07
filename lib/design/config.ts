@@ -1,3 +1,5 @@
+import { hexToLab } from "@/lib/design/color";
+
 /**
  * 「写真に合わせてデザインする」(オーダーシミュレーター)の設定。
  * 写真を読み取り → 天地の物語を決め → 天・地の絵を作る。注文が決まったら職人が別の手順で 4K に清書して印刷する。
@@ -170,21 +172,38 @@ type Brief = {
 // 計算で決めた色(color.ts)。紙の色は必ずこれ、小さな色は 1 か所だけ
 export type Palette = { base: string; accent: string | null };
 
+/**
+ * 色を言葉にする(画像 AI に色名や #番号を渡すと、色見本と番号を絵の中に文字で描き込む。2026-10-08 本人の指摘)。
+ * L*C*h から「明るさ・鮮やかさ・色み」の英語にする。厳密な色名ではなく、柄の色の方向を伝えるため
+ */
+export function colorWords(hex: string) {
+  const { L, a, b } = hexToLab(hex);
+  const C = Math.hypot(a, b), h = ((Math.atan2(b, a) * 180) / Math.PI + 360) % 360;
+  const tone = L < 35 ? "deep" : L > 68 ? "pale" : "";
+  if (C < 7) return `${tone || "mid"} ${L > 85 ? "off-white" : L < 20 ? "near-black" : "gray"}`.trim();
+  const sat = C < 22 ? "muted" : C > 45 ? "vivid" : "soft";
+  const hues: [number, string][] = [[25, "rose"], [50, "red"], [75, "orange-brown"], [100, "ochre yellow"], [135, "yellow-green"],
+    [180, "green"], [225, "teal blue"], [275, "blue"], [310, "indigo violet"], [345, "purple"], [360, "rose"]];
+  const name = hues.find(([lim]) => h < lim)![1];
+  return [tone, sat, name].filter(Boolean).join(" ");
+}
+
 // 天地に共通する言葉(雰囲気・描かないもの・色・紙の色・呼応・一点の光)
 function common(brief: Brief, wishes: Wishes, pal: Palette) {
   const x = wishWords(wishes);
   const feel = `${x.mood || "quiet and elegant"}, ${x.density || "clear, well-sized motifs with generous empty space around them"}${x.tone ? ", " + x.tone : ""}. `;
   // お客様が写真の主役を入れてほしいと明記したときだけ、主役を禁止の一覧から外す
   const avoid = brief.include_subject ? "people" : `${brief.subject}, people`;
-  const colors = brief.colors.map((c) => `${c.name_ja} ${c.hex}`).join(", ");
+  const colors = brief.colors.map((c) => colorWords(c.hex)).join(", ");
   const paper = `Base paper color exactly ${pal.base}, the same everywhere in the background. `;
-  const echo = pal.accent ? `Echo color ${pal.accent}: use it on ONE small element only. ` : "";
+  const echo = pal.accent ? `Echo color (${colorWords(pal.accent)}): use it on ONE small element only. ` : "";
+  const noLabels = "Never write any text, numbers, color codes or color names, and never draw color swatches, palette charts or labels anywhere in the image. ";
   const gold = "At most one small touch of gold leaf or gold dust, in one place only. ";
   // 「控えめに」が重なると画像 AI は柄をほとんど描かなくなる(2026-10-02 実測で柄の面積 0.5〜0.8%)。量をはっきり言う
   const amount =
     "The motifs must be clearly visible at a glance (not tiny, not faint) and cover about 15 to 25 percent of the whole image; " +
     "natural forms with nested large-and-small detail, in odd-numbered groups, balanced asymmetrically. ";
-  return `Feeling: ${feel}Absolutely do not draw: ${avoid}, text, names. Motif colors: ${colors}. ${paper}${echo}${gold}${amount}`;
+  return `Feeling: ${feel}Absolutely do not draw: ${avoid}, text, names. Motif colors: ${colors}. ${paper}${echo}${gold}${amount}${noLabels}`;
 }
 
 /**
@@ -218,6 +237,8 @@ export function retryNote(why: string[]) {
     louder_than_photo: "The previous attempt was too colorful: use quieter, less saturated colors so the photo stays the star.",
     paper_color_off: "The previous attempt used the wrong background: the background must be the exact base paper color given.",
     small_after_trim: "The previous attempt was drawn as a card on a white table: the design itself must fill the entire canvas.",
+    background_not_uniform:
+      "The previous attempt changed the background color in part of the image (a panel, band or block of another color). The background must be ONE uniform paper color everywhere, edge to edge; draw water, sky or ground only as lines and small shapes on that same paper color, never as a filled area of another color.",
   };
   return why.map((w) => t[w]).filter(Boolean).join(" ");
 }
