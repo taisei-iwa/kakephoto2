@@ -877,32 +877,57 @@
       openWish();
     });
 
-    // 要望の画面: 各項目は 1 つだけ選べ、もう一度押すと外れる
+    // 要望の画面: 4 問(1 画面に 1 問)→ 最後に柄の量と自由記入(2026-10-08)。
+    // 各項目は 1 つだけ選べ、もう一度押すと外れる。質問の答えを選ぶと次の問いへ進む(答えずに「次へ」でも進める)
+    const LAST_PAGE = 5;
+    let page = 1;
+    const progressEl = document.getElementById("design-wish-progress");
+    const backBtn = document.getElementById("design-wish-back");
+    const nextBtn = document.getElementById("design-wish-next");
+    const startBtn = document.getElementById("design-wish-ok");
+    const skipBtn = document.getElementById("design-wish-auto");
+    function showPage(n) {
+      page = n;
+      dWish.querySelectorAll(".wish-page").forEach((el) => { el.hidden = Number(el.dataset.page) !== n; });
+      progressEl.textContent = n < LAST_PAGE ? "質問 " + n + " / 4" : "最後に(どちらも任意)";
+      backBtn.hidden = n === 1;
+      nextBtn.hidden = n === LAST_PAGE;
+      startBtn.hidden = n !== LAST_PAGE;
+      skipBtn.hidden = n === LAST_PAGE;
+    }
     dWish.querySelectorAll(".wish-group").forEach((g) => {
       g.querySelectorAll("button").forEach((b) => {
         b.addEventListener("click", () => {
           const on = b.getAttribute("aria-pressed") === "true";
           g.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false"));
           b.setAttribute("aria-pressed", String(!on));
+          // 質問の答えを選んだら、少し間をおいて次の問いへ(選んだことが目で分かるように)
+          if (!on && g.classList.contains("wish-q") && page < LAST_PAGE) {
+            const at = page;
+            setTimeout(() => { if (dWish.open && page === at) showPage(at + 1); }, 260);
+          }
         });
       });
     });
+    backBtn.addEventListener("click", () => { if (page > 1) showPage(page - 1); });
+    nextBtn.addEventListener("click", () => { if (page < LAST_PAGE) showPage(page + 1); });
     function openWish() {
       dWish.querySelectorAll(".wish-group").forEach((g) => {
         g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(wishes[g.dataset.wish] === b.dataset.value)));
       });
       noteEl.value = wishes.note || "";
+      showPage(1);
       dWish.showModal();
     }
     // ×: デザインを始めずに閉じる(次に開いたときは、前回デザインしたときの選択が出る)
     document.getElementById("design-wish-close").addEventListener("click", () => dWish.close());
-    document.getElementById("design-wish-auto").addEventListener("click", () => {
+    skipBtn.addEventListener("click", () => {
       if (!dWish.open) return;
       wishes = {};
       dWish.close();
       start();
     });
-    document.getElementById("design-wish-ok").addEventListener("click", () => {
+    startBtn.addEventListener("click", () => {
       if (!dWish.open) return;
       const w = {};
       dWish.querySelectorAll(".wish-group").forEach((g) => {
@@ -938,7 +963,7 @@
       ga("design_pick", { variant: tenchi.variant || "", count: list.length });
       showToast("デザインしました(" + tenchi.designId + ")。「デザイン前」で元に戻せます。");
     }
-    function chooseDesign(fabs, concept) {
+    function chooseDesign(fabs, concept, words) {
       rememberBeforeDesign(); // 2 案を選ばずに閉じても、デザイン前に戻れるように
       // プレビューは順に描く(同時に描くと割り当ての差し替えがぶつかる)
       return fabs.reduce((chain, f) => chain.then((arr) => renderDesignThumb(f).then((cv) => arr.concat([{ f, cv }]))), Promise.resolve([]))
@@ -946,7 +971,16 @@
           items.forEach((it) => KakeDesign.uploadPreview(it.f.designId, it.cv));
           if (items.length === 1) { finishWith(items[0].f, items); return; }
           const listEl = document.getElementById("design-choice-list");
-          document.getElementById("design-choice-concept").textContent = concept || "";
+          // 4 問の答えから選んだイメージの言葉を、案の説明の前に出す(「自分の答えで決まった」と分かるように)
+          const conceptEl = document.getElementById("design-choice-concept");
+          conceptEl.textContent = "";
+          if (words && words.length) {
+            const wEl = document.createElement("span");
+            wEl.className = "design-choice-words";
+            wEl.textContent = "イメージ「" + words.join("・") + "」";
+            conceptEl.appendChild(wEl);
+          }
+          conceptEl.appendChild(document.createTextNode(concept || ""));
           listEl.innerHTML = "";
           items.forEach((it) => {
             const li = document.createElement("li");
@@ -990,7 +1024,7 @@
         elapsedEl.textContent = Math.round((Date.now() - t0) / 1000) + "秒経過。このままお待ちください。";
       }, 1000);
       dProgress.showModal();
-      ga("design_start", { mood: wishes.mood || "auto", tone: wishes.tone || "auto", density: wishes.density || "auto", note: wishes.note ? 1 : 0 });
+      ga("design_start", { place: wishes.place || "auto", memory: wishes.memory || "auto", light: wishes.light || "auto", clarity: wishes.clarity || "auto", density: wishes.density || "auto", note: wishes.note ? 1 : 0 });
       let res = null;
       KakeDesign.photoJpeg(state.honshiImage.dataUrl, state.honshiImage.cropRect, 768)
         .then((photo) => KakeDesign.analyze(photo, parts.ten, parts.chi, wishes))
@@ -998,7 +1032,7 @@
           res = r;
           stepRead.className = "done";
           stepDraw.className = "active";
-          // 2 案(なじませる / 引き立てる)を同時に描く。片方が失敗しても、できた方で進める
+          // 2 案(なじませる / 差し色を拾う)を同時に描く。片方が失敗しても、できた方で進める
           return Promise.all(r.designs.map((d) => KakeDesign.renderBoth(d.id).then((img) => ({ d, img }), (e) => ({ d, e }))));
         })
         .then((results) => {
@@ -1006,7 +1040,7 @@
           if (!ok.length) throw results[0].e;
           const fabs = ok.map((x) => addDesignFabrics(x.d, x.img.ten, x.img.chi));
           ga("design_done", { seconds: Math.round((Date.now() - t0) / 1000), count: fabs.length });
-          return chooseDesign(fabs, res.concept).then(() => dProgress.close());
+          return chooseDesign(fabs, res.concept, res.words).then(() => dProgress.close());
         })
         .catch((e) => {
           if (dProgress.open) dProgress.close();

@@ -1,15 +1,17 @@
 /**
  * POST /api/design/analyze — 写真を読み取り、天地の案(物語・モチーフ)を決めて、2 案ぶんのデザイン番号を返す。
  * 受け取る: { consent: true, photo: "data:image/jpeg;base64,…"(長い辺 768px 程度), ten: {wMm,hMm}, chi: {wMm,hMm},
- *           wishes?: { mood, tone, density, note }(要望の画面。決まった値と 100 字までの自由記入だけを受け付ける) }
- * 返す:     { concept, designs: [{ id, variant, nakaHex, baseHex }, …] }
+ *           wishes?: { place, memory, light, clarity, density, note }(要望の画面の 4 問と柄の量・自由記入。決まった値と 100 字までの自由記入だけを受け付ける。
+ *           mood・tone は 2026-10-08 までの画面の値で、今も受け付ける) }
+ * 返す:     { concept, words: ["伝統的な", "味わい深い"](4 問の答えから選んだイメージの言葉。答えがなければ空), designs: [{ id, variant, nakaHex, baseHex }, …] }
  * 2026-10-02 美しさの研究(資料/2026-10-02_掛軸の美しさ研究_…)を取り込み:
  * - 色は画像 AI に任せず写真を測って決める(color.ts)。2 案 = blend(写真になじませる)/ echo(写真の差し色を拾う。2026-10-08 に lift から替えた)
  * - 職人の評価(lessons.json)を、次の案づくりの見本として指示に入れる
  * 写真は読み取りと色の計測に使うだけで保存しない(評価用の小さな見本は、画面から別に送られる)。
  */
 import { NextResponse } from "next/server";
-import { ANALYZE_MODEL, ANALYZE_PROMPT, ANALYZE_SCHEMA, Lesson, cleanWishes, lessonsSection, nearestAspect, wishSection } from "@/lib/design/config";
+import { ANALYZE_MODEL, ANALYZE_PROMPT, ANALYZE_SCHEMA, Lesson, cleanWishes, imageWords, lessonsSection, nearestAspect, wishSection } from "@/lib/design/config";
+import { lookFrom } from "@/lib/design/words";
 import { chooseColors, measurePhoto, Variant } from "@/lib/design/color";
 import { analyzeImage, GeminiError } from "@/lib/design/gemini";
 import { DesignMeta, getJSON, newDesignId, putFile } from "@/lib/design/store";
@@ -35,6 +37,8 @@ export async function POST(req: Request) {
 
   try {
     const wishes = cleanWishes(body.wishes);
+    const look = lookFrom(wishes); // 4 問の答えのイメージの点(答えがなければ null)
+    const words = imageWords(wishes).map((w) => w.ja);
     const lessons = (await getJSON<Lesson[]>("lessons.json")) || [];
     const [brief, photo] = await Promise.all([
       analyzeImage(ANALYZE_MODEL, ANALYZE_PROMPT + wishSection(wishes) + lessonsSection(lessons), ANALYZE_SCHEMA, m[1]),
@@ -60,7 +64,7 @@ export async function POST(req: Request) {
     const ids = variants.map(() => newDesignId());
     const designs = [];
     for (let i = 0; i < variants.length; i++) {
-      const c = chooseColors(photo, variants[i], wishes.tone, wishes.mood); // 雰囲気も色に効かせる(2026-10-03)
+      const c = chooseColors(photo, variants[i], wishes.tone, wishes.mood, look); // 雰囲気(2026-10-03)・4 問の答え(2026-10-08)も色に効かせる
       const meta: DesignMeta = {
         id: ids[i],
         createdAt,
@@ -70,6 +74,8 @@ export async function POST(req: Request) {
         variant: variants[i],
         pair: ids[1 - i],
         palette: { base: c.base, naka: c.naka, accent: c.accent },
+        look,
+        words,
         photo: photoNums,
       };
       await putFile(`${ids[i]}/meta.json`, JSON.stringify(meta, null, 1));
@@ -77,8 +83,8 @@ export async function POST(req: Request) {
       designs.push({ id: ids[i], variant: variants[i], nakaHex: c.naka, baseHex: c.base });
     }
     // 職人へのお知らせ(1 回の利用で 1 通。送り終えてから返す: 返した後は関数が止まることがある)
-    await notifyDesignStarted({ ids, createdAt, scene: brief.scene_ja, concept: brief.concept_ja, wishes });
-    return NextResponse.json({ concept: brief.concept_ja, designs });
+    await notifyDesignStarted({ ids, createdAt, scene: brief.scene_ja, concept: brief.concept_ja, wishes, words });
+    return NextResponse.json({ concept: brief.concept_ja, words, designs });
   } catch (e) {
     const status = e instanceof GeminiError ? e.status : 500;
     console.error("design/analyze", e);

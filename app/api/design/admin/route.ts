@@ -61,6 +61,7 @@ async function item(id: string) {
     mitate: meta.brief.mitate_ja,
     season: meta.brief.season,
     wishes: meta.wishes,
+    words: meta.words || [],
     palette: meta.palette,
     photo: meta.photo,
     rendered: !!rec,

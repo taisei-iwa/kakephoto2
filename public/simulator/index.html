@@ -423,40 +423,72 @@
 
   <dialog id="design-wish-dialog" class="picker-dialog design-dialog" aria-modal="true" aria-labelledby="design-wish-title">
     <button type="button" id="design-wish-close" class="dialog-x" aria-label="閉じる">×</button>
-    <h2 id="design-wish-title" class="dialog-title">どんな雰囲気にしますか</h2>
-    <p class="dialog-note">選ばなければ、おまかせで描きます。</p>
-    <div class="wish-group" data-wish="mood">
-      <span class="wish-label">雰囲気</span>
-      <div class="wish-chips">
-        <button type="button" data-value="calm">落ち着いた</button>
-        <button type="button" data-value="gorgeous">華やか</button>
-        <button type="button" data-value="lovely">かわいらしい</button>
-        <button type="button" data-value="dignified">凛とした</button>
+    <h2 id="design-wish-title" class="dialog-title">どんな掛軸にしますか</h2>
+    <!-- 4 問(2026-10-08 本人決定)。答えから雰囲気の言葉を 2 つ選んで描く。どの問いも軸を動かさない答えを 1 つ持つ -->
+    <p class="wish-progress" id="design-wish-progress" aria-live="polite"></p>
+    <div class="wish-page" data-page="1">
+      <p class="dialog-note">4つの質問に答えると、写真に合う雰囲気を言葉で2つに絞って描きます。</p>
+      <div class="wish-group wish-q" data-wish="place">
+        <span class="wish-label">どこに飾りますか</span>
+        <div class="wish-chips">
+          <button type="button" data-value="washitsu">和室・床の間</button>
+          <button type="button" data-value="living">洋室・リビング</button>
+          <button type="button" data-value="entrance">玄関・お店</button>
+          <button type="button" data-value="undecided">まだ決めていない</button>
+        </div>
       </div>
     </div>
-    <div class="wish-group" data-wish="tone">
-      <span class="wish-label">色み</span>
-      <div class="wish-chips">
-        <button type="button" data-value="photo">写真の色に合わせる</button>
-        <button type="button" data-value="pale">淡く</button>
-        <button type="button" data-value="deep">深く</button>
+    <div class="wish-page" data-page="2" hidden>
+      <div class="wish-group wish-q" data-wish="memory">
+        <span class="wish-label">どんな思い出の写真ですか</span>
+        <div class="wish-chips">
+          <button type="button" data-value="celebration">お祝い・記念日</button>
+          <button type="button" data-value="nostalgia">懐かしい思い出</button>
+          <button type="button" data-value="daily">日々の暮らし</button>
+          <button type="button" data-value="quiet">静かな景色・作品</button>
+          <button type="button" data-value="none">どれでもない</button>
+        </div>
       </div>
     </div>
-    <div class="wish-group" data-wish="density">
-      <span class="wish-label">柄の量</span>
-      <div class="wish-chips">
-        <button type="button" data-value="airy">余白を多く</button>
-        <button type="button" data-value="balanced">ほどよく</button>
-        <button type="button" data-value="rich">にぎやかに</button>
+    <div class="wish-page" data-page="3" hidden>
+      <div class="wish-group wish-q" data-wish="light">
+        <span class="wish-label">部屋に掛けたとき、どう見せたいですか</span>
+        <div class="wish-chips">
+          <button type="button" data-value="light">明るく軽やかに</button>
+          <button type="button" data-value="deep">落ち着いた深みで</button>
+          <button type="button" data-value="any">どちらでも</button>
+        </div>
       </div>
     </div>
-    <label class="wish-note-label" for="design-wish-note">入れたいもの(自由記入・100字まで)</label>
-    <textarea id="design-wish-note" class="wish-note" maxlength="100" rows="2" placeholder="例:桜を入れてほしい / 娘の名前の由来のひまわり / 海の思い出"></textarea>
-    <p class="dialog-note">文字や人物は描けません。</p>
-    <div class="dialog-btns">
-      <button type="button" id="design-wish-auto" class="secondary">おまかせで始める</button>
+    <div class="wish-page" data-page="4" hidden>
+      <div class="wish-group wish-q" data-wish="clarity">
+        <span class="wish-label">色の感じはどちらが好みですか</span>
+        <div class="wish-chips">
+          <button type="button" data-value="clear">すっきり澄んだ色</button>
+          <button type="button" data-value="muted">渋く味わいのある色</button>
+          <button type="button" data-value="any">どちらでも</button>
+        </div>
+      </div>
+    </div>
+    <div class="wish-page" data-page="5" hidden>
+      <div class="wish-group" data-wish="density">
+        <span class="wish-label">柄の量</span>
+        <div class="wish-chips">
+          <button type="button" data-value="airy">余白を多く</button>
+          <button type="button" data-value="balanced">ほどよく</button>
+          <button type="button" data-value="rich">にぎやかに</button>
+        </div>
+      </div>
+      <label class="wish-note-label" for="design-wish-note">入れたいもの(自由記入・100字まで)</label>
+      <textarea id="design-wish-note" class="wish-note" maxlength="100" rows="2" placeholder="例:桜を入れてほしい / 娘の名前の由来のひまわり / 海の思い出"></textarea>
+      <p class="dialog-note">どちらも空欄のままで構いません。文字や人物は描けません。</p>
+    </div>
+    <div class="dialog-btns wish-nav">
+      <button type="button" id="design-wish-back" class="secondary">戻る</button>
+      <button type="button" id="design-wish-next">次へ</button>
       <button type="button" id="design-wish-ok">この内容で始める</button>
     </div>
+    <button type="button" id="design-wish-auto" class="wish-skip">質問を飛ばして、おまかせで始める</button>
   </dialog>
 
   <dialog id="design-choice-dialog" class="picker-dialog design-dialog design-choice-dialog" aria-modal="true" aria-labelledby="design-choice-title">

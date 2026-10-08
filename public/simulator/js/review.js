@@ -13,10 +13,15 @@
     mood: { calm: "落ち着いた", gorgeous: "華やか", lovely: "かわいらしい", dignified: "凛とした" },
     tone: { photo: "写真の色に合わせる", pale: "淡く", deep: "深く" },
     density: { airy: "余白を多く", balanced: "ほどよく", rich: "にぎやかに" },
+    // 2026-10-08 からの 4 問の答え
+    place: { washitsu: "和室・床の間", living: "洋室・リビング", entrance: "玄関・お店", undecided: "飾る場所は未定" },
+    memory: { celebration: "お祝い・記念日", nostalgia: "懐かしい思い出", daily: "日々の暮らし", quiet: "静かな景色・作品" },
+    light: { light: "明るく軽やかに", deep: "落ち着いた深みで" },
+    clarity: { clear: "すっきり澄んだ色", muted: "渋く味わいのある色" },
   };
   const FAIL = {
     motifs_too_few: "柄が少なすぎ", motifs_too_many: "柄が多すぎ", louder_than_photo: "写真より鮮やか",
-    paper_color_off: "紙の色が大きくずれ", small_after_trim: "台紙の余白が大きい",
+    paper_color_off: "紙の色が大きくずれ", small_after_trim: "台紙の余白が大きい", background_not_uniform: "地の一部が別の色",
   };
 
   let token = "";
@@ -94,13 +99,15 @@
     // 共通の情報
     li.appendChild(text("rv-concept", a.concept || ""));
     const w = a.wishes || {};
-    const wishText = [WISH.mood[w.mood], WISH.tone[w.tone], WISH.density[w.density], w.note ? "「" + w.note + "」" : ""].filter(Boolean).join("・") || "おまかせ";
+    const wishText = [WISH.place[w.place], WISH.memory[w.memory], WISH.light[w.light], WISH.clarity[w.clarity],
+      WISH.mood[w.mood], WISH.tone[w.tone], WISH.density[w.density], w.note ? "「" + w.note + "」" : ""].filter(Boolean).join("・") || "おまかせ";
     const meta = document.createElement("p");
     meta.className = "rv-meta";
     [
       ["写真", (a.scene || "") + (a.season ? "(" + (SEASON[a.season] || a.season) + ")" : "")],
       ["見立て", a.mitate || "―"],
       ["要望", wishText],
+      ["イメージ", (a.words || []).join("・") || "―"],
       ["日時", new Date(a.createdAt).toLocaleString("ja-JP")],
     ].forEach(([k, v]) => { const b = document.createElement("b"); b.textContent = k + " "; meta.appendChild(b); meta.appendChild(document.createTextNode(v)); meta.appendChild(document.createElement("br")); });
     li.appendChild(meta);

@@ -10,6 +10,7 @@
  * lift は過去に作った案の表示のために残す
  */
 import sharp from "sharp";
+import type { Look } from "@/lib/design/words";
 
 export type Lab = { L: number; a: number; b: number };
 export type Swatch = Lab & { C: number; h: number; hex: string; weight: number };
@@ -161,12 +162,12 @@ const MOOD: Record<string, { light: number; deepL?: number; cMul: number; cMax?:
   dignified: { light: 90, deepL: 20, cMul: 0.5, cMax: 8 },
 };
 
-export function chooseColors(p: PhotoColors, variant: Variant, tone?: string, mood?: string) {
+export function chooseColors(p: PhotoColors, variant: Variant, tone?: string, mood?: string, look?: Look | null) {
   // 色相: 写真の主色にそろえる(主色が無彩色に近ければ、和紙らしい暖かい無彩色寄り)。
   // echo は写真の小さな色(呼応のアクセント)の色相にする。小さな色が見つからない写真では、主色のまま明るさだけ一段ずらす
   const echoSrc = variant === "echo" ? p.accent : null;
   const tinted = echoSrc ? true : p.dominant.C >= 8;
-  const h = echoSrc ? echoSrc.h : tinted ? p.dominant.h : 75;
+  let h = echoSrc ? echoSrc.h : tinted ? p.dominant.h : 75;
   // 彩度: 写真の主色より控える(天地は最も低彩度)。ただし灰色に落とさない(鳥の子・藍染めくらいの色みは残す)
   let C = echoSrc ? clamp(echoSrc.C * 0.45, 6, 16) : tinted ? clamp(p.dominant.C * 0.45, 6, 16) : 5;
   // 差し色が主色と中差(約 70〜110 度)にあるときは、紙の彩度を控えて写真の主色とぶつからないようにする(仮の目安)
@@ -187,6 +188,20 @@ export function chooseColors(p: PhotoColors, variant: Variant, tone?: string, mo
     else if (m.noDeep) L = m.light - 4; // かわいらしい: 暗い地は使わない
     else if (m.deepL != null) L = m.deepL; // 凛とした: 暗い側はより深く
     C = clamp(C * m.cMul, 2, m.cMax ?? 16);
+  }
+  // 4 問の答え(イメージの点)を地色に効かせる。2026-10-08。幅は仮置きで、本人の評価で直す。
+  // 明るい側・深い側は写真のまわりに合わせたまま(近い色が選ばれる)、その中で明るさ・鮮やかさ・色みを少し動かす
+  if (look) {
+    // かたい・深い(y+)ほど暗く、やわらかい・明るい(y−)ほど明るく
+    L = L >= 50 ? clamp(L - 6 * look.y, 68, 93) : clamp(L - 8 * look.y, 10, 42);
+    // 澄んだ(z+)ほど鮮やかに、渋い(z−)ほど控えめに
+    C = clamp(C * (1 + 0.35 * look.z), 2, 18);
+    // 温かい(x+)は黄赤、涼しい(x−)は青の側へ、最大 12 度だけ寄せる(色みのある写真のときだけ)
+    if (tinted && Math.abs(look.x) > 0.1) {
+      const target = look.x > 0 ? 60 : 250, step = 12 * Math.abs(look.x);
+      const d = ((target - h + 540) % 360) - 180;
+      h = (h + Math.sign(d) * Math.min(Math.abs(d), step) + 360) % 360;
+    }
   }
   if (tone === "pale") { L = clamp(L + 8, 12, 93); C *= 0.8; }
   if (tone === "deep") { L = clamp(L - 12, 10, 90); C = clamp(C * 1.25, 2, 18); }

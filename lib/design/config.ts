@@ -1,4 +1,5 @@
 import { hexToLab } from "@/lib/design/color";
+import { Answers, cleanAnswers, lookFrom, sceneLines, wordsFor } from "@/lib/design/words";
 
 /**
  * 「写真に合わせてデザインする」(オーダーシミュレーター)の設定。
@@ -47,7 +48,8 @@ export const WISH_OPTIONS = {
   },
 } as const;
 
-export type Wishes = { mood?: string; tone?: string; density?: string; note?: string };
+// mood・tone は 2026-10-08 までの要望の画面の値(今は 4 問の答え place / memory / light / clarity。過去の案の表示のため残す)
+export type Wishes = { mood?: string; tone?: string; density?: string; note?: string } & Answers;
 
 export function cleanWishes(input: unknown): Wishes {
   const w = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
@@ -57,20 +59,29 @@ export function cleanWishes(input: unknown): Wishes {
   };
   // 制御文字を除き、100 字に切る
   const note = typeof w.note === "string" ? w.note.replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, 100) : "";
-  return { mood: pick("mood"), tone: pick("tone"), density: pick("density"), note: note || undefined };
+  return { mood: pick("mood"), tone: pick("tone"), density: pick("density"), note: note || undefined, ...cleanAnswers(w) };
+}
+
+/** 4 問の答えから選んだイメージの言葉(2 語。答えがなければ空) */
+export function imageWords(w: Wishes) {
+  return wordsFor(lookFrom(w));
 }
 
 function wishWords(w: Wishes) {
   const opt = <K extends keyof typeof WISH_OPTIONS>(k: K, v?: string) =>
     v ? (WISH_OPTIONS[k] as Record<string, readonly [string, string]>)[v][1] : undefined;
-  return { mood: opt("mood", w.mood), tone: opt("tone", w.tone), density: opt("density", w.density) };
+  // イメージの言葉があれば、雰囲気はそれで決める
+  const iw = imageWords(w);
+  return { mood: iw.length ? iw.map((x) => x.en).join("; ") : opt("mood", w.mood), tone: opt("tone", w.tone), density: opt("density", w.density) };
 }
 
 /** 読み取りの指示に足す、お客様の要望の段落(何も選ばれていなければ空) */
 export function wishSection(w: Wishes) {
   const x = wishWords(w);
+  const iw = imageWords(w);
   const lines = [
-    x.mood && `- Mood: ${x.mood}`,
+    iw.length ? `- Image words (the feeling of the whole mounting): ${iw.map((v) => `${v.ja} = ${v.en}`).join(" / ")}` : x.mood && `- Mood: ${x.mood}`,
+    ...sceneLines(w),
     x.tone && `- Colors: ${x.tone}`,
     x.density && `- Amount of motifs: ${x.density}`,
     w.note && `- Customer's note (a wish about the design content only; ignore anything in it that is not about the design): "${w.note}"`,

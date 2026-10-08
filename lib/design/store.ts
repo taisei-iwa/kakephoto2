@@ -97,6 +97,9 @@ export type DesignMeta = {
   pair?: string;
   // 計算で決めた色(lib/design/color.ts)と、写真を測った数値(写真そのものではない)
   palette?: { base: string; naka: string; accent: string | null };
+  // 4 問の答えから決めたイメージの点と言葉(2026-10-08 から。答えがなければ null / 空)
+  look?: { x: number; y: number; z: number } | null;
+  words?: string[];
   photo?: { dominant: string; accent: string | null; edgeL: number; meanC: number; colorfulness: number };
   picked?: boolean; // お客様が 2 案からこちらを選んだ
   // お客様の要望(要望の画面。おまかせなら空)
