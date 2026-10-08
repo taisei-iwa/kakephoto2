@@ -614,10 +614,17 @@
     btn.classList.toggle("needs-photo", !state.honshiImage);
   }
 
+  // 4 問の画面(initDesign)と裂地の見本(initSuggest)をつなぐ。2026-10-08:
+  // 「裂地の見本から選ぶ」も先に 4 問を聞き、答えに近い順に見本を並べる。おまかせデザインで「柄を入れない」を選んだときも見本へ
+  let openWishFor = null; // (mode: "design" | "suggest") => void
+  let runSuggestWith = null; // (look, via) => void
+
   function initSuggest() {
     const btn = document.getElementById("suggest-btn");
     const dlg = document.getElementById("suggest-dialog");
     if (!btn || !dlg || typeof KakeSuggest === "undefined") return;
+    const noteEl = document.getElementById("suggest-dialog-note");
+    const NOTE = noteEl ? noteEl.textContent : "";
     const listEl = document.getElementById("suggest-list");
     document.getElementById("suggest-close-btn").addEventListener("click", () => dlg.close());
 
@@ -646,6 +653,12 @@
         const h = document.createElement("p");
         h.className = "suggest-label";
         h.textContent = plan.label + "　" + plan.summary;
+        if (plan.closest) {
+          const badge = document.createElement("span");
+          badge.className = "suggest-closest";
+          badge.textContent = "ご回答にいちばん近い案";
+          h.appendChild(badge);
+        }
         const p = document.createElement("p");
         p.className = "suggest-reason";
         p.textContent = plan.reason;
@@ -667,16 +680,17 @@
       })), Promise.resolve());
     }
 
-    btn.addEventListener("click", () => {
-      if (!state.honshiImage) { showToast("先に写真を入れてください(1 写真)。"); return; }
+    // look: 4 問の答えの点(なければ null)。via: どこから来たか(GA 用)
+    function runSuggest(look, via) {
       btn.disabled = true;
       btn.classList.add("busy"); // カードの中身(素材の札など)は書き換えない
-      if (typeof gtag === "function") gtag("event", "suggest_open", { size: state.sizeMode, format: state.formatId });
+      if (typeof gtag === "function") gtag("event", "suggest_open", { via: via || "button", answered: look ? 1 : 0, size: state.sizeMode, format: state.formatId });
+      if (noteEl) noteEl.textContent = look ? "ご回答の雰囲気に近い印象の裂地で、3通りの組み方をご提案します。近い順に並べています。選ぶとプレビューに反映され、そのあとご自分で裂地を変えることもできます。" : NOTE;
       loadPhoto()
         .then((img) => {
           const photo = KakeSuggest.measurePhoto(img);
           if (!photo) throw new Error("photo");
-          return KakeSuggest.measureFabrics(state.fabrics.filter((f) => !f.generated)).then((fm) => KakeSuggest.buildPlans(photo, fm));
+          return KakeSuggest.measureFabrics(state.fabrics.filter((f) => !f.generated)).then((fm) => KakeSuggest.buildPlans(photo, fm, look));
         })
         .then((plans) => {
           if (!plans.length) { showToast("ご提案できる裂地が足りませんでした。"); return; }
@@ -684,6 +698,13 @@
         })
         .catch(() => showToast("ご提案の作成に失敗しました。写真を入れ直してお試しください。"))
         .then(() => { btn.disabled = false; btn.classList.remove("busy"); });
+    }
+    runSuggestWith = runSuggest;
+
+    btn.addEventListener("click", () => {
+      if (!state.honshiImage) { showToast("先に写真を入れてください(1 写真)。"); return; }
+      if (openWishFor) openWishFor("suggest");
+      else runSuggest(null, "button");
     });
   }
 
@@ -758,9 +779,26 @@
 
   const VARIANT_LABEL = { blend: "写真になじませる", echo: "写真の差し色を拾う", lift: "写真を引き立てる" };
 
+  // 中廻しを裂地にしたことで増える料金(和紙の無地にしたときとの差)。2026-10-08 本人「+○円があった方が丁寧」。
+  // 割り当てを一時的に差し替えて計算し、必ず元へ戻す
+  function nakaSurcharge(tenchi) {
+    if (!tenchi.nakaFabricId) return 0;
+    const backup = Object.assign({}, state.assignments);
+    applyDesign(tenchi, true);
+    const withFab = Object.assign({}, state.assignments);
+    state.assignments = backup;
+    const withPaper = Object.assign({}, withFab);
+    Object.keys(withPaper).forEach((k) => { if (withPaper[k] === tenchi.nakaFabricId) withPaper[k] = tenchi.paperId; });
+    const cost = (a) => computeTotal({ sizePrice: 0, assignments: a, fabrics: state.fabrics, groups: effectiveGroups(), boxKey: state.boxKey, optionSurcharge: 0 }).fabric;
+    return Math.max(0, cost(withFab) - cost(withPaper));
+  }
+
   // デザインを天地に割り当てる。中廻し+柱は、新しいデザインのとき、いまデザインの紙が入っているとき、
   // まだ何も選んでいない(無地・お任せ)ときにそのデザインの紙にする(お客様が裂地を選んでいたら、その裂地を残す)。
   // 未選択も含めるのは、履歴の見本(中廻しは紙の色)と切り替え後の見た目を揃えるため(2026-10-06)
+  // 2026-10-08: 中廻しは、紙の色と答えの印象に十分近い登録済みの裂地があればそれを使う(tenchi.nakaFabricId)。
+  // デザインが自動で入れた裂地は autoNakaIds で覚え、デザインを切り替えたときは紙と同じく差し替える
+  const autoNakaIds = new Set();
   function applyDesign(tenchi, isNew) {
     const groups = effectiveGroups();
     const set = (gk, id) => {
@@ -769,9 +807,11 @@
     };
     const curNaka = state.assignments.nakaUe || "";
     set("tenchi", tenchi.id);
-    if (isNew || !curNaka || curNaka.indexOf("paper_") === 0) {
-      set("nakamawashi", tenchi.paperId);
-      set("hashira", tenchi.paperId);
+    if (isNew || !curNaka || curNaka.indexOf("paper_") === 0 || autoNakaIds.has(curNaka)) {
+      const nakaId = tenchi.nakaFabricId || tenchi.paperId;
+      if (tenchi.nakaFabricId) autoNakaIds.add(tenchi.nakaFabricId);
+      set("nakamawashi", nakaId);
+      set("hashira", nakaId);
     }
   }
 
@@ -838,7 +878,8 @@
         b.appendChild(sp);
       };
       part("t", fab.cover.ten);
-      part("n", fab.cover.fallbackHex || "#e9e2d4");
+      const nf = fab.nakaFabricId && state.fabrics.find((f) => f.id === fab.nakaFabricId);
+      part("n", nf ? nf.dataUrl : fab.cover.fallbackHex || "#e9e2d4");
       part("c", fab.cover.chi);
       b.addEventListener("click", () => {
         rememberBeforeDesign(); // 自分で選び直した裂地から切り替えるときも、その選び方を残す
@@ -874,13 +915,16 @@
       try { sessionStorage.setItem(DESIGN_CONSENT_KEY, "1"); } catch (e) { /* 保存できなくても今回は進める */ }
       ga("design_consent");
       dConsent.close();
-      openWish();
+      openWish("design");
     });
 
     // 要望の画面: 4 問(1 画面に 1 問)→ 最後に柄の量と自由記入(2026-10-08)。
     // 各項目は 1 つだけ選べ、もう一度押すと外れる。質問の答えを選ぶと次の問いへ進む(答えずに「次へ」でも進める)
-    const LAST_PAGE = 5;
+    // mode: "design" = おまかせデザイン(4 問 → 柄の量・自由記入)/ "suggest" = 裂地の見本(4 問だけ)
+    let wishMode = "design";
+    let LAST_PAGE = 5;
     let page = 1;
+    const leadEl = document.getElementById("design-wish-lead");
     const progressEl = document.getElementById("design-wish-progress");
     const backBtn = document.getElementById("design-wish-back");
     const nextBtn = document.getElementById("design-wish-next");
@@ -889,7 +933,7 @@
     function showPage(n) {
       page = n;
       dWish.querySelectorAll(".wish-page").forEach((el) => { el.hidden = Number(el.dataset.page) !== n; });
-      progressEl.textContent = n < LAST_PAGE ? "質問 " + n + " / 4" : "最後に(どちらも任意)";
+      progressEl.textContent = n <= 4 ? "質問 " + n + " / 4" : "最後に(どちらも任意)";
       backBtn.hidden = n === 1;
       nextBtn.hidden = n === LAST_PAGE;
       startBtn.hidden = n !== LAST_PAGE;
@@ -911,7 +955,14 @@
     });
     backBtn.addEventListener("click", () => { if (page > 1) showPage(page - 1); });
     nextBtn.addEventListener("click", () => { if (page < LAST_PAGE) showPage(page + 1); });
-    function openWish() {
+    function openWish(mode) {
+      wishMode = mode === "suggest" ? "suggest" : "design";
+      LAST_PAGE = wishMode === "suggest" ? 4 : 5;
+      leadEl.textContent = wishMode === "suggest"
+        ? "4つの質問に答えると、ご回答に近い印象の裂地を選んでご提案します。"
+        : "4つの質問に答えると、写真に合う雰囲気を言葉で2つに絞って描きます。";
+      startBtn.textContent = wishMode === "suggest" ? "この内容で見本を見る" : "この内容で始める";
+      skipBtn.textContent = wishMode === "suggest" ? "質問を飛ばして、見本を見る" : "質問を飛ばして、おまかせで始める";
       dWish.querySelectorAll(".wish-group").forEach((g) => {
         g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(wishes[g.dataset.wish] === b.dataset.value)));
       });
@@ -919,25 +970,39 @@
       showPage(1);
       dWish.showModal();
     }
+    openWishFor = openWish;
     // ×: デザインを始めずに閉じる(次に開いたときは、前回デザインしたときの選択が出る)
     document.getElementById("design-wish-close").addEventListener("click", () => dWish.close());
     skipBtn.addEventListener("click", () => {
       if (!dWish.open) return;
-      wishes = {};
       dWish.close();
+      if (wishMode === "suggest") { if (runSuggestWith) runSuggestWith(null, "skip"); return; }
+      wishes = {};
       start();
     });
     startBtn.addEventListener("click", () => {
       if (!dWish.open) return;
       const w = {};
       dWish.querySelectorAll(".wish-group").forEach((g) => {
+        if (wishMode === "suggest" && !g.classList.contains("wish-q")) return; // 見本では 4 問だけ使う
         const on = g.querySelector('button[aria-pressed="true"]');
         if (on) w[g.dataset.wish] = on.dataset.value;
       });
+      dWish.close();
+      if (wishMode === "suggest") {
+        // 4 問の答えだけ入れ替え、デザインの柄の量・自由記入は残す
+        wishes = Object.assign({}, wishes, { place: w.place, memory: w.memory, light: w.light, clarity: w.clarity });
+        if (runSuggestWith) runSuggestWith(KakeSuggest.lookFrom(w), "questions");
+        return;
+      }
       const note = noteEl.value.trim().slice(0, 100);
       if (note) w.note = note;
       wishes = w;
-      dWish.close();
+      // 柄を入れない: 絵は描かず、答えに近い登録済みの裂地で仕立てる(AI は使わない)
+      if (w.density === "none") {
+        if (runSuggestWith) runSuggestWith(KakeSuggest.lookFrom(w), "no_pattern");
+        return;
+      }
       start();
     });
     // 作成中は閉じさせない(Esc でも)
@@ -945,7 +1010,7 @@
 
     btn.addEventListener("click", () => {
       if (!state.honshiImage) { showToast("先に写真を入れてください(1 写真)。"); return; }
-      if (consented()) { openWish(); return; }
+      if (consented()) { openWish("design"); return; }
       agree.checked = false;
       okBtn.disabled = true;
       dConsent.showModal();
@@ -971,6 +1036,14 @@
           items.forEach((it) => KakeDesign.uploadPreview(it.f.designId, it.cv));
           if (items.length === 1) { finishWith(items[0].f, items); return; }
           const listEl = document.getElementById("design-choice-list");
+          // 素材の注意書き: 中廻しに裂地を使う案があれば書き分ける
+          const matEl = document.getElementById("design-choice-mat");
+          if (matEl) {
+            if (!matEl.dataset.paperOnly) matEl.dataset.paperOnly = matEl.innerHTML;
+            matEl.innerHTML = items.some((it) => it.f.nakaFabricId)
+              ? "天地は、和紙に絵柄を印刷して仕立てます。中廻しは、案によって本物の<ruby>裂地<rt>きれじ</rt></ruby>を使います。"
+              : matEl.dataset.paperOnly;
+          }
           // 4 問の答えから選んだイメージの言葉を、案の説明の前に出す(「自分の答えで決まった」と分かるように)
           const conceptEl = document.getElementById("design-choice-concept");
           conceptEl.textContent = "";
@@ -993,11 +1066,20 @@
             const label = document.createElement("p");
             label.className = "design-choice-label";
             label.textContent = VARIANT_LABEL[it.f.variant] || "";
+            const nf = it.f.nakaFabricId && state.fabrics.find((f) => f.id === it.f.nakaFabricId);
+            const nakaLine = document.createElement("p");
+            nakaLine.className = "design-choice-naka";
+            if (nf) {
+              const plus = nakaSurcharge(it.f);
+              nakaLine.textContent = "中廻し: 裂地「" + nf.name + "」" + (plus > 0 ? "(+" + formatYen(plus) + ")" : "(追加料金なし)");
+            } else {
+              nakaLine.textContent = "中廻し: 和紙(無地)";
+            }
             const pick = document.createElement("button");
             pick.type = "button";
             pick.textContent = "こちらにする";
             pick.addEventListener("click", () => { dChoice.close(); finishWith(it.f, items); });
-            li.appendChild(thumb); li.appendChild(label); li.appendChild(pick);
+            li.appendChild(thumb); li.appendChild(label); li.appendChild(nakaLine); li.appendChild(pick);
             listEl.appendChild(li);
           });
           if (dProgress.open) dProgress.close();
@@ -1040,7 +1122,16 @@
           if (!ok.length) throw results[0].e;
           const fabs = ok.map((x) => addDesignFabrics(x.d, x.img.ten, x.img.chi));
           ga("design_done", { seconds: Math.round((Date.now() - t0) / 1000), count: fabs.length });
-          return chooseDesign(fabs, res.concept, res.words).then(() => dProgress.close());
+          // 中廻しに使える登録済みの裂地を探す(紙の色と答えの印象に近いもの)。見つからなければ紙のまま。
+          // 測るのに失敗しても、デザインは紙のまま進める
+          const look = KakeSuggest.lookFrom(wishes);
+          return KakeSuggest.measureFabrics(state.fabrics.filter((f) => !f.generated))
+            .then((fm) => { fabs.forEach((t, i) => { const nf = KakeSuggest.matchNaka(fm, ok[i].d.nakaHex, look); if (nf) t.nakaFabricId = nf.id; }); }, () => {})
+            .then(() => {
+              ga("design_naka", { fabric: fabs.filter((t) => t.nakaFabricId).length, count: fabs.length });
+              return chooseDesign(fabs, res.concept, res.words);
+            })
+            .then(() => dProgress.close());
         })
         .catch((e) => {
           if (dProgress.open) dProgress.close();

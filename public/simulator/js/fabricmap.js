@@ -236,5 +236,17 @@
     });
   }
 
-  window.KakeFabricMap = { render: render, measure: measure, emotion: emotion };
+  // 4 問の答え(-1〜1 の 3 軸)と比べるための、裂地の印象の位置(2026-10-08)。
+  // x = 温かい(+)↔ 涼しい(−) / y = 重い・かたい(+)↔ 軽い・やわらかい(−) / z = 澄んだ(+)↔ くすんだ(−)。
+  // 割る幅は地図の裂地の散らばり(暖かさ ±0.6・重さ ±0.9・澄み具合 ±0.9 でほぼ収まる)からの仮置き
+  function impression(m) {
+    const c = (v) => Math.max(-1, Math.min(1, v));
+    return { x: c((m.heat - MID.heat) / 0.6), y: c((m.weight - MID.weight) / 0.9), z: c((m.clarity - ACT_MID) / 0.9) };
+  }
+  function hexLab(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return rgbToLab((n >> 16) & 255, (n >> 8) & 255, n & 255);
+  }
+
+  window.KakeFabricMap = { render: render, measure: measure, emotion: emotion, impression: impression, hexLab: hexLab };
 })();
