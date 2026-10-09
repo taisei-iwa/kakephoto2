@@ -410,7 +410,7 @@ function SpPage() {
         <h3 className="text-[18px] tracking-[3px] text-center underline mb-[24px]">How to Order</h3>
         <div className="mb-[60px]">
           {[
-            { step: "Step 1", text: "Reach out via our official LINE or the contact form." },
+            { step: "Step 1", text: "Reach out via the contact form (or our official LINE, if you use LINE)." },
             { step: "Step 2", text: "Our artisan will follow up to discuss the details." },
             { step: "Step 3", text: "We curate kireji fabric recommendations from your photograph." },
             { step: "Step 4", text: "Once you approve the fabric, we begin crafting." },
@@ -426,17 +426,20 @@ function SpPage() {
           * Pricing varies with the fabric and specifications. We will tailor a comfortable proposal to your preferences and budget &mdash; please feel free to reach out.
         </p>
 
-        {/* CTA */}
-        <a href="https://line.me/R/ti/p/@447updgf" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 w-full h-[56px] bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] mb-[12px]">
-          Order via Official LINE
-          <Image src="/images/line-icon.svg" alt="LINE" width={32} height={30} />
-        </a>
-        <Link href="/en/contact" className="flex items-center justify-center gap-2 w-full h-[56px] bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] mb-[30px]">
+        {/* CTA(2026-10-09: 海外では LINE を使わない人が多いので、フォームを先に出す) */}
+        <Link href="/en/contact" className="flex items-center justify-center gap-2 w-full h-[56px] bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] mb-[12px]">
           Order via Contact Form
           <span className="inline-block w-[24px] h-[1px] bg-[#710b26] relative">
             <span className="absolute right-0 top-1/2 -translate-y-1/2 border-r-[1.5px] border-t-[1.5px] border-[#710b26] w-[6px] h-[6px] rotate-45" />
           </span>
         </Link>
+        <a href="https://line.me/R/ti/p/@447updgf" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-3 w-full h-[56px] bg-[#f7f7f7] text-[#710b26] text-[13px] tracking-[2px] mb-[10px]">
+          Order via Official LINE
+          <Image src="/images/line-icon.svg" alt="LINE" width={32} height={30} />
+        </a>
+        <p className="text-[10px] tracking-[0.5px] text-center leading-[18px] mb-[30px]">
+          LINE is mainly used in Japan and parts of Asia. If you don&rsquo;t use LINE, please use the contact form &mdash; we reply in English.
+        </p>
 
         {/* Gallery */}
         <div className="overflow-hidden -mx-[20px] mb-[30px]">
@@ -625,7 +628,7 @@ export default function HomeEn() {
               <h3 className="text-[28px] tracking-[7px] text-center underline mb-[60px]">How to Order</h3>
               <div>
                 {[
-                  { step: "Step 1", text: "Reach out via our official LINE or the contact form." },
+                  { step: "Step 1", text: "Reach out via the contact form (or our official LINE, if you use LINE)." },
                   { step: "Step 2", text: "Our artisan will follow up to discuss the details." },
                   { step: "Step 3", text: "We curate kireji fabric recommendations based on your photograph. Let us know if you have any color preferences at this stage." },
                   { step: "Step 4", text: "Once you have reviewed the actual fabrics, we begin crafting." },
@@ -641,25 +644,29 @@ export default function HomeEn() {
               </p>
             </div>
 
-            {/* CTA Buttons */}
+            {/* CTA Buttons(2026-10-09: フォームを左=先、LINE を右に) */}
             <a
               href="https://line.me/R/ti/p/@447updgf"
               target="_blank"
               rel="noopener noreferrer"
-              className="absolute left-[300px] top-[1830px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[3px] hover:opacity-90 transition-opacity"
+              className="absolute left-[980px] top-[1830px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[3px] hover:opacity-90 transition-opacity"
             >
               Order via KAKEPHOTO Official LINE
               <Image src="/images/line-icon.svg" alt="LINE" width={57} height={54} />
             </a>
             <Link
               href="/en/contact"
-              className="absolute left-[980px] top-[1830px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[3px] hover:opacity-90 transition-opacity"
+              className="absolute left-[300px] top-[1830px] flex items-center justify-center gap-4 w-[640px] h-[110px] bg-[#f7f7f7] border border-white text-[#710b26] text-[20px] tracking-[3px] hover:opacity-90 transition-opacity"
             >
               Order via Contact Form
               <span className="inline-block w-[41px] h-[1px] bg-[#710b26] relative ml-2">
                 <span className="absolute right-0 top-1/2 -translate-y-1/2 border-r-[2px] border-t-[2px] border-[#710b26] w-[8px] h-[8px] rotate-45" />
               </span>
             </Link>
+
+            <p className="absolute left-[300px] top-[1966px] w-[1320px] text-center text-[14px] tracking-[1px]">
+              LINE is mainly used in Japan and parts of Asia. If you don&rsquo;t use LINE, please use the contact form &mdash; we reply in English.
+            </p>
 
             {/* Gallery */}
             <div className="absolute left-0 top-[2129px] w-[1920px] overflow-hidden">
