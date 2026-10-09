@@ -176,8 +176,8 @@
         <!-- AR 体験(スマホ・タブレットのときだけ JS が表示。PC では非表示) -->
         <button type="button" id="ar-btn" class="ar-btn" hidden>壁に掛けてみる(AR体験)</button>
         <!-- 5 の最後の一歩。押すと LINE かフォームかを選ぶ(下の「相談する」と同じ選択画面) -->
-        <button type="button" id="consult-open" class="consult-btn">このデザインで<br class="sp-br" />相談してみる</button>
-        <p class="consult-note">LINE かフォームか、お好きな方法を選べます。</p>
+        <button type="button" id="consult-open" class="consult-btn">このデザインで<br class="sp-br" />見積もりをもらう(無料)</button>
+        <p class="consult-note">この時点ではご注文になりません。LINE かフォームか、お好きな方法を選べます。</p>
       </fieldset>
 
       <div class="step-nav">
@@ -342,6 +342,13 @@
   <dialog id="consult-dialog" class="picker-dialog consult-dialog" aria-modal="true" aria-labelledby="consult-title">
     <button type="button" id="consult-close" class="dialog-x" aria-label="閉じる">×</button>
     <h2 id="consult-title" class="dialog-title">ご相談の方法を選んでください</h2>
+    <!-- 押したあとに何が起きるかを先に見せ、相談の重さを下げる(2026-10-09) -->
+    <ol class="consult-flow">
+      <li>いまの内容とプレビューを送る</li>
+      <li>職人が拝見し、お見積もりとご提案をお返事します</li>
+      <li>ご納得いただけたら、ご注文・制作に進みます</li>
+    </ol>
+    <p class="consult-free">お見積もりは無料です。この時点ではご注文になりません。</p>
     <div class="consult-choices">
       <a href="https://line.me/R/ti/p/@447updgf" target="_blank" rel="noopener" id="cta-line" class="cta cta-line" role="button">
         <svg class="cta-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -396,6 +403,8 @@
       <input type="range" id="room-scale" min="70" max="130" value="100" step="1" />
       <span id="room-scale-note" class="room-scale-note"></span>
     </div>
+    <!-- 部屋に飾った見え方を何度も見る人がいる(2026-10-09)。いちばん気持ちが高まる画面から相談へ進めるように -->
+    <button type="button" id="room-consult-btn" class="consult-btn room-consult-btn">この掛軸で見積もりをもらう(無料)</button>
     <div class="dialog-btns">
       <button type="button" id="room-save-btn">画像で保存</button>
       <button type="button" id="room-reset-btn" class="secondary">位置を戻す</button>

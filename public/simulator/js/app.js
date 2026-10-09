@@ -1079,7 +1079,13 @@
             pick.type = "button";
             pick.textContent = "こちらにする";
             pick.addEventListener("click", () => { dChoice.close(); finishWith(it.f, items); });
-            li.appendChild(thumb); li.appendChild(label); li.appendChild(nakaLine); li.appendChild(pick);
+            // 案を選んだうえで、そのまま相談の方法を選ぶ画面へ(2 案が出た時点がいちばん気持ちが高まるため)
+            const quote = document.createElement("button");
+            quote.type = "button";
+            quote.className = "design-choice-quote";
+            quote.textContent = "この案で見積もりをもらう";
+            quote.addEventListener("click", () => { dChoice.close(); finishWith(it.f, items); openConsult("choice"); });
+            li.appendChild(thumb); li.appendChild(label); li.appendChild(nakaLine); li.appendChild(pick); li.appendChild(quote);
             listEl.appendChild(li);
           });
           if (dProgress.open) dProgress.close();
@@ -1296,6 +1302,8 @@
       draw();
     });
     document.getElementById("room-close-btn").addEventListener("click", () => dlg.close());
+    // 部屋の画面から相談へ。相談の画面は部屋の画面の上に開き、閉じれば部屋に戻る
+    document.getElementById("room-consult-btn").addEventListener("click", () => openConsult("room"));
     document.getElementById("room-save-btn").addEventListener("click", () => {
       downloadCanvas(canvas, "kakephoto-room-" + scene.id + ".png").then((ok) => {
         showToast(ok ? "画像を保存しました。" : "画像の保存に失敗しました。お手数ですが画面の写真をお撮りください。");
@@ -3039,7 +3047,7 @@
     if (typeof gtag !== "function") return;
     const d = currentDesignFabric();
     gtag("event", "consult_click", {
-      via: via, // どこから開いて何を選んだか: step5_line / step5_form / bar_line / bar_form
+      via: via, // どこから開いて何を選んだか: {step5|bar|room|choice}_{line|form}
       has_design: d ? 1 : 0,
       variant: d ? d.variant || "" : "",
       method: state.method || "",
@@ -3051,6 +3059,7 @@
   }
 
   // 相談の方法を選ぶ画面を開く。from = "step5"(5 のボタン)/ "bar"(お見積もり欄の「相談する」)
+  // / "room"(部屋に飾ってみる)/ "choice"(2 つの案の画面)
   let consultFrom = "bar";
   function openConsult(from) {
     consultFrom = from;
