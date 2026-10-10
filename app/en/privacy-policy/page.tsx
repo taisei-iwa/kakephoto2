@@ -93,6 +93,7 @@ const content = [
       "What we keep: A short description of the photo's content and colours, the designs drawn, the design number, and the option and wishes you chose are kept by us for printing when you order. We never store your photo at its original size.",
       "Improving the feature: Part of the records from the simulator is used to improve the quality of the designs. We keep a small preview (a reduced image) of the finished scroll including your photo; our craftsman reviews it, and the results are used to improve future designs. Previews and reviews are never published or provided outside our studio.",
       "Retention: Those not used for an order are deleted about one year after creation.",
+      "Preventing misuse: To prevent a large number of requests in a short time, we record an irreversibly converted value of the IP address you connect from, together with the number of requests. We do not store the IP address itself, and these records are deleted within two days.",
     ],
   },
   {

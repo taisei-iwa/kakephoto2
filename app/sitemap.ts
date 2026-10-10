@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { ja: "/contact", en: "/en/contact", priority: 0.7 },
     { ja: "/cancel-policy", en: "/en/cancel-policy", priority: 0.4 },
     { ja: "/privacy-policy", en: "/en/privacy-policy", priority: 0.3 },
+    { ja: "/terms", en: "/en/terms", priority: 0.3 },
   ];
 
   const entries: MetadataRoute.Sitemap = [];

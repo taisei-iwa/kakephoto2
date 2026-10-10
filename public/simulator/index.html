@@ -416,14 +416,8 @@
   <dialog id="design-consent-dialog" class="picker-dialog design-dialog" aria-modal="true" aria-labelledby="design-consent-title">
     <h2 id="design-consent-title" class="dialog-title">写真に合わせてデザインする</h2>
     <p class="design-lead">お写真の情景や色に合わせて、掛軸の天(上)と地(下)の絵柄を描きおこします。描いた絵柄は和紙に印刷して仕立てます。</p>
-    <ul class="design-terms">
-      <li>絵柄を描くために、お写真を縮小して外部のサービス(Google)に送り、写っているものや色を読み取ります。</li>
-      <li>外部のサービスでは、お写真が学習に使われることはありません(不正な利用を防ぐため、一定期間記録されることがあります)。</li>
-      <li>描きあがった絵柄はデザイン番号をつけて当店で保管し、ご注文のときの印刷に使います。</li>
-      <li>シミュレーターでの記録の一部は、デザイン品質向上へ利用されます。</li>
-    </ul>
-    <p class="dialog-note">詳しくは<a href="/privacy-policy" target="_blank" rel="noopener">プライバシーポリシー</a>をご覧ください。</p>
-    <label class="design-agree"><input type="checkbox" id="design-agree" /> 上記に同意して、写真を送ります</label>
+    <!-- お写真の扱いの詳細はプライバシーポリシー第7条に書き、ここは同意だけにする(2026-10-10 本人) -->
+    <label class="design-agree"><input type="checkbox" id="design-agree" /> <span><a href="/terms" target="_blank" rel="noopener">利用規約</a>と<a href="/privacy-policy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意する</span></label>
     <div class="dialog-btns">
       <button type="button" id="design-consent-cancel" class="secondary">やめる</button>
       <button type="button" id="design-consent-ok" disabled>デザインする</button>

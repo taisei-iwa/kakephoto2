@@ -637,7 +637,7 @@ function SpPage() {
               <span className="text-[12px] tracking-[1px]">LINE</span>
             </a>
           </div>
-          <p className="text-[10px] tracking-[0.8px] mb-[8px]"><a href="/privacy-policy">プライバシーポリシー</a> | <a href="/cancel-policy">ご利用ガイド</a></p>
+          <p className="text-[10px] tracking-[0.8px] mb-[8px]"><a href="/privacy-policy">プライバシーポリシー</a> | <a href="/terms">利用規約</a> | <a href="/cancel-policy">ご利用ガイド</a></p>
           <p className="text-[9px] tracking-[0.8px]">©︎KAKEPHOTO All Rights Reserved.</p>
         </footer>
       </section>
@@ -961,7 +961,7 @@ export default function Home() {
 
             {/* プライバシーポリシー */}
             <p className="absolute right-0 top-[161px] text-[14px] tracking-[1.4px]">
-              <a href="/privacy-policy">プライバシーポリシー</a> | <a href="/cancel-policy">ご利用ガイド</a>
+              <a href="/privacy-policy">プライバシーポリシー</a> | <a href="/terms">利用規約</a> | <a href="/cancel-policy">ご利用ガイド</a>
             </p>
           </footer>
         </section>

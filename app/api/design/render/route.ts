@@ -12,6 +12,7 @@ import sharp from "sharp";
 import { IMAGE_MODEL, combinedPrompt, nearestAspect, partPrompt, retryNote } from "@/lib/design/config";
 import { generateImage, GeminiError } from "@/lib/design/gemini";
 import { DesignMeta, getFile, getJSON, putFile } from "@/lib/design/store";
+import { checkOrigin } from "@/lib/design/guard";
 import { correctToBase, judge, measureDesign } from "@/lib/design/metrics";
 import { quietCut, trimAndFit, trimEdgeLines } from "@/lib/design/trim";
 
@@ -19,6 +20,8 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  const denied = checkOrigin(req);
+  if (denied) return denied;
   let body: { id?: string };
   try {
     body = await req.json();

@@ -1078,8 +1078,6 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ã‚¹ãƒ
 
 .design-dialog { max-width: 560px; width: min(560px, 94vw); max-height: 92vh; overflow-y: auto; }
 .design-lead { font-size: 0.86rem; line-height: 1.8; margin: 0 0 0.7rem; }
-.design-terms { font-size: 0.78rem; line-height: 1.75; color: var(--ink-soft); margin: 0 0 0.6rem; padding-left: 1.2em; }
-.design-terms li + li { margin-top: 0.3rem; }
 .design-agree { display: flex; gap: 0.5rem; align-items: center; font-size: 0.86rem; margin: 0.4rem 0 0.9rem; cursor: pointer; }
 .design-agree input { width: 1.1rem; height: 1.1rem; accent-color: var(--brand); }
 .design-steps { font-size: 0.86rem; line-height: 2; margin: 0 0 0.8rem; padding-left: 1.4em; color: var(--ink-faint); }

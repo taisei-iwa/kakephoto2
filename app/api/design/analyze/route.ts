@@ -15,6 +15,7 @@ import { lookFrom } from "@/lib/design/words";
 import { chooseColors, measurePhoto, Variant } from "@/lib/design/color";
 import { analyzeImage, GeminiError } from "@/lib/design/gemini";
 import { DesignMeta, getJSON, newDesignId, putFile } from "@/lib/design/store";
+import { checkOrigin, takeDesignQuota } from "@/lib/design/guard";
 import { notifyDesignStarted } from "@/lib/design/notify";
 
 export const runtime = "nodejs";
@@ -23,6 +24,8 @@ export const maxDuration = 60;
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
 export async function POST(req: Request) {
+  const denied = checkOrigin(req);
+  if (denied) return denied;
   let body: { consent?: boolean; photo?: string; ten?: { wMm: number; hMm: number }; chi?: { wMm: number; hMm: number }; wishes?: unknown };
   try {
     body = await req.json();
@@ -34,6 +37,9 @@ export async function POST(req: Request) {
   if (!m || m[1].length > 3_000_000) return NextResponse.json({ error: "bad_photo" }, { status: 400 });
   const okSize = (p?: { wMm: number; hMm: number }) => !!p && p.wMm > 10 && p.hMm > 10 && p.wMm < 2000 && p.hMm < 2000;
   if (!okSize(body.ten) || !okSize(body.chi)) return NextResponse.json({ error: "bad_parts" }, { status: 400 });
+  // 回数の上限(料金の歯止め)。形の正しい依頼だけを数える
+  const over = await takeDesignQuota(req);
+  if (over) return over;
 
   try {
     const wishes = cleanWishes(body.wishes);

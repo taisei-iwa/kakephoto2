@@ -6,10 +6,13 @@
  */
 import { NextResponse } from "next/server";
 import { getFile, putFile } from "@/lib/design/store";
+import { checkOrigin } from "@/lib/design/guard";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  const denied = checkOrigin(req);
+  if (denied) return denied;
   const body = await req.json().catch(() => ({}));
   const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(body.image || "");
   if (!/^KP-[0-9A-Z]{6}$/.test(body.id || "") || !m || m[1].length > 400_000) return NextResponse.json({ error: "bad_request" }, { status: 400 });

@@ -476,7 +476,7 @@ function SpPage() {
               <span className="text-[12px] tracking-[1px]">LINE</span>
             </a>
           </div>
-          <p className="text-[10px] tracking-[0.8px] mb-[8px]"><a href="/en/privacy-policy">Privacy Policy</a> | <a href="/en/cancel-policy">Shopping Guide</a></p>
+          <p className="text-[10px] tracking-[0.8px] mb-[8px]"><a href="/en/privacy-policy">Privacy Policy</a> | <a href="/en/terms">Terms of Use</a> | <a href="/en/cancel-policy">Shopping Guide</a></p>
           <p className="text-[9px] tracking-[0.8px]">©︎KAKEPHOTO All Rights Reserved.</p>
         </footer>
       </section>
@@ -707,6 +707,8 @@ export default function HomeEn() {
 
               <div className="absolute left-0 top-[195px] flex items-center gap-[20px] text-[14px] tracking-[1.4px]">
                 <Link href="/en/privacy-policy" className="hover:opacity-80">Privacy Policy</Link>
+                <span className="opacity-60">|</span>
+                <Link href="/en/terms" className="hover:opacity-80">Terms of Use</Link>
                 <span className="opacity-60">|</span>
                 <Link href="/en/cancel-policy" className="hover:opacity-80">Shopping Guide</Link>
               </div>
