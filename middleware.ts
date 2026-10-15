@@ -26,6 +26,11 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // 日本語だけのページ(英語版がない)。英語の端末から来ても /en へ送らない
+  if (pathname === "/shichigosan" || pathname.startsWith("/shichigosan/")) {
+    return NextResponse.next();
+  }
+
   const cookieLang = req.cookies.get("lang")?.value;
 
   // If user already picked, respect it.
