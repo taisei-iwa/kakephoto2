@@ -1171,6 +1171,22 @@
     let grabDx = 0, grabDy = 0;
     let lastScale = 1;  // スライダーの直前の倍率(中心を保って拡縮するために使う)
 
+    // 5. 部屋に掛けたときの揺れ: 掛けた直後に一度だけ、わずかに揺れて止まる(2026-10-15 本人採用)
+    const SWING_MS = 1400;
+    let swingStart = 0;
+    function swingAngle() {
+      if (!swingStart) return 0;
+      const t = (performance.now() - swingStart) / 1000;
+      if (t * 1000 >= SWING_MS) { swingStart = 0; return 0; }
+      return (1.6 * Math.PI / 180) * Math.exp(-3.2 * t) * Math.cos(2 * Math.PI * 1.15 * t);
+    }
+    function startSwing() {
+      if (reduceMotion()) return;
+      swingStart = performance.now();
+      const tick = () => { draw(); if (swingStart && !dragging) requestAnimationFrame(tick); else { swingStart = 0; draw(); } };
+      requestAnimationFrame(tick);
+    }
+
     function bgMmPerPx() {
       const span = (scene.floorYPct - scene.ceilYPct) * bg.height;
       return scene.wallHeightMm / span;
@@ -1201,13 +1217,16 @@
       ctx.drawImage(bg, 0, 0);
       const s = scrollSizePx();
       clampPos();
-      // 壁との馴染みのため、うっすら影を落とす
+      // 壁との馴染みのため、うっすら影を落とす。揺れている間は上端の中央を支点に傾け、影も一緒に動かす
+      const a = swingAngle();
       ctx.save();
       ctx.shadowColor = "rgba(40,25,20,0.30)";
       ctx.shadowBlur = Math.max(6, s.w * 0.06);
-      ctx.shadowOffsetX = s.w * 0.02;
+      ctx.shadowOffsetX = s.w * 0.02 - a * s.h * 0.25;
       ctx.shadowOffsetY = s.w * 0.03;
-      ctx.drawImage(scrollCv, pos.x, pos.y, s.w, s.h);
+      ctx.translate(pos.x + s.w / 2, pos.y);
+      ctx.rotate(a);
+      ctx.drawImage(scrollCv, -s.w / 2, 0, s.w, s.h);
       ctx.restore();
       // 表示するのは仕上がりの実寸。スライダーは背景側の見え方を合わせるためのもので、掛軸の寸法は変わらない。
       noteEl.textContent = "高さ 約" + Math.round(s.hMm / 10) + "cm";
@@ -1230,8 +1249,10 @@
       });
       return loadBg(sc).then((img) => {
         bg = img;
-        if (!keepPos || !pos) resetPos();
+        const hung = !keepPos || !pos; // 新しく掛けたときだけ揺らす
+        if (hung) resetPos();
         draw();
+        if (hung) startSwing();
       });
     }
 
@@ -1738,6 +1759,7 @@
     if (elBox.bdBox) {
       elBox.bdBox.textContent = bd.box > 0 ? "+" + formatYen(bd.box) : formatYen(0);
     }
+    flashPriceRows({ total: bd.total, size: bd.size, option: bd.option, fabric: bd.fabric, box: bd.box });
   }
 
   // ---- 表装形式 ----
@@ -1897,6 +1919,112 @@
   }
   function clearPartHighlight() {
     setPartHighlight(null);
+  }
+
+  // ---- 意味のある動き(2026-10-15 本人「全部取り入れて」。試作で確認済みの 6 つ) ----
+  // 表具の仕事を感じられる動きだけを、短く 1 回だけ。端末で「視差効果を減らす」の人には動かさない。
+  const MOTION = { unroll: 1100, dye: 700, glow: 900 };
+  function reduceMotion() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  // 1. 掛軸がほどける: 写真を入れた直後に一度だけ、軸が上から下へ下りて仕上がりが現れる
+  let pendingUnroll = false;
+  function playUnroll() {
+    if (reduceMotion()) return false;
+    const p = el.preview;
+    p.classList.remove("kp-unroll");
+    void p.offsetWidth; // 続けて入れたときも最初から
+    p.style.setProperty("--kp-h", p.offsetHeight + "px");
+    p.classList.add("kp-unroll");
+    setTimeout(() => p.classList.remove("kp-unroll"), MOTION.unroll + 50);
+    return true;
+  }
+  // 位置合わせを閉じたら、新しい写真ならほどいてから「ここをタップ」を出す
+  function afterTrimClose() {
+    if (pendingUnroll) {
+      pendingUnroll = false;
+      if (playUnroll()) { setTimeout(() => showTapHint(), MOTION.unroll); return; }
+    }
+    showTapHint();
+  }
+
+  // 2. 裂地がにじむように替わる / 3. 替わった部位が一度ふわっと縁どられる
+  // render() の前後で各部位の裂地を比べ、変わったところだけ古い裂地を上にかぶせ、
+  // 写真の中心から外へ穴を広げて新しい裂地を見せる。
+  let fabricBefore = null;
+  function fabricKey(d) {
+    if (d.classList.contains("jiku-bar")) return d.classList.contains("top") ? "_barTop" : "_barBottom";
+    return d.dataset.part;
+  }
+  function snapshotFabrics() {
+    const m = {};
+    el.preview.querySelectorAll(".part, .jiku-bar").forEach((d) => {
+      const k = fabricKey(d);
+      if (!k || k === "honshi") return;
+      const s = d.style;
+      m[k] = { img: s.backgroundImage, color: s.backgroundColor, size: s.backgroundSize, pos: s.backgroundPosition, rep: s.backgroundRepeat };
+    });
+    return m;
+  }
+  function playFabricMotion() {
+    const before = fabricBefore;
+    fabricBefore = null;
+    if (!before || reduceMotion()) return;
+    const honshi = el.preview.querySelector(".part-honshi");
+    const pr = el.preview.getBoundingClientRect();
+    const hr = honshi ? honshi.getBoundingClientRect() : pr;
+    const cx = hr.left + hr.width / 2, cy = hr.top + hr.height / 2;
+    // 掛軸のいちばん遠い角まで届く半径(軸棒のはみ出しぶんを足す)
+    const reach = Math.max(cx - pr.left, pr.right - cx) + Math.max(cy - pr.top, pr.bottom - cy) + 40;
+    const groups = new Set();
+    el.preview.querySelectorAll(".part, .jiku-bar").forEach((d) => {
+      const k = fabricKey(d);
+      const o = before[k];
+      if (!o || (o.img === d.style.backgroundImage && o.color === d.style.backgroundColor)) return;
+      if (d.dataset.hlGroup) groups.add(d.dataset.hlGroup);
+      const r = d.getBoundingClientRect();
+      const ov = document.createElement("div");
+      ov.className = "kp-dye";
+      ov.setAttribute("aria-hidden", "true");
+      ov.style.backgroundImage = o.img;
+      ov.style.backgroundColor = o.color || "var(--placeholder)";
+      ov.style.backgroundSize = o.size;
+      ov.style.backgroundPosition = o.pos;
+      ov.style.backgroundRepeat = o.rep;
+      ov.style.setProperty("--kp-x", (cx - r.left) + "px");
+      ov.style.setProperty("--kp-y", (cy - r.top) + "px");
+      d.appendChild(ov);
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        ov.style.transition = "--kp-r " + MOTION.dye + "ms ease-out";
+        ov.style.setProperty("--kp-r", reach + "px");
+      }));
+      setTimeout(() => ov.remove(), MOTION.dye + 80);
+    });
+    // 部位を 1 か所だけ選び直したときは、その部位を一度縁どる(案の反映など全体が替わるときは出さない)
+    if (groups.size === 1) flashPartHighlight(groups.values().next().value);
+  }
+  function flashPartHighlight(group) {
+    setPartHighlight(group);
+    el.preview.querySelectorAll(".hl-frame").forEach((f) => f.classList.add("kp-flash"));
+    setTimeout(() => el.preview.querySelectorAll(".hl-frame.kp-flash").forEach((f) => f.remove()), MOTION.glow + 50);
+  }
+
+  // 4. 料金は静かに書き換わる: 変わった行だけ薄く色がついて消える(数字は回さない)
+  let priceBefore = null;
+  function flashPriceRows(now) {
+    const prev = priceBefore;
+    priceBefore = now;
+    if (!prev || reduceMotion()) return;
+    const rows = { total: el.priceTotal, size: el.bdSize.closest(".bd-row"), option: document.getElementById("bd-fuutai-row"),
+      fabric: document.getElementById("bd-fabric-row"), box: document.getElementById("bd-box-row") };
+    Object.keys(rows).forEach((k) => {
+      const row = rows[k];
+      if (!row || prev[k] === now[k]) return;
+      row.classList.remove("kp-changed");
+      void row.offsetWidth;
+      row.classList.add("kp-changed");
+    });
   }
 
   // 矩形群を「接触している(隣り合う)ものどうし」で連結し、各かたまりの外接矩形(+柱で囲まれた窓)を返す。
@@ -2081,6 +2209,7 @@
         el.trimHonshiBtn.style.display = "";
         el.honshiImageFile.value = "";
         setHonshiFileName(file.name || "選んだ写真");
+        pendingUnroll = true; // 位置合わせを閉じたら、掛軸がほどけて写真が現れる
         render();
         // 取り込んだらそのまま位置合わせへ(トリミング画面の「写真を変更」から来た場合は開いたまま差し替わる)
         openTrimDialog();
@@ -2231,6 +2360,8 @@
       scale = targetHonshiLong / Math.max(honshiW, honshiH);
     }
 
+    // 描き直す前の裂地を覚えておき、描いたあとで変わった部位だけをにじませる(1 段目でだけ覚える)
+    if (forcedScale === undefined) fabricBefore = snapshotFabrics();
     el.preview.innerHTML = "";
     el.preview.style.width = px(layout.totalW * scale);
     el.preview.style.height = px(layout.totalH * scale);
@@ -2351,6 +2482,7 @@
         }
       }
     }
+    playFabricMotion();
   }
 
   // ---- 写真描画ヘルパ(cover 相当) ----
@@ -2423,7 +2555,7 @@
       needCropped: false,
       allowChangePhoto: true,
       allowOrient: true,
-      onClose: showTapHint,
+      onClose: afterTrimClose,
       onConfirm: function (cropRect) { state.honshiImage.cropRect = cropRect; render(); },
     });
   }

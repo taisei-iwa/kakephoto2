@@ -1423,3 +1423,42 @@ ruby rt { font-size: 0.5em; letter-spacing: 0; font-weight: 400; }
 .fmap-sw { display: inline-block; height: 14px; margin-right: 2px; vertical-align: middle; border: 1px solid rgba(255,255,255,0.25); }
 .fmap-list td:nth-child(n+6) { font-variant-numeric: tabular-nums; }
 .fmap-list td:nth-child(2) { white-space: nowrap; }
+
+/* ---- 意味のある動き(2026-10-15 本人「全部取り入れて」) ----
+   表具の仕事を感じられる動きだけを、短く 1 回だけ。視差効果を減らす設定の人には出さない(JS 側でも止める)。 */
+/* 1. 掛軸がほどける: 上から下へ見える範囲を広げ、軸棒と軸先を同じ速さで下ろす */
+.kakejiku-preview.kp-unroll { animation: kp-unroll 1100ms cubic-bezier(.22,.7,.2,1) both; }
+@keyframes kp-unroll {
+  from { clip-path: inset(-14px -40px calc(100% - 6px) -40px); }
+  to   { clip-path: inset(-14px -40px -24px -40px); }
+}
+.kp-unroll .jiku-bar.bottom, .kp-unroll .jiku-end { animation: kp-roll-down 1100ms cubic-bezier(.22,.7,.2,1) both; }
+@keyframes kp-roll-down { from { transform: translateY(calc(-1 * var(--kp-h, 0px))); } to { transform: none; } }
+
+/* 2. 裂地がにじむ: 古い裂地を上にかぶせ、写真の中心から穴を広げて新しい裂地を見せる */
+@property --kp-r { syntax: "<length>"; inherits: false; initial-value: 0px; }
+.kp-dye {
+  position: absolute; inset: 0; pointer-events: none;
+  -webkit-mask-image: radial-gradient(circle at var(--kp-x) var(--kp-y), transparent calc(var(--kp-r) - 60px), #000 var(--kp-r));
+          mask-image: radial-gradient(circle at var(--kp-x) var(--kp-y), transparent calc(var(--kp-r) - 60px), #000 var(--kp-r));
+}
+
+/* 3. 部位が浮かぶ: カーソルを重ねた枠はすっと出る。選び直した部位は一度だけ縁どって消える */
+.hl-frame { animation: kp-fade-in 160ms ease-out; }
+.hl-frame.kp-flash { animation: kp-glow 900ms ease-out both; box-shadow: inset 0 0 0 2px var(--brand), inset 0 0 18px rgba(113,11,38,0.18); }
+@keyframes kp-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes kp-glow { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
+
+/* 4. 料金: 変わった行だけ薄く色がついて、すっと消える(数字は回さない) */
+.price-total.kp-changed, .bd-row.kp-changed { animation: kp-tint 1200ms ease-out; border-radius: 3px; }
+@keyframes kp-tint {
+  0%, 30% { background: rgba(113,11,38,0.10); box-shadow: 0 0 0 4px rgba(113,11,38,0.10); }
+  100% { background: transparent; box-shadow: 0 0 0 4px transparent; }
+}
+
+/* 6. 動きを控えたい人には出さない */
+@media (prefers-reduced-motion: reduce) {
+  .kakejiku-preview.kp-unroll, .kp-unroll .jiku-bar.bottom, .kp-unroll .jiku-end,
+  .hl-frame, .hl-frame.kp-flash, .price-total.kp-changed, .bd-row.kp-changed { animation: none; }
+  .kp-dye { display: none; }
+}
