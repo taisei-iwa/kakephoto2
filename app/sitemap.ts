@@ -37,5 +37,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       alternates: { languages },
     });
   }
+
+  // 英語版のない日本語だけのページ
+  const singles: Array<{ path: string; priority: number }> = [
+    { path: "/shichigosan", priority: 0.8 },
+    { path: "/simulator/", priority: 0.6 },
+  ];
+  for (const { path, priority } of singles) {
+    entries.push({
+      url: `${baseUrl}${path}`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority,
+    });
+  }
   return entries;
 }

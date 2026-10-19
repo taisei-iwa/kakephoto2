@@ -115,7 +115,7 @@ export default function RootLayout({
               logo: "https://kakephoto.com/images/logo-horizontal.svg",
               description:
                 "Custom Japanese hanging scrolls (kakejiku) made from your photograph by cultural-heritage artisans. 写真から作るオーダーメイド掛け軸。",
-              founder: { "@type": "Person", name: "Iwasaki Seishodo / 岩﨑精正堂" },
+              founder: { "@type": "Organization", name: "岩﨑精正堂", alternateName: "Iwasaki Seishodo" },
               sameAs: [
                 "https://www.instagram.com/kakephoto_art/",
                 "https://line.me/R/ti/p/@447updgf",

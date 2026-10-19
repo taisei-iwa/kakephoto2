@@ -649,6 +649,27 @@ export default function Home() {
   return (
     <>
       <h1 className="sr-only">KAKEPHOTO（かけフォト）｜写真から作るオーダーメイド掛け軸</h1>
+      {/* 料金を検索エンジン・AI が読める形で(画面には出ない) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: "写真から作るオーダーメイド掛け軸",
+            brand: { "@type": "Brand", name: "KAKEPHOTO" },
+            description: "お手元の写真を本紙に、一点ずつ手仕立てで仕立てる完全オーダーメイドの掛け軸。",
+            image: "https://kakephoto.com/opengraph-image.png",
+            offers: {
+              "@type": "AggregateOffer",
+              priceCurrency: "JPY",
+              lowPrice: 44000,
+              availability: "https://schema.org/InStock",
+              url: "https://kakephoto.com/",
+            },
+          }),
+        }}
+      />
       <div className="vp-sp-only vp-sp-root">
         <SpPage />
       </div>
