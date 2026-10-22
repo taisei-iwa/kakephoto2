@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
       { pathname: "/images/**" },
     ],
   },
+  async redirects() {
+    // 七五三の着地ページは 2026-10-22 に廃止。広告の古いリンクはトップへ(UTM はそのまま引き継がれる)
+    return [{ source: "/shichigosan", destination: "/", permanent: true }];
+  },
 };
 
 export default nextConfig;
