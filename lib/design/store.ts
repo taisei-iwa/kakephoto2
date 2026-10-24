@@ -102,6 +102,8 @@ export type DesignMeta = {
   words?: string[];
   photo?: { dominant: string; accent: string | null; edgeL: number; meanC: number; colorfulness: number };
   picked?: boolean; // お客様が 2 案からこちらを選んだ
+  // 絵柄を描かない無地の和紙の案(2026-10-25 本人決定。写真の色を測るだけで、画像 AI は使わない)
+  plain?: boolean;
   // お客様の要望(要望の画面。おまかせなら空)
   wishes?: { mood?: string; tone?: string; density?: string; note?: string };
   parts: { ten: { wMm: number; hMm: number; aspect: string }; chi: { wMm: number; hMm: number; aspect: string } };

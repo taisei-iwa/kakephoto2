@@ -126,7 +126,7 @@
         <div class="method-list">
           <button type="button" id="design-btn" class="method-card" data-method="design">
             <span class="method-title">おまかせでデザイン</span>
-            <span class="method-desc">写真に合わせて天地の絵柄を描き、和紙に印刷して仕立てます。</span>
+            <span class="method-desc">写真の色に合わせて、天地を無地の和紙(または色の合う<ruby>裂地<rt>きれじ</rt></ruby>)で仕立てます。</span>
           </button>
           <button type="button" id="suggest-btn" class="method-card" data-method="suggest">
             <span class="method-title"><ruby>裂地<rt>きれじ</rt></ruby>の見本から選ぶ</span>
@@ -415,7 +415,7 @@
   <!-- 写真に合わせてデザインする: 同意 → 作成中(できたらすぐプレビューに反映) -->
   <dialog id="design-consent-dialog" class="picker-dialog design-dialog" aria-modal="true" aria-labelledby="design-consent-title">
     <h2 id="design-consent-title" class="dialog-title">写真に合わせてデザインする</h2>
-    <p class="design-lead">お写真の情景や色に合わせて、掛軸の天(上)と地(下)の絵柄を描きおこします。描いた絵柄は和紙に印刷して仕立てます。</p>
+    <p class="design-lead">お写真の色を測って、掛軸の天(上)と地(下)の色を選びます。絵柄は入れず、無地の和紙(色の合う<ruby>裂地<rt>きれじ</rt></ruby>があればその裂地)で仕立てます。</p>
     <!-- お写真の扱いの詳細はプライバシーポリシー第7条に書き、ここは同意だけにする(2026-10-10 本人) -->
     <label class="design-agree"><input type="checkbox" id="design-agree" /> <span><a href="/terms" target="_blank" rel="noopener">利用規約</a>と<a href="/privacy-policy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意する</span></label>
     <div class="dialog-btns">
@@ -430,7 +430,7 @@
     <!-- 4 問(2026-10-08 本人決定)。答えから雰囲気の言葉を 2 つ選んで描く。どの問いも軸を動かさない答えを 1 つ持つ -->
     <p class="wish-progress" id="design-wish-progress" aria-live="polite"></p>
     <div class="wish-page" data-page="1">
-      <p class="dialog-note" id="design-wish-lead">4つの質問に答えると、写真に合う雰囲気を言葉で2つに絞って描きます。</p>
+      <p class="dialog-note" id="design-wish-lead">4つの質問に答えると、写真とご回答に合う色を2案お作りします。</p>
       <div class="wish-group wish-q" data-wish="place">
         <span class="wish-label">どこに飾りますか</span>
         <div class="wish-chips">
@@ -473,20 +473,6 @@
         </div>
       </div>
     </div>
-    <div class="wish-page" data-page="5" hidden>
-      <div class="wish-group" data-wish="density">
-        <span class="wish-label">柄の量</span>
-        <div class="wish-chips">
-          <button type="button" data-value="airy">余白を多く</button>
-          <button type="button" data-value="balanced">ほどよく</button>
-          <button type="button" data-value="rich">にぎやかに</button>
-          <button type="button" data-value="none">柄を入れない(<ruby>裂地<rt>きれじ</rt></ruby>で仕立てる)</button>
-        </div>
-      </div>
-      <label class="wish-note-label" for="design-wish-note">入れたいもの(自由記入・100字まで)</label>
-      <textarea id="design-wish-note" class="wish-note" maxlength="100" rows="2" placeholder="例:桜を入れてほしい / 娘の名前の由来のひまわり / 海の思い出"></textarea>
-      <p class="dialog-note">どちらも空欄のままで構いません。文字や人物は描けません。</p>
-    </div>
     <div class="dialog-btns wish-nav">
       <button type="button" id="design-wish-back" class="secondary">戻る</button>
       <button type="button" id="design-wish-next">次へ</button>
@@ -499,7 +485,7 @@
     <button type="button" id="design-choice-close" class="dialog-x" aria-label="閉じる">×</button>
     <h2 id="design-choice-title" class="dialog-title">2つの案ができました</h2>
     <p class="design-choice-concept" id="design-choice-concept"></p>
-    <p class="mat-alert" id="design-choice-mat">どちらも、和紙に絵柄を印刷して仕立てます(布の<ruby>裂地<rt>きれじ</rt></ruby>ではありません)。</p>
+    <p class="mat-alert" id="design-choice-mat">どちらも、無地の和紙で仕立てます(布の<ruby>裂地<rt>きれじ</rt></ruby>ではありません)。</p>
     <ul id="design-choice-list" class="design-choice-list" aria-label="デザインの案"></ul>
     <p class="dialog-note">選ばなかった案も、あとから「これまでのデザイン」で切り替えられます。</p>
   </dialog>
@@ -508,10 +494,10 @@
     <h2 id="design-progress-title" class="dialog-title">デザインしています</h2>
     <ol class="design-steps">
       <li id="design-step-read">お写真を読み取っています</li>
-      <li id="design-step-draw">天と地の絵柄を描いています</li>
+      <li id="design-step-draw">天と地の色を選んでいます</li>
     </ol>
     <div class="design-bar" aria-hidden="true"><span></span></div>
-    <p class="dialog-note" id="design-elapsed">30秒ほどかかります。このままお待ちください。</p>
+    <p class="dialog-note" id="design-elapsed">数秒で終わります。このままお待ちください。</p>
   </dialog>
 
 

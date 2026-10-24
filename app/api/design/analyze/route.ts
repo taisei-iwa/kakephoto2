@@ -8,6 +8,7 @@
  * - 色は画像 AI に任せず写真を測って決める(color.ts)。2 案 = blend(写真になじませる)/ echo(写真の差し色を拾う。2026-10-08 に lift から替えた)
  * - 職人の評価(lessons.json)を、次の案づくりの見本として指示に入れる
  * 写真は読み取りと色の計測に使うだけで保存しない(評価用の小さな見本は、画面から別に送られる)。
+ * 2026-10-25 本人決定: plain: true のときは絵柄を描かない無地の和紙の案。写真の色を測るだけで、画像 AI には送らない。
  */
 import { NextResponse } from "next/server";
 import { ANALYZE_MODEL, ANALYZE_PROMPT, ANALYZE_SCHEMA, Lesson, cleanWishes, imageWords, lessonsSection, nearestAspect, wishSection } from "@/lib/design/config";
@@ -26,7 +27,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 export async function POST(req: Request) {
   const denied = checkOrigin(req);
   if (denied) return denied;
-  let body: { consent?: boolean; photo?: string; ten?: { wMm: number; hMm: number }; chi?: { wMm: number; hMm: number }; wishes?: unknown };
+  let body: { consent?: boolean; plain?: boolean; photo?: string; ten?: { wMm: number; hMm: number }; chi?: { wMm: number; hMm: number }; wishes?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -45,9 +46,15 @@ export async function POST(req: Request) {
     const wishes = cleanWishes(body.wishes);
     const look = lookFrom(wishes); // 4 問の答えのイメージの点(答えがなければ null)
     const words = imageWords(wishes).map((w) => w.ja);
-    const lessons = (await getJSON<Lesson[]>("lessons.json")) || [];
+    const plain = body.plain === true;
+    const plainBrief: DesignMeta["brief"] = {
+      ok: true, scene_ja: "", subject: "", colors: [], ten_prompt: "", chi_prompt: "",
+      concept_ja: "お写真の色を測り、天と地を無地の和紙で仕立てる色を選びました。",
+    };
+    const lessons = plain ? [] : (await getJSON<Lesson[]>("lessons.json")) || [];
     const [brief, photo] = await Promise.all([
-      analyzeImage(ANALYZE_MODEL, ANALYZE_PROMPT + wishSection(wishes) + lessonsSection(lessons), ANALYZE_SCHEMA, m[1]),
+      plain ? Promise.resolve(plainBrief)
+        : analyzeImage(ANALYZE_MODEL, ANALYZE_PROMPT + wishSection(wishes) + lessonsSection(lessons), ANALYZE_SCHEMA, m[1]),
       measurePhoto(Buffer.from(m[1], "base64")),
     ]);
     if (!brief.ok) return NextResponse.json({ error: "unsuitable" }, { status: 422 });
@@ -75,6 +82,7 @@ export async function POST(req: Request) {
         id: ids[i],
         createdAt,
         brief,
+        ...(plain ? { plain: true } : {}),
         wishes,
         parts,
         variant: variants[i],
@@ -89,7 +97,7 @@ export async function POST(req: Request) {
       designs.push({ id: ids[i], variant: variants[i], nakaHex: c.naka, baseHex: c.base });
     }
     // 職人へのお知らせ(1 回の利用で 1 通。送り終えてから返す: 返した後は関数が止まることがある)
-    await notifyDesignStarted({ ids, createdAt, scene: brief.scene_ja, concept: brief.concept_ja, wishes, words });
+    await notifyDesignStarted({ ids, createdAt, scene: plain ? "無地の和紙(絵柄なし)" : brief.scene_ja, concept: brief.concept_ja, wishes, words });
     return NextResponse.json({ concept: brief.concept_ja, words, designs });
   } catch (e) {
     const status = e instanceof GeminiError ? e.status : 500;

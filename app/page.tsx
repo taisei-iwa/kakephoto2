@@ -571,8 +571,8 @@ function SpPage() {
         <h3 className="text-[18px] tracking-[4px] text-center underline mb-[24px]">オーダーの流れ</h3>
         <div className="mb-[60px]">
           {[
-            { step: "Step1", text: "まずは公式LINEもしくはお問合せからご連絡ください。" },
-            { step: "Step2", text: "詳細をお伺いするため、後日、職人よりご連絡します。" },
+            { step: "Step1", text: <>まずは公式LINEもしくは<br />お問合せからご連絡ください。</> },
+            { step: "Step2", text: <>詳細をお伺いするため、<br />後日、職人よりご連絡します。</> },
             { step: "Step3", text: "写真からおすすめの裂地を選定します。" },
             { step: "Step4", text: "裂地を確認後、制作に移らせていただきます。" },
           ].map((item, i) => (
@@ -584,7 +584,7 @@ function SpPage() {
         </div>
 
         <p className="text-[10px] tracking-[0.5px] text-center leading-[18px] mb-[30px] -mt-[40px]">
-          ※使用する裂地や仕様により、金額は変動します。ご希望やご予算に合わせて、無理のない形をご提案しますのでお気軽にご相談ください。
+          ※使用する裂地や仕様により、金額は変動します。<br />ご希望やご予算に合わせて、無理のない形を<br />ご提案しますのでお気軽にご相談ください。
         </p>
 
         {/* CTA */}

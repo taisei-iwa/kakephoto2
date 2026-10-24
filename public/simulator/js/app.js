@@ -752,13 +752,13 @@
   function addDesignFabrics(res, tenUrl, chiUrl) {
     const tenchi = {
       id: "design_" + res.id, designId: res.id, generated: true, variant: res.variant,
-      name: "和紙に印刷・写真に合わせた絵柄(" + res.id + ")", uses: ["tenchi"], grade: "standard", washi: true,
+      name: "和紙に印刷・写真に合わせた無地(" + res.id + ")", uses: ["tenchi"], grade: "standard", washi: true,
       dataUrl: tenUrl, tileW: 40, tileH: 40,
       cover: { ten: tenUrl, chi: chiUrl, fallbackHex: res.nakaHex },
     };
     const paper = {
       id: "paper_" + res.id, designId: res.id, generated: true,
-      name: "和紙に印刷・絵柄に合わせた無地(" + res.id + ")", uses: ["nakamawashi"], grade: "standard", washi: true,
+      name: "和紙に印刷・天地に合わせた無地(" + res.id + ")", uses: ["nakamawashi"], grade: "standard", washi: true,
       dataUrl: KakeDesign.paperSwatch(res.nakaHex), tileW: 40, tileH: 40,
     };
     tenchi.paperId = paper.id;
@@ -781,14 +781,18 @@
 
   // 中廻しを裂地にしたことで増える料金(和紙の無地にしたときとの差)。2026-10-08 本人「+○円があった方が丁寧」。
   // 割り当てを一時的に差し替えて計算し、必ず元へ戻す
+  // 2026-10-25: 天地に登録済みの裂地を使う案(tenchiFabricId)も同じく、和紙の無地との差を出す
   function nakaSurcharge(tenchi) {
-    if (!tenchi.nakaFabricId) return 0;
+    if (!tenchi.nakaFabricId && !tenchi.tenchiFabricId) return 0;
     const backup = Object.assign({}, state.assignments);
     applyDesign(tenchi, true);
     const withFab = Object.assign({}, state.assignments);
     state.assignments = backup;
     const withPaper = Object.assign({}, withFab);
-    Object.keys(withPaper).forEach((k) => { if (withPaper[k] === tenchi.nakaFabricId) withPaper[k] = tenchi.paperId; });
+    Object.keys(withPaper).forEach((k) => {
+      if (tenchi.nakaFabricId && withPaper[k] === tenchi.nakaFabricId) withPaper[k] = tenchi.paperId;
+      else if (tenchi.tenchiFabricId && withPaper[k] === tenchi.tenchiFabricId) withPaper[k] = tenchi.id;
+    });
     const cost = (a) => computeTotal({ sizePrice: 0, assignments: a, fabrics: state.fabrics, groups: effectiveGroups(), boxKey: state.boxKey, optionSurcharge: 0 }).fabric;
     return Math.max(0, cost(withFab) - cost(withPaper));
   }
@@ -799,6 +803,8 @@
   // 2026-10-08: 中廻しは、紙の色と答えの印象に十分近い登録済みの裂地があればそれを使う(tenchi.nakaFabricId)。
   // デザインが自動で入れた裂地は autoNakaIds で覚え、デザインを切り替えたときは紙と同じく差し替える
   const autoNakaIds = new Set();
+  // 2026-10-25: 天地も同じく、色の合う登録済みの裂地(tenchiFabricId)があればそれを使い、autoTenIds で覚える
+  const autoTenIds = new Set();
   function applyDesign(tenchi, isNew) {
     const groups = effectiveGroups();
     const set = (gk, id) => {
@@ -806,7 +812,8 @@
       if (g && !g.linkedInto) g.keys.forEach((k) => { state.assignments[k] = id; });
     };
     const curNaka = state.assignments.nakaUe || "";
-    set("tenchi", tenchi.id);
+    if (tenchi.tenchiFabricId) autoTenIds.add(tenchi.tenchiFabricId);
+    set("tenchi", tenchi.tenchiFabricId || tenchi.id);
     if (isNew || !curNaka || curNaka.indexOf("paper_") === 0 || autoNakaIds.has(curNaka)) {
       const nakaId = tenchi.nakaFabricId || tenchi.paperId;
       if (tenchi.nakaFabricId) autoNakaIds.add(tenchi.nakaFabricId);
@@ -820,7 +827,8 @@
   let beforeDesign = null;
   function rememberBeforeDesign() {
     // いまの天地がデザインなら、お客様の選び方ではないので覚え直さない(前に覚えたものを残す)
-    if ((state.assignments.ten || "").indexOf("design_") === 0) return;
+    const ten = state.assignments.ten || "";
+    if (ten.indexOf("design_") === 0 || autoTenIds.has(ten)) return;
     beforeDesign = Object.assign({}, state.assignments);
   }
 
@@ -869,7 +877,7 @@
       b.className = "design-thumb";
       b.title = (i + 1) + "つ目のデザイン(" + fab.designId + ")";
       b.setAttribute("aria-label", b.title);
-      b.setAttribute("aria-pressed", String(state.assignments.ten === fab.id));
+      b.setAttribute("aria-pressed", String(state.assignments.ten === (fab.tenchiFabricId || fab.id)));
       const part = (cls, bg) => {
         const sp = document.createElement("span");
         sp.className = cls;
@@ -877,10 +885,11 @@
         else sp.style.backgroundImage = "url(" + bg + ")";
         b.appendChild(sp);
       };
-      part("t", fab.cover.ten);
+      const tf = fab.tenchiFabricId && state.fabrics.find((f) => f.id === fab.tenchiFabricId);
+      part("t", tf ? tf.dataUrl : fab.cover.ten);
       const nf = fab.nakaFabricId && state.fabrics.find((f) => f.id === fab.nakaFabricId);
       part("n", nf ? nf.dataUrl : fab.cover.fallbackHex || "#e9e2d4");
-      part("c", fab.cover.chi);
+      part("c", tf ? tf.dataUrl : fab.cover.chi);
       b.addEventListener("click", () => {
         rememberBeforeDesign(); // 自分で選び直した裂地から切り替えるときも、その選び方を残す
         applyDesign(fab, false);
@@ -896,7 +905,6 @@
     const dConsent = document.getElementById("design-consent-dialog");
     const dProgress = document.getElementById("design-progress-dialog");
     const dWish = document.getElementById("design-wish-dialog");
-    const noteEl = document.getElementById("design-wish-note");
     // 要望(もう一度デザインするときも前回の選択を残す)
     let wishes = {};
     if (!btn || !dConsent || typeof KakeDesign === "undefined") return;
@@ -957,16 +965,15 @@
     nextBtn.addEventListener("click", () => { if (page < LAST_PAGE) showPage(page + 1); });
     function openWish(mode) {
       wishMode = mode === "suggest" ? "suggest" : "design";
-      LAST_PAGE = wishMode === "suggest" ? 4 : 5;
+      LAST_PAGE = 4; // 2026-10-25 絵柄を描かなくなったので、柄の量・自由記入は聞かない
       leadEl.textContent = wishMode === "suggest"
         ? "4つの質問に答えると、ご回答に近い印象の裂地を選んでご提案します。"
-        : "4つの質問に答えると、写真に合う雰囲気を言葉で2つに絞って描きます。";
+        : "4つの質問に答えると、写真とご回答に合う色を2案お作りします。";
       startBtn.textContent = wishMode === "suggest" ? "この内容で見本を見る" : "この内容で始める";
       skipBtn.textContent = wishMode === "suggest" ? "質問を飛ばして、見本を見る" : "質問を飛ばして、おまかせで始める";
       dWish.querySelectorAll(".wish-group").forEach((g) => {
         g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(wishes[g.dataset.wish] === b.dataset.value)));
       });
-      noteEl.value = wishes.note || "";
       showPage(1);
       dWish.showModal();
     }
@@ -995,14 +1002,7 @@
         if (runSuggestWith) runSuggestWith(KakeSuggest.lookFrom(w), "questions");
         return;
       }
-      const note = noteEl.value.trim().slice(0, 100);
-      if (note) w.note = note;
       wishes = w;
-      // 柄を入れない: 絵は描かず、答えに近い登録済みの裂地で仕立てる(AI は使わない)
-      if (w.density === "none") {
-        if (runSuggestWith) runSuggestWith(KakeSuggest.lookFrom(w), "no_pattern");
-        return;
-      }
       start();
     });
     // 作成中は閉じさせない(Esc でも)
@@ -1040,8 +1040,8 @@
           const matEl = document.getElementById("design-choice-mat");
           if (matEl) {
             if (!matEl.dataset.paperOnly) matEl.dataset.paperOnly = matEl.innerHTML;
-            matEl.innerHTML = items.some((it) => it.f.nakaFabricId)
-              ? "天地は、和紙に絵柄を印刷して仕立てます。中廻しは、案によって本物の<ruby>裂地<rt>きれじ</rt></ruby>を使います。"
+            matEl.innerHTML = items.some((it) => it.f.nakaFabricId || it.f.tenchiFabricId)
+              ? "無地の和紙で仕立てます。色の合う本物の<ruby>裂地<rt>きれじ</rt></ruby>があれば、案によってその部分に使います。"
               : matEl.dataset.paperOnly;
           }
           // 4 問の答えから選んだイメージの言葉を、案の説明の前に出す(「自分の答えで決まった」と分かるように)
@@ -1066,14 +1066,14 @@
             const label = document.createElement("p");
             label.className = "design-choice-label";
             label.textContent = VARIANT_LABEL[it.f.variant] || "";
+            const tf = it.f.tenchiFabricId && state.fabrics.find((f) => f.id === it.f.tenchiFabricId);
             const nf = it.f.nakaFabricId && state.fabrics.find((f) => f.id === it.f.nakaFabricId);
             const nakaLine = document.createElement("p");
             nakaLine.className = "design-choice-naka";
-            if (nf) {
+            nakaLine.textContent = "天地: " + (tf ? "裂地「" + tf.name + "」" : "和紙(無地)") + " / 中廻し: " + (nf ? "裂地「" + nf.name + "」" : "和紙(無地)");
+            if (tf || nf) {
               const plus = nakaSurcharge(it.f);
-              nakaLine.textContent = "中廻し: 裂地「" + nf.name + "」" + (plus > 0 ? "(+" + formatYen(plus) + ")" : "(追加料金なし)");
-            } else {
-              nakaLine.textContent = "中廻し: 和紙(無地)";
+              nakaLine.textContent += plus > 0 ? "(+" + formatYen(plus) + ")" : "(追加料金なし)";
             }
             const pick = document.createElement("button");
             pick.type = "button";
@@ -1107,7 +1107,7 @@
       stepRead.className = "active";
       stepDraw.className = "";
       const t0 = Date.now();
-      elapsedEl.textContent = "30秒ほどかかります。このままお待ちください。";
+      elapsedEl.textContent = "数秒で終わります。このままお待ちください。";
       const timer = setInterval(() => {
         elapsedEl.textContent = Math.round((Date.now() - t0) / 1000) + "秒経過。このままお待ちください。";
       }, 1000);
@@ -1120,21 +1120,24 @@
           res = r;
           stepRead.className = "done";
           stepDraw.className = "active";
-          // 2 案(なじませる / 差し色を拾う)を同時に描く。片方が失敗しても、できた方で進める
-          return Promise.all(r.designs.map((d) => KakeDesign.renderBoth(d.id).then((img) => ({ d, img }), (e) => ({ d, e }))));
-        })
-        .then((results) => {
-          const ok = results.filter((x) => x.img);
-          if (!ok.length) throw results[0].e;
-          const fabs = ok.map((x) => addDesignFabrics(x.d, x.img.ten, x.img.chi));
+          // 2026-10-25 本人決定: 絵柄は描かない。2 案(なじませる / 差し色を拾う)とも、測った色の無地の和紙にする
+          const ok = r.designs.map((d) => ({ d }));
+          const fabs = ok.map((x) => { const plain = KakeDesign.paperSwatch(x.d.baseHex); return addDesignFabrics(x.d, plain, plain); });
           ga("design_done", { seconds: Math.round((Date.now() - t0) / 1000), count: fabs.length });
-          // 中廻しに使える登録済みの裂地を探す(紙の色と答えの印象に近いもの)。見つからなければ紙のまま。
+          // 天地・中廻しに使える登録済みの裂地を探す(紙の色と答えの印象に近いもの)。見つからなければ紙のまま。
           // 測るのに失敗しても、デザインは紙のまま進める
           const look = KakeSuggest.lookFrom(wishes);
           return KakeSuggest.measureFabrics(state.fabrics.filter((f) => !f.generated))
-            .then((fm) => { fabs.forEach((t, i) => { const nf = KakeSuggest.matchNaka(fm, ok[i].d.nakaHex, look); if (nf) t.nakaFabricId = nf.id; }); }, () => {})
+            .then((fm) => {
+              fabs.forEach((t, i) => {
+                const tf = KakeSuggest.matchNaka(fm, ok[i].d.baseHex, look, "tenchi");
+                if (tf) t.tenchiFabricId = tf.id;
+                const nf = KakeSuggest.matchNaka(fm, ok[i].d.nakaHex, look);
+                if (nf && (!tf || nf.id !== tf.id)) t.nakaFabricId = nf.id; // 天地と同じ裂地にはしない
+              });
+            }, () => {})
             .then(() => {
-              ga("design_naka", { fabric: fabs.filter((t) => t.nakaFabricId).length, count: fabs.length });
+              ga("design_naka", { fabric: fabs.filter((t) => t.nakaFabricId).length, tenchi: fabs.filter((t) => t.tenchiFabricId).length, count: fabs.length });
               return chooseDesign(fabs, res.concept, res.words);
             })
             .then(() => dProgress.close());

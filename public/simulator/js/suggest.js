@@ -257,17 +257,18 @@
    * おまかせデザインの中廻しを、登録済みの裂地から選ぶ(2026-10-08 本人決定「B」)。
    * 計算で決めた中廻しの紙の色(nakaHex)に近く、柄が控えめで、答えの印象から離れすぎない裂地。
    * 十分に近いものがなければ null(紙のまま)。目安の幅は仮置き
+   * 2026-10-25: 天地も無地の和紙になったので、use = "tenchi" で天地の色(baseHex)にも同じ基準で使う(本人「色味が合いそうなら登録済みから」)
    */
-  function matchNaka(fabrics, nakaHex, look) {
+  function matchNaka(fabrics, nakaHex, look, use) {
     const FM = window.KakeFabricMap;
     if (!FM || !FM.hexLab) return null;
     const t = FM.hexLab(nakaHex);
     let best = null, bestScore = Infinity;
-    usable(fabrics, "nakamawashi").forEach((m) => {
+    usable(fabrics, use || "nakamawashi").forEach((m) => {
       if (!m.lab) return;
       const dE = Math.sqrt((m.lab[0] - t[0]) ** 2 + (m.lab[1] - t[1]) ** 2 + (m.lab[2] - t[2]) ** 2);
       const ld = lookDist(m, look);
-      if (dE > 14 || (look && ld > 1.1) || m.patternStrength > 0.07) return; // 天地に絵があるので、中廻しは無地か地紋ていどの裂地だけ
+      if (dE > 14 || (look && ld > 1.1) || m.patternStrength > 0.07) return; // 無地の和紙と並べるので、無地か地紋ていどの裂地だけ
       const score = dE / 14 + ld * 0.6 + m.patternStrength * 3;
       if (score < bestScore) { bestScore = score; best = m; }
     });

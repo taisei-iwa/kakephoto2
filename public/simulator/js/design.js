@@ -34,8 +34,9 @@
 
   // 写真の読み取りと案づくり → { concept, designs: [{ id, variant, nakaHex, baseHex }, …] }(2 案)。
   // wishes は要望の画面の選択({ mood, tone, density, note })
+  // 2026-10-25 本人決定: おまかせは絵柄を描かない無地の和紙(plain)。色を測るだけで、画像 AI には送らない
   function analyze(photo, tenMm, chiMm, wishes) {
-    return post("/api/design/analyze", { consent: true, photo: photo, ten: tenMm, chi: chiMm, wishes: wishes || {} });
+    return post("/api/design/analyze", { consent: true, plain: true, photo: photo, ten: tenMm, chi: chiMm, wishes: wishes || {} });
   }
 
   // 天と地(1 枚に描いて上下に切り分けたもの)→ { ten, chi }(どちらも dataURL)
@@ -86,7 +87,6 @@
   // エラーの種類 → お客様に見せる文
   function errorMessage(e) {
     const code = (e && e.code) || "";
-    if (code === "unsuitable") return "このお写真では絵柄をお作りできませんでした。別のお写真でお試しください。";
     if (code === "busy") return "ただいま混み合っています。少し時間をおいてお試しください。";
     if (code === "limit") return "続けてたくさんお作りいただいたため、いったんお休みしています。しばらく時間をおいてお試しください。";
     if (code === "limit_site") return "本日のデザインの受付は終了しました。明日またお試しください。";

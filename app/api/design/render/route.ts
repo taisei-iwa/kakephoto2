@@ -31,6 +31,7 @@ export async function POST(req: Request) {
   if (!/^KP-[0-9A-Z]{6}$/.test(body.id || "")) return NextResponse.json({ error: "bad_request" }, { status: 400 });
   const meta = await getJSON<DesignMeta>(`${body.id}/meta.json`);
   if (!meta) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  if (meta.plain) return NextResponse.json({ error: "bad_request" }, { status: 400 }); // 無地の案は描かない
   if (await getFile(`${meta.id}/ten.jpg`)) return NextResponse.json({ error: "already_rendered" }, { status: 409 });
 
   const { ten, chi } = meta.parts;
