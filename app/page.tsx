@@ -1,9 +1,12 @@
 "use client";
 import Image from "@/components/VImage";
+import { getImageProps } from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { preload } from "react-dom";
 import { motion, useInView } from "framer-motion";
 import Link from "next/link";
 import { LangSwitcher } from "./_components/LangSwitcher";
+import { IMG_V } from "@/lib/imageVersion";
 
 function FadeInOnScroll({ children, className, delay = 0 }: { children?: React.ReactNode; className?: string; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -376,7 +379,7 @@ function SpPage() {
             fill
             className="object-cover scale-[1.25]"
             style={{ objectPosition: isChrome ? "center calc(50% - 9px)" : "center" }}
-            priority
+            fetchPriority="high"
           />
         </div>
         <div className="absolute top-[20px] left-[16px] z-10">
@@ -646,6 +649,11 @@ function SpPage() {
 }
 
 export default function Home() {
+  // PC の背景(約1.2MB)は PC 幅のときだけ先読みする。priority だとスマホでも読み込まれるため
+  preload(`/images/fv-bg.jpg?v=${IMG_V}`, { as: "image", media: "(min-width: 768px)", fetchPriority: "high" });
+  // スマホの背景も同じく、スマホ幅のときだけ先読みする(PC で最大幅の画像が読み込まれていた)
+  const { props: spFv } = getImageProps({ src: `/images/sp-fv-bg.jpg?v=${IMG_V}`, alt: "", fill: true });
+  preload(spFv.src, { as: "image", media: "(max-width: 767.98px)", fetchPriority: "high", imageSrcSet: spFv.srcSet, imageSizes: spFv.sizes });
   return (
     <>
       <h1 className="sr-only">KAKEPHOTO（かけフォト）｜写真から作るオーダーメイド掛け軸</h1>
@@ -691,7 +699,7 @@ export default function Home() {
                 left: '-51.41%',
                 top: '-33.59%',
               }}
-              priority
+              fetchPriority="high"
               unoptimized
             />
           </div>
