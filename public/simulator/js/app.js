@@ -1369,6 +1369,7 @@
 
   // ---- 裏方: 裂地の追加/削除(#admin のときだけ表示。サーバー経由で catalog.js を更新)----
   let adminPendingImage = null; // トリミング済みの取り込み画像(dataURL)。編集で未変更なら null。
+  let adminRawImage = null; // 下ごしらえ前の切り抜き(影・継ぎ目のチェックを変えたら、ここから作り直す)
   let adminEditingId = null;    // 編集中の裂地 id(null = 追加モード)
 
   function isAdmin() { return (location.hash || "").indexOf("admin") >= 0; }
@@ -1399,6 +1400,10 @@
     if (cancelBtn) cancelBtn.addEventListener("click", resetAdminForm);
     const recropBtn = document.getElementById("admin-fabric-recrop");
     if (recropBtn) recropBtn.addEventListener("click", onAdminRecrop);
+    ["admin-fix-shade", "admin-fix-seam"].forEach((id) => {
+      const cb = document.getElementById(id);
+      if (cb) cb.addEventListener("change", applyAdminFabricFix);
+    });
     const mapBtn = document.getElementById("fabric-map-refresh");
     if (mapBtn) mapBtn.addEventListener("click", renderFabricMap);
   }
@@ -1425,7 +1430,8 @@
   // 保存済み画像は同一オリジン配信なので canvas で切り出し可能(狭める調整向け。元より広げるのは不可)。
   function onAdminRecrop() {
     const img = document.getElementById("admin-fabric-preview");
-    const src = img && img.getAttribute("src");
+    // 下ごしらえ前の切り抜きがあればそちらを切り直す(二重にならさないため)
+    const src = adminRawImage || (img && img.getAttribute("src"));
     if (!src) return adminWarn("先に画像を選んでください。");
     openFabricTrim(src);
   }
@@ -1443,14 +1449,31 @@
         needCropped: true,
         onConfirm: function (cropRect, croppedDataUrl) {
           downscaleImage(croppedDataUrl, 400, function (small) {
-            adminPendingImage = small;
-            showAdminPreview(small);
+            adminRawImage = small;
+            applyAdminFabricFix();
           });
         },
       });
     };
     img.onerror = () => adminWarn("画像の読み込みに失敗しました。");
     img.src = srcUrl;
+  }
+
+  // 影・継ぎ目の下ごしらえ(js/fabricfix.js)をかけて取り込み画像にする
+  function applyAdminFabricFix() {
+    if (!adminRawImage) return;
+    const raw = adminRawImage;
+    const opts = {
+      shade: document.getElementById("admin-fix-shade").checked,
+      seam: document.getElementById("admin-fix-seam").checked,
+    };
+    const done = (url) => {
+      if (adminRawImage !== raw) return; // 途中で別の画像に変わった
+      adminPendingImage = url;
+      showAdminPreview(url);
+    };
+    if (typeof KakeFabricFix === "undefined" || (!opts.shade && !opts.seam)) return done(raw);
+    KakeFabricFix.process(raw, opts).then(done, () => done(raw));
   }
 
   function showAdminPreview(dataUrl) {
@@ -1516,6 +1539,7 @@
   function onAdminEditFabric(fab) {
     adminEditingId = fab.id;
     adminPendingImage = null;
+    adminRawImage = null;
     document.getElementById("admin-fabric-name").value = fab.name || "";
     document.getElementById("admin-use-tenchi").checked = (fab.uses || []).indexOf("tenchi") >= 0;
     document.getElementById("admin-use-nakamawashi").checked = (fab.uses || []).indexOf("nakamawashi") >= 0;
@@ -1541,6 +1565,7 @@
   function resetAdminForm() {
     adminEditingId = null;
     adminPendingImage = null;
+    adminRawImage = null;
     document.getElementById("admin-fabric-file").value = "";
     document.getElementById("admin-fabric-name").value = "";
     document.getElementById("admin-use-tenchi").checked = false;

@@ -263,6 +263,10 @@
       <label>画像(裂地のスワッチ)<input type="file" id="admin-fabric-file" accept="image/*" /></label>
       <p class="admin-hint">画像を選ぶとトリミング画面が開きます。柄が継ぎ目なく繰り返す範囲を切り抜くと綺麗です。</p>
       <div id="admin-fabric-preview-wrap" class="admin-preview" hidden>切り抜き: <img id="admin-fabric-preview" alt="取り込みプレビュー" /> <button type="button" id="admin-fabric-recrop" class="secondary">切り抜きを調整</button></div>
+      <div class="admin-uses">下ごしらえ:
+        <label><input type="checkbox" id="admin-fix-shade" checked /> 影をならす</label>
+        <label><input type="checkbox" id="admin-fix-seam" /> 継ぎ目をならす(無地・不規則な柄向け。縞や規則的な柄は外す)</label>
+      </div>
       <label>名前<input type="text" id="admin-fabric-name" placeholder="例: 裂地 菊唐草(臙脂)" /></label>
       <div class="admin-uses">用途(1つ以上):
         <label><input type="checkbox" id="admin-use-tenchi" /> 天地</label>
@@ -509,6 +513,7 @@
   <script src="js/suggest.js"></script>
   <script src="js/design.js"></script>
   <script src="js/fabricmap.js"></script>
+  <script src="js/fabricfix.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
