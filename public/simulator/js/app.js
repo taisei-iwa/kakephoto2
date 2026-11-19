@@ -1469,7 +1469,8 @@
     if (document.getElementById("admin-use-nakamawashi").checked) uses.push("nakamawashi");
     if (document.getElementById("admin-use-ichimonji").checked) uses.push("ichimonji");
     const grade = document.getElementById("admin-fabric-grade").value || "standard";
-    const tile = Math.max(8, Math.min(200, parseInt(document.getElementById("admin-fabric-tile").value, 10) || 40));
+    // 「柄の大きさ」= 見本画像の横幅を実物の mm で。高さは画像の縦横比から出す(正方形で敷くと見本がゆがむため。2026-11-19)
+    const tile = Math.max(8, Math.min(400, parseInt(document.getElementById("admin-fabric-tile").value, 10) || 40));
     const editing = !!adminEditingId;
     if (!name) return adminWarn("名前を入力してください。");
     if (!uses.length) return adminWarn("用途を1つ以上選んでください。");
@@ -1481,6 +1482,17 @@
     if (editing) payload.id = adminEditingId;
     adminWarn(editing ? "更新しています…" : "追加しています…");
 
+    const cur = editing ? state.fabrics.find((f) => f.id === adminEditingId) : null;
+    const aspectImg = new Image();
+    aspectImg.onload = () => {
+      if (aspectImg.naturalWidth) payload.tileH = Math.max(8, Math.min(400, Math.round(tile * aspectImg.naturalHeight / aspectImg.naturalWidth)));
+      send();
+    };
+    aspectImg.onerror = send; // 読めなければ正方形のまま
+    aspectImg.src = adminPendingImage || (cur && cur.dataUrl) || "";
+    if (!aspectImg.src) send();
+
+    function send() {
     postJSON(url, payload, function (err, resp) {
       if (err || !resp || !resp.ok) {
         const verb = editing ? "更新" : "追加";
@@ -1497,6 +1509,7 @@
       render();
       updatePrice();
     });
+    }
   }
 
   // 編集開始: その裂地の値をフォームに展開(画像は据え置き。差し替えたいときだけ選び直す)。
