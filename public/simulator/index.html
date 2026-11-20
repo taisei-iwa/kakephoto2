@@ -181,9 +181,6 @@
         <button type="button" id="room-btn" class="room-btn">部屋に飾ってみる</button>
         <!-- AR 体験(スマホ・タブレットのときだけ JS が表示。PC では非表示) -->
         <button type="button" id="ar-btn" class="ar-btn" hidden>壁に掛けてみる(AR体験)</button>
-        <!-- LINE で相談するときに出来上がった掛軸を添付できるよう、相談の直前に画像の保存を置く(2026-11-20 本人)。
-             スマホは共有シート(「画像を保存」で写真アプリへ)、PC はダウンロード -->
-        <button type="button" id="save-image-btn" class="save-image-btn">掛軸の画像を保存</button>
         <!-- 6 の相談はお見積もり欄のボタン 1 つにまとめた(オレンジのボタンは 2026-11-20 本人の指示で削除。6 ではお見積もり欄のボタンが「出来上がった掛軸で相談する」になる) -->
         <p class="consult-note">この時点ではご注文になりません。LINE かフォームか、お好きな方法を選べます。</p>
         <p class="confirm-ship"><span>送料は別途頂戴します。</span><span>納品はご注文から</span><span>約1〜2か月後を目処としています。</span></p>
@@ -259,6 +256,9 @@
 
         <!-- 相談は1つのボタンにまとめ、押すと LINE かフォームかを選ぶ(2026-10-05 本人) -->
         <div class="cta-row">
+          <!-- LINE で相談するときに出来上がった掛軸を添付できるよう、相談ボタンのすぐ上に画像の保存を置く(2026-11-20 本人)。
+               6 の確認の段階だけ出す。スマホは共有シート(「画像を保存」で写真アプリへ)、PC はダウンロード -->
+          <button type="button" id="save-image-btn" class="save-image-btn">掛軸の画像を保存</button>
           <button type="button" id="cta-consult" class="cta cta-consult">相談する</button>
         </div>
         <p class="cta-note">途中のご質問も、仕上がりのご相談も、お気軽にどうぞ。</p>
