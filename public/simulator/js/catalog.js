@@ -104,9 +104,13 @@ function fabricSurcharge(fab) {
 }
 
 // ---- 「見本の写真で試す」で使う写真(2026-11-20)----
-// 自分の写真がなくても試せるように。assets/sample/ に置いたファイルを並べる(複数あれば毎回どれか 1 枚)。
+// 自分の写真がなくても試せるように。assets/sample/ に置いたファイルを並べる(押すたびに次の 1 枚)。
 // 空のあいだはボタンを出さない。使ってよい写真(自前で撮ったもの・権利の確かなもの)だけを置く。
-const SAMPLE_PHOTOS = [];
+// 2026-11-20 本人の指示で Unsplash から 3 ジャンル(風景・花・動物)を 1 枚ずつ選んだ。いずれも Unsplash ライセンス(商用可・表記不要)。
+//   sample-fuji.jpg   富士山と秋のカエデ  Andreas Rasmussen  https://unsplash.com/photos/GhvpEtG5HMs
+//   sample-ajisai.jpg 紫陽花              Tiffany Chan       https://unsplash.com/photos/_SAVhxRL2U8
+//   sample-mikeneko.jpg 三毛猫            Uriel Soberanes    https://unsplash.com/photos/xadzcCQZ_Xc(2026-11-20 本人の指示で柴犬から差し替え)
+const SAMPLE_PHOTOS = ["assets/sample/sample-fuji.jpg", "assets/sample/sample-ajisai.jpg", "assets/sample/sample-mikeneko.jpg"];
 
 // ---- 部屋に飾ったイメージ(写真合成)で使う背景 ----
 // 掛軸を実寸感で載せるための較正値。画像を差し替えても効くよう、すべて画像サイズに対する割合で持つ。

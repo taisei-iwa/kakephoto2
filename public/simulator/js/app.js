@@ -2291,8 +2291,11 @@
     const list = typeof SAMPLE_PHOTOS !== "undefined" ? SAMPLE_PHOTOS : [];
     if (!btn || !list.length) return;
     btn.hidden = false;
+    // 押すたびに次のジャンルへ(続けて押しても同じ写真にならない)。最初の 1 枚は毎回変える
+    let next = Math.floor(Math.random() * list.length);
     btn.addEventListener("click", () => {
-      const url = list[Math.floor(Math.random() * list.length)];
+      const url = list[next];
+      next = (next + 1) % list.length;
       btn.disabled = true;
       fetch(url)
         .then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); })
