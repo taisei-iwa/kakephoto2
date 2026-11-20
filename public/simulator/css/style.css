@@ -369,10 +369,11 @@ button:focus-visible, select:focus-visible, input:focus-visible, a.cta:focus-vis
 /* 寸法ラベル(幅=上・中央 / 高さ=左・縦書き) */
 .preview-stage { display: inline-flex; flex-direction: column; align-items: center; }
 .preview-stage-row { display: flex; align-items: center; gap: 0.5rem; }
+/* 寸法は写真サイズで変わることを伝えたいので、ブランド色で目立たせる(2026-11-20 本人) */
 .dim {
-  color: var(--ink);
-  font-size: 0.86rem;
-  font-weight: 600;
+  color: var(--brand);
+  font-size: 0.92rem;
+  font-weight: 700;
   letter-spacing: 0.08em;
   white-space: nowrap;
 }
@@ -466,6 +467,12 @@ button:focus-visible, select:focus-visible, input:focus-visible, a.cta:focus-vis
 }
 .price-tax { margin: 0; font-size: 0.76rem; color: var(--ink-soft); letter-spacing: 0.06em; }
 .sample-photo-btn { width: 100%; margin-top: 0.6rem; }
+.size-finished { margin: 0.8rem 0 0; padding: 0.55rem 0.7rem; border-left: 3px solid var(--brand); background: var(--surface-2); font-size: 0.78rem; line-height: 1.6; color: var(--ink-soft); }
+.size-finished strong { display: block; font-size: 0.95rem; color: var(--brand); letter-spacing: 0.04em; white-space: nowrap; }
+@media (max-width: 960px) {
+  .size-finished { padding: 0.45rem 0.5rem; font-size: 0.66rem; }
+  .size-finished strong { font-size: 0.8rem; letter-spacing: 0; }
+}
 /* 表装の形式のカード(形の小さな絵+名前。2026-11-20) */
 .format-select-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .format-cards { display: grid; gap: 0.4rem; margin-top: 0.3rem; }
@@ -495,8 +502,10 @@ button:focus-visible, select:focus-visible, input:focus-visible, a.cta:focus-vis
 .format-card-sub { font-size: 0.72rem; color: var(--ink-soft); }
 /* 大きさを選ぶ前は A4 の目安を「〜」付きで出す(¥0 から始まらないように。2026-11-20) */
 .price-from { font-size: 0.55em; font-weight: 500; margin-left: 0.1em; }
+/* 送料と納品は本人指定の 3 行で、行の途中では折り返さない(2026-11-20 本人) */
 .price-ship { margin: 0.6rem 0 0; font-size: 0.74rem; line-height: 1.7; color: var(--ink-soft); }
 .confirm-ship { margin: 0.8rem 0 0; font-size: 0.78rem; line-height: 1.7; color: var(--ink-soft); }
+.price-ship span, .confirm-ship span { display: block; white-space: nowrap; }
 
 .price-breakdown {
   margin: 1.4rem 0 0;
@@ -596,21 +605,21 @@ button:focus-visible, select:focus-visible, input:focus-visible, a.cta:focus-vis
 /* model-viewer は AR 起動の足場としてだけ使う(画面には出さない) */
 .ar-viewer { position: fixed; width: 2px; height: 2px; left: 0; bottom: 0; opacity: 0.01; pointer-events: none; }
 
-/* プレビューを画像で保存(控えめなアウトラインボタン) */
+/* 掛軸の画像を保存(LINE に添付するため、相談の直前に置く。2026-11-20 本人) */
 .save-image-btn {
   width: 100%;
   margin-top: 1.4rem;
   padding: 0.7rem 1rem;
   font-size: 0.82rem;
   letter-spacing: 0.08em;
-  border-color: var(--line);
-  color: var(--ink-soft);
+  border-color: var(--brand-soft);
+  color: var(--brand);
   background: transparent;
 }
 .save-image-btn:hover {
   background: var(--surface-2);
   color: var(--brand);
-  border-color: var(--brand-soft);
+  border-color: var(--brand);
 }
 
 /* 送信時の案内トースト(画像保存・本文コピーの操作後に表示) */
@@ -968,6 +977,7 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
     grid-template-areas:
       "head    total"
       "tax     total"
+      "ship    ship"
       "cta     cta"; /* 2026-10-02 一本道化: 作り方は 3、画像保存・部屋・AR は 5 の段階へ移した */
     align-items: center;
     column-gap: 0.5rem;
@@ -990,9 +1000,14 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
   .price-tax { grid-area: tax; margin: 0; font-size: 0.6rem; }
   .price-breakdown { display: none; }
   .price-note { display: none; }
-  .price-ship { display: none; } /* スマホは 5 の確認の画面に同じ案内を出す */
+  /* スマホは操作欄が細く 3 行目が入らないので、確認の段階のときだけ金額の欄(画面いっぱいの幅)に出す */
+  .confirm-ship { display: none; }
+  .price-ship { display: none; grid-area: ship; margin: 0.1rem 0 0.15rem; font-size: 0.66rem; line-height: 1.6; letter-spacing: 0.02em; }
+  body.step-last .price-ship { display: block; }
+  body.step-last .price-card { max-height: none; }
   /* スマホでは価格バーを薄く保つため省略。画像保存は LINE ボタンが自動で行う。 */
   .save-image-btn { display: none; }
+  #confirm-block .save-image-btn { display: block; } /* 6 の確認では LINE に添付するために出す(2026-11-20 本人) */
   .design-btn { grid-area: design; margin-top: 0.15rem; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
   .ar-btn { grid-area: ar; margin-top: 0.15rem; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
   .ar-btn[hidden] { display: none; }
@@ -1387,7 +1402,7 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
   .mat-alert { font-size: 0.64rem; padding: 0.4rem 0.45rem; margin-top: 0.4rem; }
   .confirm-list { grid-template-columns: 1fr; gap: 0 0; font-size: 0.64rem; }
   .confirm-list dt { margin-top: 0.3rem; font-size: 0.58rem; }
-  #confirm-block .room-btn, #confirm-block .ar-btn { margin-top: 0.4rem; padding: 0.45rem 0.2rem; font-size: 0.66rem; letter-spacing: 0; }
+  #confirm-block .room-btn, #confirm-block .ar-btn, #confirm-block .save-image-btn { margin-top: 0.4rem; padding: 0.45rem 0.2rem; font-size: 0.66rem; letter-spacing: 0; }
 }
 
 /* 桐箱の写真(桐箱を選んだときだけ) */
@@ -1507,7 +1522,7 @@ ruby rt { font-size: 0.5em; letter-spacing: 0; font-weight: 400; }
 @keyframes kp-glow { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
 
 /* 4. 料金: 変わった行だけ薄く色がついて、すっと消える(数字は回さない) */
-.price-total.kp-changed, .bd-row.kp-changed { animation: kp-tint 1200ms ease-out; border-radius: 3px; }
+.price-total.kp-changed, .bd-row.kp-changed, .dim.kp-changed, .size-finished.kp-changed { animation: kp-tint 1200ms ease-out; border-radius: 3px; }
 @keyframes kp-tint {
   0%, 30% { background: rgba(113,11,38,0.10); box-shadow: 0 0 0 4px rgba(113,11,38,0.10); }
   100% { background: transparent; box-shadow: 0 0 0 4px transparent; }
@@ -1516,6 +1531,6 @@ ruby rt { font-size: 0.5em; letter-spacing: 0; font-weight: 400; }
 /* 6. 動きを控えたい人には出さない */
 @media (prefers-reduced-motion: reduce) {
   .kakejiku-preview.kp-unroll, .kp-unroll .jiku-bar.bottom, .kp-unroll .jiku-end,
-  .hl-frame, .hl-frame.kp-flash, .price-total.kp-changed, .bd-row.kp-changed { animation: none; }
+  .hl-frame, .hl-frame.kp-flash, .price-total.kp-changed, .bd-row.kp-changed, .dim.kp-changed, .size-finished.kp-changed { animation: none; }
   .kp-dye { display: none; }
 }

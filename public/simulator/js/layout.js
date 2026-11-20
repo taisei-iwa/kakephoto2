@@ -45,18 +45,24 @@ function computeLayout(preset, honshiW, honshiH, opts) {
   }
   const ichimonjiTotal = ichimonjiTop + ichimonjiBottom;
 
-  const nakaShita = hasNaka ? ichimonjiTotal * r.nakaShitaOfIchimonjiTotal : 0; // 中廻し下高
+  // 天・地・中廻し・柱は本紙の大きさに比例させる(A4 を基準に、A3 なら約 1.41 倍)。
+  // 2026-11-20 本人「A4 と A3 で天地・中廻しの割合が変わっている」。以前は一文字から mm 固定で連鎖させていたため、
+  // 本紙が大きい A3 ほど表具が相対的に細く見えていた。一文字だけは従来どおり mm 固定(本人ルール)。
+  const k = r.scaleBaseLongMm ? longSide / r.scaleBaseLongMm : 1;
+  const chainBase = ichimonjiTotal * k; // 中廻し下・地・柱の連鎖の基準
+
+  const nakaShita = hasNaka ? chainBase * r.nakaShitaOfIchimonjiTotal : 0; // 中廻し下高
   const nakaUe = hasNaka ? nakaShita * r.nakaUeOfNakaShita : 0; // 中廻し上高
 
   // 地: 中廻し連鎖(地 = 中廻し上下合計)か、本紙長辺基準の直接指定
   const chi = r.chiOfIchimonjiTotal != null
-    ? ichimonjiTotal * r.chiOfIchimonjiTotal
+    ? chainBase * r.chiOfIchimonjiTotal
     : r.chiOfHonshiH != null ? longSide * r.chiOfHonshiH : nakaUe + nakaShita;
   const ten = chi * r.tenOfChi; // 天
 
   // --- 幅方向 ---
   // 柱(片側)幅: mm 固定 > 本紙幅比 > 中廻し下比。中廻しを持たない形式では一文字合計(=三段の中廻し下相当)を基準にする。
-  const hashiraBase = hasNaka ? nakaShita : ichimonjiTotal;
+  const hashiraBase = hasNaka ? nakaShita : chainBase;
   const hashiraW = r.hashiraMm != null
     ? r.hashiraMm
     : r.hashiraOfHonshiW != null

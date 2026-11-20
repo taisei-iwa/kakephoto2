@@ -184,8 +184,6 @@
     const saveImageBtn = document.getElementById("save-image-btn");
     if (ctaLine) ctaLine.addEventListener("click", onLineClick);
     if (ctaForm) ctaForm.addEventListener("click", onFormClick);
-    const consultOpen = document.getElementById("consult-open"); // 5 の「このデザインで相談してみる」
-    if (consultOpen) consultOpen.addEventListener("click", () => openConsult("step5"));
     const ctaConsult = document.getElementById("cta-consult"); // お見積もり欄の「相談する」
     if (ctaConsult) ctaConsult.addEventListener("click", () => openConsult("bar"));
     const consultClose = document.getElementById("consult-close");
@@ -389,19 +387,22 @@
   }
 
   // ---- 一本道の段階(2026-10-02 Tesla 型)と作り方の 3 択 ----
-  // 段階: 1 写真 / 2 大きさと仕立て / 3 作り方 / 4 軸先・箱 / 5 確認。今の段階の欄だけ見せる。
+  // 段階: 1 写真 / 2 仕立て / 3 作り方 / 4 写真サイズ / 5 軸先・箱 / 6 確認。今の段階の欄だけ見せる。
   // 段階の表示を押せば行き来できる。合計と相談(お見積もりの欄)は常に見せる。
-  // 仕立ての形を作り方より前にするのは、デザインが天地の寸法を使うため。
-  const STEP_NAMES = ["", "写真", "大きさ", "作り方", "仕上げ", "確認"];
+  // 仕立ての形を作り方より前にするのは、デザインが天地の寸法を使うため。写真サイズは作り方のあと(2026-11-20 本人)。
+  // サイズを選ぶ前のデザインは既定の A4 縦の寸法で作る(おまかせは無地の和紙なので、あとでサイズを変えても崩れない)。
+  // 2026-11-20 本人: 写真サイズは裂地を選んだあと。写真 → 仕立て → 作り方 → サイズ → 仕上げ → 確認 の 6 段
+  const STEP_NAMES = ["", "写真", "仕立て", "作り方", "サイズ", "仕上げ", "確認"];
+  const LAST_STEP = STEP_NAMES.length - 1;
   let currentStep = 1;
 
   // その段階で足りないもの(足りていれば "")。満たさないと次へ進めない(2026-10-02 本人)
   function stepMissing(n) {
     if (n === 1 && !state.honshiImage) return "写真をお選びください。";
-    if (n === 2 && !state.sizeMode) return "本紙の大きさ(A4 / A3 / 自由サイズ)をお選びください。";
-    if (n === 2 && el.sizeWarning && !el.sizeWarning.hidden) return "本紙の大きさを正しく入力してください。";
     if (n === 2 && !state.formatChosen) return "仕立て(表装の形式)をお選びください。";
     if (n === 3 && !state.method) return "作り方を一つお選びください。";
+    if (n === 4 && !state.sizeMode) return "写真サイズ(A4 / A3 / 自由サイズ)をお選びください。";
+    if (n === 4 && el.sizeWarning && !el.sizeWarning.hidden) return "写真サイズを正しく入力してください。";
     return "";
   }
   // n の段階へ行けるか(手前の段階がすべて満たされているか)
@@ -418,7 +419,7 @@
   }
 
   function showStep(n) {
-    currentStep = Math.max(1, Math.min(5, n));
+    currentStep = Math.max(1, Math.min(LAST_STEP, n));
     document.querySelectorAll(".panel-controls [data-step]").forEach((f) => {
       f.hidden = Number(f.dataset.step) !== currentStep;
     });
@@ -430,8 +431,13 @@
     const prev = document.getElementById("step-prev");
     const next = document.getElementById("step-next");
     prev.hidden = currentStep === 1;
-    next.hidden = currentStep === 5;
-    next.querySelector(".step-next-name").textContent = currentStep < 5 ? ":" + STEP_NAMES[currentStep + 1] : "";
+    document.body.classList.toggle("step-last", currentStep === LAST_STEP); // スマホは確認の段階で金額の欄に送料と納品を出す
+    if (currentStep === LAST_STEP) setTimeout(prepareShareImage, 300); // 保存ボタンを押したらすぐ共有シートを開けるように
+    // 6 まで進んだら、お見積もり欄の相談ボタンを「出来上がった掛軸で相談する」にする(2026-11-20 本人)
+    const ctaConsultBtn = document.getElementById("cta-consult");
+    if (ctaConsultBtn) ctaConsultBtn.textContent = currentStep === LAST_STEP ? "出来上がった掛軸で相談する" : "相談する";
+    next.hidden = currentStep === LAST_STEP;
+    next.querySelector(".step-next-name").textContent = currentStep < LAST_STEP ? ":" + STEP_NAMES[currentStep + 1] : "";
     const panel = document.querySelector(".panel-controls");
     if (panel) panel.scrollTop = 0;
     if (typeof gtag === "function") gtag("event", "step_view", { step: currentStep });
@@ -499,7 +505,7 @@
     const dl = document.getElementById("confirm-list");
     if (!dl) return;
     const layout = computeLayout(activePreset(), state.honshiW, state.honshiH, partOptions());
-    const rows = [["大きさ", sizeSummaryText()], ["仕立て", formatSummaryText()]];
+    const rows = [["写真サイズ", sizeSummaryText()], ["仕立て", formatSummaryText()]];
     fabricSummaryLines(layout).forEach((l) => {
       const i = l.indexOf(": ");
       rows.push([l.slice(0, i), l.slice(i + 2)]);
@@ -1701,8 +1707,13 @@
   function onSizeModeChange() {
     state.sizeMode = currentSizeMode();
     const isFree = state.sizeMode === "free";
-    el.orientationRow.hidden = isFree;
+    el.orientationRow.hidden = true; // 向きは写真の位置合わせで決める(2026-11-20 本人)
     el.freeSizeRow.hidden = !isFree;
+    // 自由サイズの初期値も、位置合わせで決めた向きに合わせる(横向きの写真なら幅 > 高さ)
+    if (isFree) {
+      const w = parseFloat(el.freeW.value), h = parseFloat(el.freeH.value);
+      if ((currentOrientation() === "landscape") === (w < h)) { el.freeW.value = h; el.freeH.value = w; }
+    }
     onSizeChange();
   }
 
@@ -2381,9 +2392,21 @@
     const dimW = document.getElementById("dim-w");
     const dimH = document.getElementById("dim-h");
     if (!dimW || !dimH) return;
+    const fin = document.getElementById("size-finished");
+    const show = (wText, hText) => {
+      // 幅・高さが変わったときだけ、寸法の表示を一度色づけて知らせる
+      const key = wText + "|" + hText;
+      if (dimW.dataset.key && dimW.dataset.key !== key) {
+        [dimW, dimH, fin].forEach((n) => { if (!n) return; n.classList.remove("kp-changed"); void n.offsetWidth; n.classList.add("kp-changed"); });
+      }
+      dimW.dataset.key = key;
+      if (fin) { fin.hidden = false; fin.innerHTML = "掛軸全体の仕上がり<strong>幅 " + wText + " cm</strong><strong>高さ " + hText + " cm</strong>"; }
+    };
     if (!state.sizeMode) {
       dimW.textContent = "";
       dimH.textContent = "";
+      dimW.dataset.key = "";
+      if (fin) fin.hidden = true;
       return;
     }
     // サイズ帯×向き×形式の本人確認済み「仕上がり全体寸法」を優先表示。
@@ -2394,6 +2417,7 @@
       dimW.textContent = "幅 " + cmRange(fixed.w) + " cm";
       // 高さは縦書きラベル。数字は縦中横(横並び)で表示する。
       dimH.innerHTML = "高さ " + cmRangeTcy(fixed.h) + " " + tcy("cm");
+      show(cmRange(fixed.w), cmRange(fixed.h));
       return;
     }
     // 未登録(自由サイズ 等)は比率(暫定計算)でキリよく(5cm 刻み)概算。
@@ -2401,6 +2425,7 @@
     const r5mm = (mm) => Math.round(mm / 10 / 5) * 5; // mm → cm を 5 刻みに
     dimW.textContent = "幅 約" + r5mm(lay.totalW) + " cm";
     dimH.innerHTML = "高さ 約" + tcy(r5mm(lay.totalH)) + " " + tcy("cm");
+    show("約" + r5mm(lay.totalW), "約" + r5mm(lay.totalH));
   }
   // [min,max] cm → "約80〜100" / 同値なら "約23"
   function cmRange(r) {
@@ -2465,7 +2490,7 @@
     updateDesignVisibility(); // 写真が入っているときだけ「写真に合わせてデザインする」を出す
     renderDesignHistory(); // これまでのデザイン(縮小計算の前に置き、スマホでも枠の高さに入れる)
     updateMaterialNote(); // 和紙の部位の表示(同じく縮小計算の前に)
-    if (currentStep === 5) renderConfirm();
+    if (currentStep === LAST_STEP) renderConfirm();
     updateStepNav(); // 写真・大きさ・作り方が満たされたら「次へ」を有効に
     el.previewWarning.hidden = true;
 
@@ -2550,8 +2575,8 @@
             applyCover(div, fab, key, "center");
             div.dataset.fabricId = fabricId;
           } else if (fab) {
-            const tilePxW = Math.max(2, fab.tileW * scale);
-            const tilePxH = Math.max(2, fab.tileH * scale);
+            const tilePxW = Math.max(2, fab.tileW * scale * patternK());
+            const tilePxH = Math.max(2, fab.tileH * scale * patternK());
             applyFabricTiling(div, fab, tilePxW, tilePxH);
             div.dataset.fabricId = fabricId;
           }
@@ -2570,9 +2595,9 @@
     const chiFab = state.fabrics.find((f) => f.id === state.assignments.chi);
     // 八双・軸棒には天・地の紙が巻き込まれるので、デザインの天地はその絵の上端・下端を続けて見せる
     if (tenFab && tenFab.cover) applyCover(top, tenFab, "ten", "top");
-    else if (tenFab) applyFabricTiling(top, tenFab, Math.max(2, tenFab.tileW * scale), Math.max(2, tenFab.tileH * scale));
+    else if (tenFab) applyFabricTiling(top, tenFab, Math.max(2, tenFab.tileW * scale * patternK()), Math.max(2, tenFab.tileH * scale * patternK()));
     if (chiFab && chiFab.cover) applyCover(bottom, chiFab, "chi", "bottom");
-    else if (chiFab) applyFabricTiling(bottom, chiFab, Math.max(2, chiFab.tileW * scale), Math.max(2, chiFab.tileH * scale));
+    else if (chiFab) applyFabricTiling(bottom, chiFab, Math.max(2, chiFab.tileW * scale * patternK()), Math.max(2, chiFab.tileH * scale * patternK()));
     const endL = document.createElement("div");
     endL.className = "jiku-end left " + state.jikuColor + (jikuSpot ? " spot" : "");
     const endR = document.createElement("div");
@@ -2640,6 +2665,13 @@
     div.style.backgroundSize = "cover";
     div.style.backgroundPosition = pos === "top" ? "center top" : pos === "bottom" ? "center bottom" : "center";
     div.style.backgroundRepeat = "no-repeat";
+  }
+
+  // 裂地の柄の大きさの倍率。プレビューは写真を同じ大きさで描くので、実寸のまま敷くと A3 では柄が細かく見え、
+  // A4 と A3 で模様が変わって見える(2026-11-20 本人)。柄は A4(長辺 297mm)のときの見え方にそろえる。
+  // 表具の寸法も同じ倍率で写真に比例させている(layout.js の scaleBaseLongMm)。
+  function patternK() {
+    return Math.max(state.honshiW, state.honshiH) / 297;
   }
 
   // ---- 裂地タイリングヘルパ ----
@@ -3024,7 +3056,7 @@
     const layout = computeLayout(activePreset(), state.honshiW, state.honshiH, partOptions());
     const lines = [];
     lines.push("【掛軸オーダー内容】");
-    lines.push("■ 本紙サイズ: " + sizeSummaryText());
+    lines.push("■ 写真サイズ: " + sizeSummaryText());
     const fin = finishedSizeText(layout);
     if (fin) lines.push("■ 仕上がり寸法(目安): " + fin);
     lines.push("■ 仕立て: " + formatSummaryText());
@@ -3140,7 +3172,7 @@
           if (fab && fab.cover) {
             drawCover(ctx, imgs[fab.cover[key]], x, y, w, h, "center", fab.cover.fallbackHex);
           } else if (fab && imgs[fabSrc(fab)]) {
-            fillTiled(ctx, imgs[fabSrc(fab)], x, y, w, h, fab.tileW * scale, fab.tileH * scale);
+            fillTiled(ctx, imgs[fabSrc(fab)], x, y, w, h, fab.tileW * scale * patternK(), fab.tileH * scale * patternK());
           } else {
             ctx.fillStyle = "#efe9de"; // 無地
             ctx.fillRect(x, y, w, h);
@@ -3228,7 +3260,7 @@
 
   function drawRod(ctx, img, fab, scale, x, y, w, h) {
     if (fab && img) {
-      fillTiled(ctx, img, x, y, w, h, fab.tileW * scale, fab.tileH * scale);
+      fillTiled(ctx, img, x, y, w, h, fab.tileW * scale * patternK(), fab.tileH * scale * patternK());
     } else {
       ctx.fillStyle = "#e3dccd";
       ctx.fillRect(x, y, w, h);
@@ -3299,9 +3331,41 @@
     t._timer = setTimeout(() => t.classList.remove("show"), 6000);
   }
 
+  // 掛軸の画像を保存。LINE に添付しやすいよう、スマホは共有シート(「画像を保存」で写真アプリに入る)を開く。
+  // iPhone の Safari は、押してから時間がかかると共有シートを開かせないので、6 の段階に入ったら先に画像を作っておく。
+  let shareCache = null; // { key, file }
+  function shareKey() {
+    return JSON.stringify([state.assignments, state.honshiW, state.honshiH, state.formatId, state.jikuColor, partOptions(),
+      state.honshiImage && state.honshiImage.cropRect, state.honshiImage && state.honshiImage.dataUrl.length]);
+  }
+  function prepareShareImage() {
+    const key = shareKey();
+    if (shareCache && shareCache.key === key) return Promise.resolve(shareCache.file);
+    return renderPreviewToCanvas().then((canvas) => new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (!blob) { resolve(null); return; }
+        shareCache = { key: key, file: new File([blob], "kakephoto-kakejiku.png", { type: "image/png" }) };
+        resolve(shareCache.file);
+      }, "image/png");
+    })).catch(() => null);
+  }
   function onSaveImageClick() {
+    const canShareFiles = (f) => { try { return !!(navigator.canShare && navigator.share && navigator.canShare({ files: [f] })); } catch (e) { return false; } };
+    const mobile = matchMedia("(hover: none)").matches;
+    const ready = shareCache && shareCache.key === shareKey() ? shareCache.file : null;
+    if (typeof gtag === "function") gtag("event", "save_image", { step: currentStep });
+    if (mobile && ready && canShareFiles(ready)) {
+      navigator.share({ files: [ready], title: "KAKEPHOTO 掛軸" })
+        .then(() => showToast("保存できたら、LINE のトーク画面でこの画像を添付してください。"))
+        .catch((e) => { if (!e || e.name !== "AbortError") fallbackSave(); });
+      return;
+    }
+    fallbackSave();
+    prepareShareImage(); // 次に押したときは共有シートを開けるように
+  }
+  function fallbackSave() {
     savePreviewImage().then((ok) => {
-      showToast(ok ? "プレビュー画像を保存しました。" : "画像の保存に失敗しました。お手数ですが画面の写真をお撮りください。");
+      showToast(ok ? "掛軸の画像を保存しました。LINE で相談するときに添付してください。" : "画像の保存に失敗しました。お手数ですが画面の写真をお撮りください。");
     });
   }
 

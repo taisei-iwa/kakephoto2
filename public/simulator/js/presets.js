@@ -61,13 +61,14 @@ const FORMAT_PRESETS = [
       tenOfChi: 2, // 天 = 地×2(関東式)
       hashiraOfNakaShita: 1, // 柱幅 = 中廻し下(これより太くなることは無い・本人)
       fuutaiOfTotalW: 0.04, // 風帯幅 = 全幅/25 相当
+      scaleBaseLongMm: 297, // 天地・中廻し・柱は A4(長辺 297mm)のときの寸法を基準に、本紙の長辺に比例させる
     },
   },
   {
     id: "chagake",
     label: "茶掛(茶道スタイル)",
-    status: "confirmed", // 高さ各部は三段と同じ(本人)。柱だけ細身。
-    note: "高さ各部は三段表装と同じ連鎖。柱は本来3.5分相当の細身(mm 固定)。",
+    status: "confirmed", // 高さ各部は三段と同じ(本人)。柱だけ細身。2026-11-20 天だけ短く(天 = 地×1.5)。
+    note: "高さ各部は三段表装と同じ連鎖で、天だけ地×1.5 と短め。柱は本来3.5分相当の細身(mm 固定)。",
     linkGroups: { fuutai: "ichimonji", hashira: "nakamawashi" }, // 風帯=一文字、柱=中廻しとセット
     parts: {
       ichimonji: true,
@@ -82,9 +83,10 @@ const FORMAT_PRESETS = [
       ichimonjiBottomMm: 20,
       nakaShitaOfIchimonjiTotal: 1,
       nakaUeOfNakaShita: 2,
-      tenOfChi: 2,
-      hashiraMm: 10.5, // 茶掛の柱は 3.5分(≈10.5mm)の細身
+      tenOfChi: 1.5, // 天 = 地×1.5。2026-11-20 本人「茶掛の天が長すぎる」で 2 → 1.5(A4 で 天 約22.5cm)
+      hashiraMm: 10.5, // 茶掛の柱は 3.5分(≈10.5mm)の細身(本紙の大きさに比例させない)
       fuutaiOfTotalW: 0.04,
+      scaleBaseLongMm: 297,
     },
   },
   {
@@ -111,6 +113,7 @@ const FORMAT_PRESETS = [
       tenOfChi: 2,
       hashiraOfNakaShita: 1, // 柱幅 = 一文字合計(三段の中廻し下と同じ太さ)
       fuutaiOfTotalW: 0.04,
+      scaleBaseLongMm: 297,
     },
   },
   {
@@ -138,6 +141,7 @@ const FORMAT_PRESETS = [
       hashiraOfNakaShita: 1,
       heriMm: 10, // 明朝縁 約1cm
       fuutaiOfTotalW: 0.04,
+      scaleBaseLongMm: 297,
     },
   },
 ];
