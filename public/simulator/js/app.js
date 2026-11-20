@@ -3310,8 +3310,58 @@
 
   function savePreviewImage() {
     return renderPreviewToCanvas()
+      .then(withOrderCaption)
       .then((canvas) => downloadCanvas(canvas, "kakephoto-kakejiku-preview.png"))
       .catch(() => false);
+  }
+
+  // 保存する画像の下に、注文の内容(写真サイズ・仕上がり・仕立て・裂地・軸先・箱・お見積もり)を書き添える。
+  // LINE では画像を送ってもらうだけなので、画像だけで職人に内容が伝わるように(2026-11-20 本人)。
+  function withOrderCaption(src) {
+    const lines = buildOrderSummary().split("\n").slice(1) // 1 行目の見出しは描き直す
+      .map((l) => l.replace(/^■ /, "").replace(/^　・/, "　"));
+    const W = Math.max(src.width, 760);
+    // LINE では画像が画面の幅(約 300px)に縮んで見えるので、そのときに読める大きさにする
+    const fs = Math.round(W * 0.042), lh = Math.round(fs * 1.6), pad = Math.round(W * 0.06);
+    const font = (px, w) => (w || "") + " " + px + 'px "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif';
+    const ready = document.fonts && document.fonts.load ? document.fonts.load(font(fs)).catch(() => {}) : Promise.resolve();
+    return ready.then(() => {
+      // 長い行は幅に合わせて折り返す
+      const measure = document.createElement("canvas").getContext("2d");
+      measure.font = font(fs);
+      const maxW = W - pad * 2;
+      const wrapped = [];
+      lines.forEach((l) => {
+        let cur = "";
+        for (const ch of l) {
+          if (measure.measureText(cur + ch).width > maxW && cur) { wrapped.push(cur); cur = "　" + ch; }
+          else cur += ch;
+        }
+        wrapped.push(cur);
+      });
+      const titleH = Math.round(fs * 1.25 * 1.9);
+      const capH = pad * 0.6 + titleH + wrapped.length * lh + pad * 0.8;
+      const out = document.createElement("canvas");
+      out.width = W;
+      out.height = Math.round(src.height + capH);
+      const g = out.getContext("2d");
+      g.fillStyle = "#ffffff";
+      g.fillRect(0, 0, out.width, out.height);
+      g.drawImage(src, Math.round((W - src.width) / 2), 0);
+      let y = src.height + pad * 0.6;
+      g.strokeStyle = "#d9cfc2";
+      g.lineWidth = Math.max(1, Math.round(fs * 0.06));
+      g.beginPath(); g.moveTo(pad, y); g.lineTo(W - pad, y); g.stroke();
+      g.textBaseline = "top";
+      g.fillStyle = "#710b26";
+      g.font = font(Math.round(fs * 1.25), "600");
+      g.fillText("KAKEPHOTO 掛軸のご希望内容", pad, y + Math.round(fs * 0.5));
+      y += titleH;
+      g.fillStyle = "#333333";
+      g.font = font(fs);
+      wrapped.forEach((l) => { g.fillText(l, pad, y); y += lh; });
+      return out;
+    });
   }
 
   function showToast(msg) {
@@ -3341,7 +3391,7 @@
   function prepareShareImage() {
     const key = shareKey();
     if (shareCache && shareCache.key === key) return Promise.resolve(shareCache.file);
-    return renderPreviewToCanvas().then((canvas) => new Promise((resolve) => {
+    return renderPreviewToCanvas().then(withOrderCaption).then((canvas) => new Promise((resolve) => {
       canvas.toBlob((blob) => {
         if (!blob) { resolve(null); return; }
         shareCache = { key: key, file: new File([blob], "kakephoto-kakejiku.png", { type: "image/png" }) };
@@ -3369,7 +3419,7 @@
     });
   }
 
-  // LINE: 本文をコピー＋画像を保存し、LINE は既定の動作(新規タブ)で開く。
+  // LINE: 既定の動作(新規タブ)で開く。
   // preventDefault しないのは、プログラム的な window.open がポップアップブロックされるのを避けるため。
   // 相談ボタンを押した記録(GA4)。デザインした人ほど相談に進むかを測る(2026-10-03 研究「欲しくなる掛軸」E)
   function consultEvent(via) {
@@ -3400,20 +3450,11 @@
     if (d && d.open) d.close();
   }
 
+  // 2026-11-20 本人: 本文のコピー(貼り付け)と画像の自動保存はやめた。コピーされたことも、ペーストの操作も
+  // お客様に分かりにくいため。LINE では「掛軸の画像を保存」で保存した画像を送ってもらう。
   function onLineClick() {
     consultEvent(consultFrom + "_line");
     setTimeout(closeConsult, 0); // LINE は別の画面で開く。戻ったときに選択画面が残らないよう閉じる
-    const summary = buildOrderSummary();
-    let copied = false;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(summary).then(() => { copied = true; }).catch(() => {});
-    }
-    savePreviewImage().then((imgOk) => {
-      showToast(
-        (imgOk ? "プレビュー画像を保存し、" : "") +
-        "ご希望内容をコピーしました。LINE のトーク画面で画像を添付し、本文を貼り付けて送信してください。"
-      );
-    });
   }
 
   // フォーム: 選択内容をクエリに載せて /contact へ。フォームの本文に初期表示される。
