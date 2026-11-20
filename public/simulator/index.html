@@ -66,6 +66,8 @@
           <label for="honshi-image-file" id="honshi-pick-btn" class="file-btn">写真を選ぶ</label>
           <span id="honshi-image-name" class="file-name">まだ選んでいません</span>
         </div>
+        <!-- 自分の写真がなくても試せるように(catalog.js の SAMPLE_PHOTOS が空なら出さない。2026-11-20) -->
+        <button type="button" id="sample-photo-btn" class="sample-photo-btn secondary" hidden>見本の写真で試す</button>
         <div id="honshi-image-warning" class="warning" role="alert" hidden></div>
         <div class="row btns" style="margin-top:0.6rem;">
           <button type="button" id="trim-honshi-btn" class="secondary" style="display:none">位置を調整</button>
@@ -77,9 +79,9 @@
       <fieldset class="block" id="size-block" data-step="2">
         <legend class="legend-long"><span class="step-num">2</span>本紙<span class="lg-opt">(写真)</span>の大きさを選ぶ<span class="req" title="必須">※</span></legend>
         <div class="seg" role="radiogroup" aria-label="サイズの種類">
-          <label class="seg-item"><input type="radio" name="size-mode" value="a4" /> <span>A4 定型</span></label>
-          <label class="seg-item"><input type="radio" name="size-mode" value="a3" /> <span>A3 定型</span></label>
-          <label class="seg-item"><input type="radio" name="size-mode" value="free" /> <span>自由サイズ</span></label>
+          <label class="seg-item"><input type="radio" name="size-mode" value="a4" /> <span>A4 定型 <span class="seg-sub seg-price" data-price="a4"></span></span></label>
+          <label class="seg-item"><input type="radio" name="size-mode" value="a3" /> <span>A3 定型 <span class="seg-sub seg-price" data-price="a3"></span></span></label>
+          <label class="seg-item"><input type="radio" name="size-mode" value="free" /> <span>自由サイズ <span class="seg-sub seg-price" data-price="free"></span></span></label>
         </div>
 
         <!-- 定型(A4/A3)の向き -->
@@ -106,8 +108,9 @@
       <!-- F4: 表装形式(全形式を顧客にも見せる) -->
       <fieldset class="block" data-step="2">
         <legend>仕立てを選ぶ<span class="req" title="必須">※</span></legend>
-        <label for="format-select">表装の形式</label>
-        <select id="format-select" aria-label="表装形式の選択"></select>
+        <!-- 名前だけだと違いが分からないので、形の小さな絵で選ぶ(2026-11-20)。select は状態の受け皿として残し、画面には出さない -->
+        <div id="format-cards" class="format-cards" role="radiogroup" aria-label="表装の形式"></div>
+        <select id="format-select" class="format-select-hidden" aria-hidden="true" tabindex="-1"></select>
         <div class="row pair-row">
           <label><input type="checkbox" id="opt-ichimonji-ari" /> 一文字追加<button type="button" class="guide-q" data-guide="guide-ichimonji" aria-label="一文字とは(図で見る)">?</button></label>
           <label id="fuutai-ari-label" hidden><input type="checkbox" id="opt-fuutai-ari" /> 風帯あり(+¥3,000)<button type="button" class="guide-q" data-guide="guide-fuutai" aria-label="風帯とは(図で見る)">?</button></label>
@@ -178,6 +181,7 @@
         <!-- 5 の最後の一歩。押すと LINE かフォームかを選ぶ(下の「相談する」と同じ選択画面) -->
         <button type="button" id="consult-open" class="consult-btn">このデザインで<br class="sp-br" />見積もりをもらう(無料)</button>
         <p class="consult-note">この時点ではご注文になりません。LINE かフォームか、お好きな方法を選べます。</p>
+        <p class="confirm-ship">送料は実費で、別途いただきます。発送は、デザインが決まってから約1〜2か月後です。</p>
       </fieldset>
 
       <div class="step-nav">
@@ -242,6 +246,8 @@
         </dl>
 
         <p class="price-note">表示の価格はお見積もりの目安です。確定の金額ではありません。</p>
+        <!-- 送料と届くまでの日数(cancel-policy と同じ内容。2026-11-20) -->
+        <p class="price-ship">送料は実費で、別途いただきます。<br />発送は、デザインが決まってから約1〜2か月後です。</p>
 
         <!-- お見積もりの欄は合計と相談だけ(作り方は 3、画像保存・部屋・AR は 5 の段階へ)。AR の表示部品は見えない位置に置くのでここに残す -->
         <model-viewer id="ar-viewer" class="ar-viewer" ar ar-modes="webxr scene-viewer quick-look" ar-placement="wall" ar-scale="auto" loading="eager" reveal="auto" alt="掛軸の完成イメージ"></model-viewer>

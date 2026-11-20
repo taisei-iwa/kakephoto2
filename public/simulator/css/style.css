@@ -465,6 +465,38 @@ button:focus-visible, select:focus-visible, input:focus-visible, a.cta:focus-vis
   color: var(--brand);
 }
 .price-tax { margin: 0; font-size: 0.76rem; color: var(--ink-soft); letter-spacing: 0.06em; }
+.sample-photo-btn { width: 100%; margin-top: 0.6rem; }
+/* 表装の形式のカード(形の小さな絵+名前。2026-11-20) */
+.format-select-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.format-cards { display: grid; gap: 0.4rem; margin-top: 0.3rem; }
+.format-card { flex: none; display: grid; grid-template-columns: 2.2rem 1fr; align-items: center; gap: 0.7rem; width: 100%; text-align: left; padding: 0.45rem 0.7rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); letter-spacing: 0.03em; }
+.format-card:hover { background: var(--surface-2); color: var(--ink); border-color: var(--brand-soft); }
+.format-card[aria-checked="true"] { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+.format-card .guide-svg { width: 100%; height: auto; max-height: 3.6rem; display: block; }
+/* スマホは操作欄が細いので、絵と字を小さくして折り返さないようにする */
+@media (max-width: 960px) {
+  .format-card { grid-template-columns: 1.4rem 1fr; gap: 0.45rem; padding: 0.35rem 0.45rem; }
+  .format-card .guide-svg { max-height: 2.9rem; }
+  .format-card-name { font-size: 0.8rem; }
+  .format-card-sub { font-size: 0.58rem; letter-spacing: 0; white-space: nowrap; }
+  .sample-photo-btn { font-size: 0.74rem; padding: 0.5rem 0.3rem; letter-spacing: 0; white-space: nowrap; }
+}
+/* PC は 3 つを横に並べ、絵を上・名前を下にして高さを抑える */
+@media (min-width: 961px) {
+  .format-cards { grid-template-columns: repeat(3, 1fr); }
+  .format-card { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 0.3rem; padding: 0.55rem 0.3rem; }
+  .format-card .guide-svg { width: auto; height: 4.4rem; max-height: none; }
+  .format-card-name { font-size: 0.85rem; }
+  .format-card-sub { font-size: 0.66rem; }
+}
+.format-card-text { display: grid; gap: 0.05rem; }
+.format-card-name { font-size: 0.9rem; color: var(--brand); }
+.format-card-name rt { font-size: 0.5em; color: var(--ink-faint); }
+.format-card-sub { font-size: 0.72rem; color: var(--ink-soft); }
+/* 大きさを選ぶ前は A4 の目安を「〜」付きで出す(¥0 から始まらないように。2026-11-20) */
+.price-from { font-size: 0.55em; font-weight: 500; margin-left: 0.1em; }
+.price-ship { margin: 0.6rem 0 0; font-size: 0.74rem; line-height: 1.7; color: var(--ink-soft); }
+.confirm-ship { margin: 0.8rem 0 0; font-size: 0.78rem; line-height: 1.7; color: var(--ink-soft); }
 
 .price-breakdown {
   margin: 1.4rem 0 0;
@@ -958,6 +990,7 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
   .price-tax { grid-area: tax; margin: 0; font-size: 0.6rem; }
   .price-breakdown { display: none; }
   .price-note { display: none; }
+  .price-ship { display: none; } /* スマホは 5 の確認の画面に同じ案内を出す */
   /* スマホでは価格バーを薄く保つため省略。画像保存は LINE ボタンが自動で行う。 */
   .save-image-btn { display: none; }
   .design-btn { grid-area: design; margin-top: 0.15rem; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
@@ -984,9 +1017,28 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
   color: var(--brand);
   background: transparent;
 }
-.room-btn:hover { background: var(--surface-2); }
+/* 共通の button:hover は文字を白にするので、背景だけ薄くするときは文字色も戻す(白地に白文字で読めなかった。2026-11-20) */
+.room-btn:hover { background: var(--surface-2); color: var(--brand); }
 
 .room-dialog { max-width: 720px; width: min(720px, 94vw); max-height: 92vh; overflow-y: auto; }
+/* PC: 部屋の写真を左に大きく、操作を右に並べる(縦長の部屋写真が細く、左右が空いていた。2026-11-20) */
+@media (min-width: 900px) and (min-height: 560px) {
+  .room-dialog[open] {
+    max-width: 94vw;
+    width: fit-content; /* 縦長の部屋は細く、横長の部屋は広く。写真の形に合わせて枠を決める */
+    display: grid;
+    grid-template-columns: auto 17rem;
+    grid-template-rows: auto auto auto auto auto 1fr;
+    column-gap: 1.4rem;
+    align-items: start;
+  }
+  .room-dialog[open] > * { grid-column: 2; }
+  .room-dialog[open] > .room-canvas-wrap { grid-column: 1; grid-row: 1 / -1; height: calc(92vh - 3.6rem); align-self: stretch; }
+  .room-dialog[open] .room-canvas { max-height: 100%; max-width: calc(94vw - 22rem); }
+  .room-dialog[open] .room-controls { flex-wrap: wrap; }
+  .room-dialog[open] .room-scale-note { min-width: 0; width: 100%; text-align: left; }
+  .room-dialog[open] .dialog-btns { flex-wrap: wrap; }
+}
 
 .room-list {
   list-style: none;
@@ -1157,8 +1209,8 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
 }
 .suggest-thumb {
   flex: none;
-  width: 84px;
-  height: 150px;
+  width: 132px;
+  height: 236px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1169,11 +1221,16 @@ body.admin-mode { height: auto !important; overflow: auto !important; } /* ス�
 .suggest-body { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
 .suggest-label { margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--brand); letter-spacing: 0.04em; }
 .suggest-reason { margin: 0; font-size: 0.78rem; color: var(--ink-soft); line-height: 1.65; flex: 1; }
-.suggest-body button { align-self: flex-start; width: auto; padding: 0.45rem 1.1rem; font-size: 0.78rem; }
+.suggest-body button { flex: none; align-self: flex-start; width: auto; padding: 0.45rem 1.1rem; font-size: 0.78rem; }
+.suggest-fabrics { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.35rem 0.6rem; }
+.suggest-fabrics li { display: flex; align-items: center; gap: 0.45rem; font-size: 0.74rem; line-height: 1.35; }
+.suggest-fabrics small { display: block; font-size: 0.62rem; color: var(--ink-faint); }
+.suggest-swatch { flex: none; width: 2.4rem; height: 2.4rem; border: 1px solid var(--line); background-size: cover; background-position: center; }
 
 @media (max-width: 640px) {
   .suggest-btn { grid-area: suggest; margin-top: 0.15rem; padding: 0.5rem 0.4rem; font-size: 0.78rem; letter-spacing: 0.03em; }
-  .suggest-thumb { width: 64px; height: 114px; }
+  .suggest-thumb { width: 100px; height: 180px; }
+  .suggest-fabrics { grid-template-columns: 1fr; }
   .suggest-body button { align-self: stretch; width: 100%; }
 }
 

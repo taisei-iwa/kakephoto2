@@ -104,6 +104,14 @@
     placeholder.disabled = true;
     el.formatSelect.insertBefore(placeholder, el.formatSelect.firstChild);
     el.formatSelect.value = "";
+    buildFormatCards();
+
+    // 大きさのボタンに金額を添えて、比べて選べるようにする(金額は catalog.js から。2026-11-20)
+    document.querySelectorAll(".seg-price").forEach((sp) => {
+      const k = sp.dataset.price;
+      if (k === "free" && typeof SIZE_TIERS !== "undefined") sp.textContent = formatYen(SIZE_TIERS[0].price) + "〜";
+      else if (typeof FIXED_SIZES !== "undefined" && FIXED_SIZES[k]) sp.textContent = formatYen(FIXED_SIZES[k].price);
+    });
 
     // サイズ種別
     Array.from(el.sizeModeRadios).forEach((r) => r.addEventListener("change", onSizeModeChange));
@@ -127,6 +135,7 @@
 
     // 写真(本紙画像)
     el.honshiImageFile.addEventListener("change", onHonshiImageChange);
+    initSamplePhoto();
     el.removeHonshiBtn.addEventListener("click", onRemoveHonshiImage);
     el.trimHonshiBtn.addEventListener("click", () => openTrimDialog());
 
@@ -662,6 +671,22 @@
         const p = document.createElement("p");
         p.className = "suggest-reason";
         p.textContent = plan.reason;
+        // 掛軸全体の見本だけでは裂地の違いが見えにくいので、部位ごとの裂地を見本の布で並べる(2026-11-20)
+        const chips = document.createElement("ul");
+        chips.className = "suggest-fabrics";
+        [["tenchi", "天地"], ["nakamawashi", "中廻し"], ["ichimonji", "一文字"]].forEach(([k, label]) => {
+          const fab = plan.picks[k];
+          const g = effectiveGroups()[k];
+          if (!fab || !g || g.linkedInto) return;
+          const c = document.createElement("li");
+          const sw = document.createElement("span");
+          sw.className = "suggest-swatch";
+          sw.style.backgroundImage = "url(" + fab.dataUrl + ")";
+          const t = document.createElement("span");
+          t.innerHTML = '<small>' + label + "</small>" + fab.name.replace(/[<>&]/g, "");
+          c.appendChild(sw); c.appendChild(t);
+          chips.appendChild(c);
+        });
         const pick = document.createElement("button");
         pick.type = "button";
         pick.textContent = "この案にする";
@@ -674,7 +699,7 @@
           updatePrice();
           showToast(plan.label + "を反映しました。ここから裂地を変えることもできます。");
         });
-        body.appendChild(h); body.appendChild(p); body.appendChild(pick);
+        body.appendChild(h); body.appendChild(p); body.appendChild(chips); body.appendChild(pick);
         li.appendChild(thumb); li.appendChild(body);
         listEl.appendChild(li);
       })), Promise.resolve());
@@ -1785,6 +1810,12 @@
     });
     el.priceTotal.textContent = formatYen(bd.total);
     el.bdSize.textContent = formatYen(bd.size);
+    // 大きさを選ぶ前は ¥0 ではなく A4 の目安を「〜」付きで出す(2026-11-20)
+    if (!state.sizeMode && typeof FIXED_SIZES !== "undefined" && FIXED_SIZES.a4) {
+      const from = formatYen(FIXED_SIZES.a4.price + bd.total);
+      el.priceTotal.innerHTML = from + '<span class="price-from">〜</span>';
+      el.bdSize.textContent = "A4 " + formatYen(FIXED_SIZES.a4.price) + "〜";
+    }
     // 風帯加算(付くときだけ行を表示)
     const fuutaiRow = document.getElementById("bd-fuutai-row");
     const bdFuutai = document.getElementById("bd-fuutai");
@@ -1819,8 +1850,39 @@
 
   // 形式変更。確定済みの与件: オプションのチェック状態は形式を変えても保持する(リセットしない)。
   // initial=true は初期化時(チェックボックスへ state を一度反映する)。
+  // 表装の形式を、形の小さな絵(図解と同じ描き方)で選ぶカードにする
+  function buildFormatCards() {
+    const box = document.getElementById("format-cards");
+    if (!box) return;
+    FORMAT_PRESETS.filter((p) => !p.hidden).forEach((p) => {
+      const m = /^(.*?)\((.*)\)$/.exec(p.label) || [null, p.label, ""];
+      const g = FORMAT_GUIDE[p.id] || {};
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "format-card";
+      b.dataset.format = p.id;
+      b.setAttribute("role", "radio");
+      b.setAttribute("aria-checked", "false");
+      b.innerHTML = guideSVG(p.id, { noIchimonji: true, noFuutai: true }, { aria: m[1] }) +
+        '<span class="format-card-text"><span class="format-card-name">' +
+        (g.kana ? "<ruby>" + m[1] + "<rt>" + g.kana + "</rt></ruby>" : m[1]) +
+        '</span><span class="format-card-sub">' + m[2] + "</span></span>";
+      b.addEventListener("click", () => {
+        el.formatSelect.value = p.id;
+        el.formatSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      box.appendChild(b);
+    });
+  }
+  function syncFormatCards() {
+    document.querySelectorAll(".format-card").forEach((c) => {
+      c.setAttribute("aria-checked", String(!!el.formatSelect.value && c.dataset.format === el.formatSelect.value));
+    });
+  }
+
   function onFormatChange() {
     state.formatId = el.formatSelect.value || state.formatId;
+    syncFormatCards();
     if (el.formatSelect.value) state.formatChosen = true;
     updateStepNav();
     // 「明朝仕立て」チェックは丸表装のときだけ表示。他形式では UI を隠すが state.mincho 値は保持する。
@@ -2223,6 +2285,26 @@
   }
 
   // ---- 写真(本紙画像)の取り込み / 取り外し ----
+  // 見本の写真で試す: 写真ファイルを選んだのと同じ流れに乗せる
+  function initSamplePhoto() {
+    const btn = document.getElementById("sample-photo-btn");
+    const list = typeof SAMPLE_PHOTOS !== "undefined" ? SAMPLE_PHOTOS : [];
+    if (!btn || !list.length) return;
+    btn.hidden = false;
+    btn.addEventListener("click", () => {
+      const url = list[Math.floor(Math.random() * list.length)];
+      btn.disabled = true;
+      fetch(url)
+        .then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); })
+        .then((b) => {
+          if (typeof gtag === "function") gtag("event", "sample_photo", { file: url });
+          onHonshiImageChange({ target: { files: [new File([b], "見本の写真", { type: b.type || "image/jpeg" })] } });
+        })
+        .catch(() => showToast("見本の写真を読み込めませんでした。"))
+        .finally(() => { btn.disabled = false; });
+    });
+  }
+
   function onHonshiImageChange(e) {
     const file = e.target.files && e.target.files[0];
     el.honshiImageWarning.hidden = true;
@@ -2399,6 +2481,13 @@
     } else {
       const targetHonshiLong = Math.min(210, Math.max(150, (window.innerHeight - 200) / 3.0)); // px
       scale = targetHonshiLong / Math.max(honshiW, honshiH);
+      // PC では掛軸の下端(軸棒)まで最初の画面に収める。プレビューの上端からの残りの高さに合わせて縮める
+      // (高さの低いノート PC で下が切れていた。2026-11-20)。スマホは下の 2 段目で枠に合わせる
+      if (!window.matchMedia("(max-width: 960px)").matches) {
+        const top = el.preview.getBoundingClientRect().top + window.scrollY;
+        const room = window.innerHeight - (top > 0 ? top : 200) - 40; // 40 = 軸棒と下の余白
+        if (room > 0) scale = Math.max(Math.min(scale, room / layout.totalH), 110 / Math.max(honshiW, honshiH));
+      }
     }
 
     // 描き直す前の裂地を覚えておき、描いたあとで変わった部位だけをにじませる(1 段目でだけ覚える)
